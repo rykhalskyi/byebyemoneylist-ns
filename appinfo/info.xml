@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	  xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>byebyemoneylist</id>
+	<name>Bye Bye Money List</name>
+	<summary>Shopping list manager and Expenses tracker</summary>
+	<description>Bye‑Bye Money List is an AI‑powered shopping list manager and expense tracker that gives you a clear, structured overview of where your money goes. Scan receipts, organize purchases, track income, and analyze your spending — all in one privacy‑first app.
+
+AI Receipt Scanning
+• Snap a photo of any receipt — the app recognizes products, prices, and store info automatically   
+• Choose your preferred AI engine: now supported Google Gemini or SiliconFlow (DeepSeek/Qwen)   
+• Items are instantly sorted into your custom categories
+
+Your Categories, Your Rules
+• Build your own category hierarchy (e.g., Food → Dairy → Cheese)   
+• No forced structure — organize your expenses exactly the way you want
+• Assign custom colors for clean, readable charts 
+
+Smart Shopping Lists
+• Plan your shopping in advance
+• Switch to In‑Store Mode and check off items as you go   
+• Add purchases directly to your expense history
+
+Personal Product Catalog
+• Maintain your own product database   
+• Scan barcodes for quick search
+• Compare prices across different stores  
+• Use barcodes for quick searching and compare prices across different stores.
+
+Advanced Analytics
+• View expenses by category, store, or shopping list   
+• Analyze pie charts, quantity trends, and price history for every product 
+
+Complete Financial Overview
+• Track income sources for a balanced monthly budget view   
+• Mark products or lists as subscriptions to monitor recurring costs separately 
+
+Privacy‑First
+Your data stays on your device.
+No accounts, no ads, no tracking — just your shopping and expenses, organized clearly.</description>
+	<version>1.0.0</version>
+	<licence>AGPL-3.0-or-later</licence>
+	<author mail="otakeessent@gmail.com" homepage="">Iaroslav Rykhalskyi</author>
+	<namespace>ByeByeMoneyList</namespace>
+	<category>tools</category>
+	<bugs>https://github.com/rykhalskyi/byebyemoneylist/issues</bugs>
+	<dependencies>
+		<nextcloud min-version="31" max-version="35"/>
+	</dependencies>
+	<navigations>
+		<navigation>
+			<id>byebyemoneylist</id>
+			<name>Bye Bye Money List</name>
+			<route>byebyemoneylist.page.index</route>
+			<icon>app.svg</icon>
+			<type>link</type>
+		</navigation>
+	</navigations>
+</info>
