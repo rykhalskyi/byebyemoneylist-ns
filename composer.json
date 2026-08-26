@@ -1,45 +1,11 @@
 {
 	"name": "nextcloud/byebyemoneylist",
-	"description": "Bye‑Bye Money List is an AI‑powered shopping list manager and expense tracker that gives you a clear, structured overview of where your money goes. Scan receipts, organize purchases, track income, and analyze your spending — all in one privacy‑first app.
-
-AI Receipt Scanning
-• Snap a photo of any receipt — the app recognizes products, prices, and store info automatically   
-• Choose your preferred AI engine: now supported Google Gemini or SiliconFlow (DeepSeek/Qwen)   
-• Items are instantly sorted into your custom categories
-
-Your Categories, Your Rules
-• Build your own category hierarchy (e.g., Food → Dairy → Cheese)   
-• No forced structure — organize your expenses exactly the way you want
-• Assign custom colors for clean, readable charts 
-
-Smart Shopping Lists
-• Plan your shopping in advance
-• Switch to In‑Store Mode and check off items as you go   
-• Add purchases directly to your expense history
-
-Personal Product Catalog
-• Maintain your own product database   
-• Scan barcodes for quick search
-• Compare prices across different stores  
-• Use barcodes for quick searching and compare prices across different stores.
-
-Advanced Analytics
-• View expenses by category, store, or shopping list   
-• Analyze pie charts, quantity trends, and price history for every product 
-
-Complete Financial Overview
-• Track income sources for a balanced monthly budget view   
-• Mark products or lists as subscriptions to monitor recurring costs separately 
-
-Privacy‑First
-Your data stays on your device.
-No accounts, no ads, no tracking — just your shopping and expenses, organized clearly.",
+	"description": "Bye-Bye Money List is an AI-powered shopping list manager and expense tracker.",
 	"license": "AGPL-3.0-or-later",
 	"authors": [
 		{
 			"name": "Iaroslav Rykhalskyi",
-			"email": "otakeessent@gmail.com",
-			"homepage": ""
+			"email": "otakeessent@gmail.com"
 		}
 	],
 	"autoload": {
@@ -67,6 +33,7 @@ No accounts, no ads, no tracking — just your shopping and expenses, organized 
 		"php": "^8.1"
 	},
 	"require-dev": {
+		"doctrine/dbal": "^3.6",
 		"nextcloud/ocp": "dev-stable31",
 		"roave/security-advisories": "dev-latest"
 	},
