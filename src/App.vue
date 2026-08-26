@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { mdiViewDashboard, mdiCart, mdiChartPie, mdiPackageVariant, mdiCog } from '@mdi/js'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcContent from '@nextcloud/vue/components/NcContent'
 import Menu from './components/Menu.vue'
+import ShoppingLists from './views/ShoppingLists.vue'
 
 const items = [
 	{ id: 'dashboard', label: 'Dashboard', icon: mdiViewDashboard },
@@ -13,10 +14,12 @@ const items = [
 	{ id: 'settings', label: 'Settings', icon: mdiCog },
 ]
 
-const currentView = ref(items[0].label)
+const currentView = ref(items[0].id)
+
+const currentLabel = computed(() => items.find((item) => item.id === currentView.value)?.label ?? currentView.value)
 
 function onSelect(id: string) {
-	currentView.value = items.find((item) => item.id === id)?.label ?? ''
+	currentView.value = id
 }
 </script>
 
@@ -24,7 +27,10 @@ function onSelect(id: string) {
 	<NcContent app-name="byebyemoneylist">
 		<Menu :items="items" @select="onSelect" />
 		<NcAppContent :class="$style.content">
-			<h2>{{ currentView }}</h2>
+			<ShoppingLists v-if="currentView === 'lists'" />
+			<h2 v-else>
+				{{ currentLabel }}
+			</h2>
 		</NcAppContent>
 	</NcContent>
 </template>
