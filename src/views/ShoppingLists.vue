@@ -97,12 +97,15 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 	<div :class="$style.wrapper">
 		<div :class="$style.header">
 			<h2>Shopping Lists</h2>
-			<NcButton type="button" variant="primary" @click="showDialog = true">
-				<template #icon>
-					<NcIconSvgWrapper :path="mdiPlus" :size="20" />
-				</template>
-				Add list
-			</NcButton>
+
+			
+				<NcButton :class="$style['add-button']" type="button" variant="primary" @click="showDialog = true">
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiPlus" :size="20" />
+					</template>
+					Add list
+				</NcButton>
+			
 		</div>
 
 		<div v-if="loading" :class="$style.center">
@@ -140,14 +143,18 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 		<ul v-else :class="$style.list">
 			<NcListItem v-for="list in lists"
 				:key="list.id"
+				:class="$style.item"
 				:name="list.name"
-				:details="formatTotal(list.finalTotal)">
+				:details="formatTotal(list.finalTotal)"
+				one-line>
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiCart" :size="20" />
 				</template>
 				<template #subname>
-					<span :class="$style.subname">{{ subname(list) }}</span>
-					<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" no-close />
+					<div :class="$style.subname">
+						<span>{{ subname(list) }}</span>
+						<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" no-close />
+					</div>
 				</template>
 			</NcListItem>
 		</ul>
@@ -158,13 +165,15 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 
 <style module>
 .wrapper {
+	box-sizing: border-box;
 	padding: 16px;
+	width: 100%;
 }
 
 .header {
-	display: flex;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
-	justify-content: space-between;
 	gap: 16px;
 }
 
@@ -183,6 +192,18 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 .subname {
 	display: flex;
 	align-items: center;
+	justify-content: flex-end;
 	gap: 8px;
+	margin-left: auto;
+	width: 100%;
 }
+
+.item {
+	width: 100%;
+}
+
+.add-button {
+	margin-top: 6px;
+}
+
 </style>
