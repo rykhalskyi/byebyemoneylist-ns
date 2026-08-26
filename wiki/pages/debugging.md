@@ -76,3 +76,20 @@ The Shopping Lists screen only renders when the "Shopping Lists" nav item is act
 - Vue template/render error → Browser Console.
 - API returns empty data but no error → check the Network response shape (`ocs.data.lists`) and the DB: `occ migrations:status byebyemoneylist` + the MariaDB tables (`oc_bbml_*`).
 - Wrong URL prefix (`generateUrl` vs `generateOcsUrl`) → `404` on `/index.php/apps/...` paths; OCS endpoints live under `/ocs/v2.php/apps/...` and must be built with `generateOcsUrl()`.
+
+## DB connect
+
+```bash
+docker exec -it master-database-mysql-1 mariadb -u root -p
+```
+password: nextcloud
+
+```bash
+USE nextcloud;
+SHOW TABLES;
+```
+
+tables:
+- oc_bbml_lists
+- oc_bbml_categories
+- oc_bbml_stores
