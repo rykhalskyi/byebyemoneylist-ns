@@ -29,3 +29,15 @@ export interface ListPayload {
 	storeId?: string | null
 	categoryId?: string | null
 }
+
+export interface CategoryPayload {
+	name: string
+	color?: string | null
+	emoji?: string | null
+	parentId?: string | null
+	income?: boolean
+}
+
+export interface StorePayload {
+	name: string
+}

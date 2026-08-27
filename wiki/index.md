@@ -10,12 +10,15 @@
 
 ## Specs
 - [specs/shopping-lists-page](pages/specs/shopping-lists-page.md) — T1: Shopping Lists page spec (view lists + add a new list). Created 2026-08-26.
+- [specs/catalog-page](pages/specs/catalog-page.md) — T2: Catalog page spec (Categories + Stores tabs). Created 2026-08-27.
 
 ## Plans
 - [plans/shopping-lists-page](pages/plans/shopping-lists-page.md) — T1: Shopping Lists page implementation plan. Created 2026-08-26.
+- [plans/catalog-page](pages/plans/catalog-page.md) — T2: Catalog page implementation plan. Created 2026-08-27.
 
 ## Tickets
 - [tickets/ticket-01-shopping-lists-page](pages/tickets/ticket-01-shopping-lists-page.md) — T1: Shopping Lists page (view lists + add a new list). Created 2026-08-26.
+- [tickets/ticket-02-catalog-page](pages/tickets/ticket-02-catalog-page.md) — T2: Catalog page (Categories + Stores tabs). Created 2026-08-27.
 
 ## Research
 *(none yet)*

@@ -1,6 +1,6 @@
 import axios from '@nextcloud/axios'
 import { generateOcsUrl } from '@nextcloud/router'
-import type { Category, ListPayload, ShoppingList, Store } from '../types'
+import type { Category, CategoryPayload, ListPayload, ShoppingList, Store, StorePayload } from '../types'
 
 interface OcsData<T> {
 	ocs: {
@@ -35,4 +35,20 @@ export async function fetchCategories(): Promise<Category[]> {
 		generateOcsUrl('/apps/byebyemoneylist/api/categories'),
 	)
 	return data.ocs.data.categories
+}
+
+export async function createCategory(payload: CategoryPayload): Promise<Category> {
+	const { data } = await axios.post<OcsData<{ category: Category }>>(
+		generateOcsUrl('/apps/byebyemoneylist/api/categories'),
+		payload,
+	)
+	return data.ocs.data.category
+}
+
+export async function createStore(payload: StorePayload): Promise<Store> {
+	const { data } = await axios.post<OcsData<{ store: Store }>>(
+		generateOcsUrl('/apps/byebyemoneylist/api/stores'),
+		payload,
+	)
+	return data.ocs.data.store
 }

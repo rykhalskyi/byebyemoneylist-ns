@@ -11,3 +11,6 @@
 ## [2026-08-26] update | spec + ticket-01 — store/category as FKs, tables/entities in T1, read-only endpoints
 ## [2026-08-26] ticket | T1 — Shopping Lists page (implemented, verified on nextcloud.local)
 ## [2026-08-26] build-deploy | debugging — added debugging guide page
+## [2026-08-27] spec | Catalog page (Categories + Stores tabs)
+## [2026-08-27] plan | Catalog page (Categories + Stores tabs)
+## [2026-08-27] ticket | T2 — Catalog page (Categories + Stores tabs)
