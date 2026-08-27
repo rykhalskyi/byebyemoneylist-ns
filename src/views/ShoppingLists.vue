@@ -98,14 +98,16 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 		<div :class="$style.header">
 			<h2>Shopping Lists</h2>
 
-			
-				<NcButton :class="$style['add-button']" type="button" variant="primary" @click="showDialog = true">
-					<template #icon>
-						<NcIconSvgWrapper :path="mdiPlus" :size="20" />
-					</template>
-					Add list
-				</NcButton>
-			
+			<NcButton
+				:class="$style['add-button']"
+				type="button"
+				variant="primary"
+				@click="showDialog = true">
+				<template #icon>
+					<NcIconSvgWrapper :path="mdiPlus" :size="20" />
+				</template>
+				Add list
+			</NcButton>
 		</div>
 
 		<div v-if="loading" :class="$style.center">

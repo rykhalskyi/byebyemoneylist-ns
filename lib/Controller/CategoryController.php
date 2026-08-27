@@ -7,6 +7,7 @@ namespace OCA\ByeByeMoneyList\Controller;
 use OCA\ByeByeMoneyList\AppInfo\Application;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Entity\CategoryEntity;
+use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -14,6 +15,7 @@ use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
 
 /**
  * @psalm-suppress UnusedClass
@@ -21,11 +23,13 @@ use OCP\IUserSession;
 class CategoryController extends OCSController {
 	private CategoryMapper $mapper;
 	private IUserSession $userSession;
+	private LoggerInterface $logger;
 
-	public function __construct(IRequest $request, CategoryMapper $mapper, IUserSession $userSession) {
+	public function __construct(IRequest $request, CategoryMapper $mapper, IUserSession $userSession, LoggerInterface $logger) {
 		parent::__construct(Application::APP_ID, $request);
 		$this->mapper = $mapper;
 		$this->userSession = $userSession;
+		$this->logger = $logger;
 	}
 
 	/**
@@ -47,17 +51,91 @@ class CategoryController extends OCSController {
 		}
 
 		$categories = array_values(array_map(
-			fn (CategoryEntity $category): array => [
-				'id' => $category->getId(),
-				'name' => $category->getName() ?? '',
-				'color' => $category->getColor(),
-				'emoji' => $category->getEmoji(),
-				'parentId' => $category->getParentId(),
-				'income' => $category->getIncome() ?? false,
-			],
+			fn (CategoryEntity $category): array => $this->serializeCategory($category),
 			$this->mapper->findAllByOwner($userId),
 		));
 
 		return new DataResponse(['categories' => $categories], Http::STATUS_OK);
+	}
+
+	/**
+	 * Create a new category for the current user
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @param string $name Category name (required)
+	 * @param ?string $color Hex color (e.g. #ff0000)
+	 * @param ?string $emoji Emoji for the category
+	 * @param ?string $parentId Optional parent category id (must belong to the current user)
+	 * @param bool $income Whether the category records income
+	 *
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{category: array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool}}|array{message: string}, array{}>
+	 *
+	 * 201: Category created
+	 * 401: Current user is not logged in
+	 * 422: Name is missing or empty, parent does not exist, or color is invalid
+	 * 500: Failed to create the category
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/categories')]
+	public function create(string $name, ?string $color = null, ?string $emoji = null, ?string $parentId = null, bool $income = false): DataResponse {
+		$userId = $this->userSession->getUser()?->getUID();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$name = trim($name);
+		if ($name === '') {
+			return new DataResponse(['message' => 'Name is required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		if ($color !== null && $color !== '' && preg_match('/^#[0-9a-fA-F]{6}$/', $color) !== 1) {
+			return new DataResponse(['message' => 'Color must be a hex color like #ff0000'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		if ($parentId !== null && $parentId !== '') {
+			$parent = $this->mapper->findByIdAndOwner($parentId, $userId);
+			if ($parent === null) {
+				return new DataResponse(['message' => 'Parent category not found'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		$category = new CategoryEntity();
+		$category->setId(Uuid::v4());
+		$category->setOwner($userId);
+		$category->setName($name);
+		if ($color !== null && $color !== '') {
+			$category->setColor($color);
+		}
+		if ($emoji !== null && $emoji !== '') {
+			$category->setEmoji($emoji);
+		}
+		if ($parentId !== null && $parentId !== '') {
+			$category->setParentId($parentId);
+		}
+		$category->setIncome($income);
+
+		try {
+			$created = $this->mapper->insert($category);
+		} catch (\Exception $e) {
+			$this->logger->error('Failed to create category', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to create category'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['category' => $this->serializeCategory($created)], Http::STATUS_CREATED);
+	}
+
+	/**
+	 * @return array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool}
+	 */
+	private function serializeCategory(CategoryEntity $category): array {
+		return [
+			'id' => $category->getId(),
+			'name' => $category->getName() ?? '',
+			'color' => $category->getColor(),
+			'emoji' => $category->getEmoji(),
+			'parentId' => $category->getParentId(),
+			'income' => $category->getIncome() ?? false,
+		];
 	}
 }

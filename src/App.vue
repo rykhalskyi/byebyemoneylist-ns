@@ -4,6 +4,7 @@ import { mdiViewDashboard, mdiCart, mdiChartPie, mdiPackageVariant, mdiCog } fro
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcContent from '@nextcloud/vue/components/NcContent'
 import Menu from './components/Menu.vue'
+import Catalog from './views/Catalog.vue'
 import ShoppingLists from './views/ShoppingLists.vue'
 
 const items = [
@@ -28,6 +29,7 @@ function onSelect(id: string) {
 		<Menu :items="items" @select="onSelect" />
 		<NcAppContent :class="$style.content">
 			<ShoppingLists v-if="currentView === 'lists'" />
+			<Catalog v-else-if="currentView === 'catalog'" />
 			<h2 v-else>
 				{{ currentLabel }}
 			</h2>

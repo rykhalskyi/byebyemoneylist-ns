@@ -12,6 +12,7 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 final class StoreControllerTest extends TestCase {
 	private StoreController $controller;
@@ -22,8 +23,9 @@ final class StoreControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$this->mapper = $this->createMock(StoreMapper::class);
 		$this->userSession = $this->createMock(IUserSession::class);
+		$logger = $this->createMock(LoggerInterface::class);
 
-		$this->controller = new StoreController($request, $this->mapper, $this->userSession);
+		$this->controller = new StoreController($request, $this->mapper, $this->userSession, $logger);
 	}
 
 	private function mockUser(string $uid): IUser {
@@ -58,6 +60,42 @@ final class StoreControllerTest extends TestCase {
 		$this->userSession->method('getUser')->willReturn(null);
 
 		$response = $this->controller->index();
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}
+
+	public function testCreateReturnsCreatedStore(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (StoreEntity $store): StoreEntity {
+				$store->setId('11111111-2222-4333-8444-555555555555');
+				return $store;
+			});
+
+		$response = $this->controller->create('Market');
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$store = $response->getData()['store'];
+		$this->assertSame('Market', $store['name']);
+		$this->assertSame('11111111-2222-4333-8444-555555555555', $store['id']);
+	}
+
+	public function testCreateReturnsUnprocessableWhenNameEmpty(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create('   ');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testCreateReturnsUnauthorizedWhenNotLoggedIn(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+
+		$response = $this->controller->create('Market');
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 	}

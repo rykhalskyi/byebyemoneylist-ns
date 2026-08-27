@@ -5,6 +5,7 @@ tags: [epic, nextcloud, web-app, roadmap]
 related:
   - "../project-overview.md"
   - "../tickets/ticket-01-shopping-lists-page.md"
+  - "../tickets/ticket-02-catalog-page.md"
 ---
 
 # Epic: Bye-Bye Money List Nextcloud App
@@ -26,13 +27,15 @@ Build the **server side** of Bye-Bye Money List — a Nextcloud application prov
 
 ## Ticket breakdown
 
+Implementation order is tracked by numbered tickets (e.g. [ticket-01-shopping-lists-page](../tickets/ticket-01-shopping-lists-page.md), [ticket-02-catalog-page](../tickets/ticket-02-catalog-page.md)); a ticket may cover parts of several T-rows below.
+
 | ID | Ticket | Source section | Status |
 |----|--------|----------------|--------|
-| T1 | [tickets/ticket-01-shopping-lists-page](../tickets/ticket-01-shopping-lists-page.md) — Shopping Lists page (view lists + add a new list) | §2 Shopping Lists | **Next up** |
+| T1 | Shopping Lists page (view lists + add a new list) — [ticket-01](../tickets/ticket-01-shopping-lists-page.md) | §2 Shopping Lists | **Done** |
 | T2 | List detail page — items, add/check/edit, product mapping, review flow | §2.16 Review flow | open |
 | T3 | Purchase & lifecycle — finish list (date + `finalTotal`), statuses new/finished/archived, empty list w/ price, quick purchase | §2.2, §2.3, §2.4, §2.13, §2.15 | open |
-| T4 | Catalog — Categories tab (CRUD, hierarchy, color/emoji, income flag) | §5.1 | open |
-| T5 | Catalog — Stores tab (CRUD, merge duplicates) | §5.2 | open |
+| T4 | Catalog — Categories tab (CRUD, hierarchy, color/emoji, income flag) | §5.1 | partial — display + create done in [ticket-02](../tickets/ticket-02-catalog-page.md); edit/delete open |
+| T5 | Catalog — Stores tab (CRUD, merge duplicates) | §5.2 | partial — display + create done in [ticket-02](../tickets/ticket-02-catalog-page.md); edit/merge open |
 | T6 | Catalog — Products tab (CRUD, barcode, aliases, favorites, status, merge, price history) | §5.3, §5.6, §5.7 | open |
 | T7 | Subscriptions & Income — dedicated tabs/views, list flags | §2.10, §2.11, §5.4, §5.5 | open |
 | T8 | Recurring lists — WEEK/MONTH/YEAR period, forward empty/with items, auto-archive + create | §2.9 | open |
