@@ -6,6 +6,7 @@ related:
   - "../project-overview.md"
   - "../tickets/ticket-01-shopping-lists-page.md"
   - "../tickets/ticket-02-catalog-page.md"
+  - "../tickets/ticket-06-products-tab.md"
 ---
 
 # Epic: Bye-Bye Money List Nextcloud App
@@ -36,7 +37,7 @@ Implementation order is tracked by numbered tickets (e.g. [ticket-01-shopping-li
 | T3 | Purchase & lifecycle — finish list (date + `finalTotal`), statuses new/finished/archived, empty list w/ price, quick purchase | §2.2, §2.3, §2.4, §2.13, §2.15 | open |
 | T4 | Catalog — Categories tab (CRUD, hierarchy, color/emoji, income flag) | §5.1 | partial — display + create done in [ticket-02](../tickets/ticket-02-catalog-page.md); edit/delete open |
 | T5 | Catalog — Stores tab (CRUD, merge duplicates) | §5.2 | partial — display + create done in [ticket-02](../tickets/ticket-02-catalog-page.md); edit/merge open |
-| T6 | Catalog — Products tab (CRUD, barcode, aliases, favorites, status, merge, price history) | §5.3, §5.6, §5.7 | open |
+| T6 | Catalog — Products tab (CRUD, barcode, aliases, favorites, status, merge, price history) | §5.3, §5.6, §5.7 | partial — display + create done in [ticket-06](../tickets/ticket-06-products-tab.md); edit/delete/merge/price history open |
 | T7 | Subscriptions & Income — dedicated tabs/views, list flags | §2.10, §2.11, §5.4, §5.5 | open |
 | T8 | Recurring lists — WEEK/MONTH/YEAR period, forward empty/with items, auto-archive + create | §2.9 | open |
 | T9 | Dashboard — user-managed widgets (spent today, this month, category spending, quick purchase, scan) | §3 | open |

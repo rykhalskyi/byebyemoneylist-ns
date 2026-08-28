@@ -14,3 +14,6 @@
 ## [2026-08-27] spec | Catalog page (Categories + Stores tabs)
 ## [2026-08-27] plan | Catalog page (Categories + Stores tabs)
 ## [2026-08-27] ticket | T2 — Catalog page (Categories + Stores tabs)
+## [2026-08-28] spec | Products tab (Catalog page)
+## [2026-08-28] plan | Products tab (Catalog page)
+## [2026-08-28] ticket | T6 — Products tab (display + create)

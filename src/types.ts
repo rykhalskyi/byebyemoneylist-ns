@@ -41,3 +41,21 @@ export interface CategoryPayload {
 export interface StorePayload {
 	name: string
 }
+
+export interface Product {
+	id: string
+	name: string
+	barcode: string | null
+	categoryId: string | null
+	aliases: string[]
+	isFavorite: boolean
+	status: string
+}
+
+export interface ProductPayload {
+	name: string
+	categoryId?: string | null
+	barcode?: string | null
+	aliases?: string[]
+	isFavorite?: boolean
+}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { mdiAlertCircle, mdiPlus, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
+import { mdiAlertCircle, mdiPackageVariant, mdiPackageVariantClosed, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -8,11 +8,12 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NewCategoryDialog from '../components/NewCategoryDialog.vue'
+import NewProductDialog from '../components/NewProductDialog.vue'
 import NewStoreDialog from '../components/NewStoreDialog.vue'
-import { fetchCategories, fetchStores } from '../services/listsApi'
-import type { Category, Store } from '../types'
+import { fetchCategories, fetchProducts, fetchStores } from '../services/listsApi'
+import type { Category, Product, Store } from '../types'
 
-type TabId = 'categories' | 'stores'
+type TabId = 'categories' | 'stores' | 'products'
 
 interface FlatCategory {
 	category: Category
@@ -22,17 +23,29 @@ interface FlatCategory {
 const tabs: { id: TabId; label: string }[] = [
 	{ id: 'categories', label: 'Categories' },
 	{ id: 'stores', label: 'Stores' },
+	{ id: 'products', label: 'Products' },
 ]
 
 const activeTab = ref<TabId>('categories')
 const categories = ref<Category[]>([])
 const stores = ref<Store[]>([])
+const products = ref<Product[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showCategoryDialog = ref(false)
 const showStoreDialog = ref(false)
+const showProductDialog = ref(false)
 
-const addButtonLabel = computed(() => (activeTab.value === 'categories' ? 'Add category' : 'Add store'))
+const addButtonLabel = computed(() => {
+	switch (activeTab.value) {
+	case 'categories':
+		return 'Add category'
+	case 'stores':
+		return 'Add store'
+	default:
+		return 'Add product'
+	}
+})
 
 const flattenedCategories = computed<FlatCategory[]>(() => {
 	const children = new Map<string | null, Category[]>()
@@ -70,9 +83,10 @@ async function loadData() {
 	loading.value = true
 	error.value = null
 	try {
-		const [categoryData, storeData] = await Promise.all([fetchCategories(), fetchStores()])
+		const [categoryData, storeData, productData] = await Promise.all([fetchCategories(), fetchStores(), fetchProducts()])
 		categories.value = categoryData
 		stores.value = storeData
+		products.value = productData
 	} catch {
 		error.value = 'Failed to load your catalog.'
 	} finally {
@@ -88,11 +102,17 @@ function parentName(category: Category): string {
 	return categories.value.find((candidate) => candidate.id === category.parentId)?.name ?? ''
 }
 
+function categoryName(product: Product): string {
+	return categories.value.find((candidate) => candidate.id === product.categoryId)?.name ?? ''
+}
+
 function onAdd() {
 	if (activeTab.value === 'categories') {
 		showCategoryDialog.value = true
-	} else {
+	} else if (activeTab.value === 'stores') {
 		showStoreDialog.value = true
+	} else {
+		showProductDialog.value = true
 	}
 }
 
@@ -102,6 +122,10 @@ async function onCategoryCreated(category: Category) {
 
 async function onStoreCreated(store: Store) {
 	stores.value = [...stores.value, store].sort((a, b) => a.name.localeCompare(b.name))
+}
+
+async function onProductCreated(product: Product) {
+	products.value = [...products.value, product].sort((a, b) => a.name.localeCompare(b.name))
 }
 </script>
 
@@ -205,7 +229,7 @@ async function onStoreCreated(store: Store) {
 			</div>
 		</template>
 
-		<template v-else>
+		<template v-else-if="activeTab === 'stores'">
 			<NcEmptyContent
 				v-if="stores.length === 0"
 				name="No stores yet"
@@ -233,6 +257,50 @@ async function onStoreCreated(store: Store) {
 			</div>
 		</template>
 
+		<template v-else>
+			<NcEmptyContent
+				v-if="products.length === 0"
+				name="No products yet"
+				description="Create your first product to build up your shopping catalog.">
+				<template #icon>
+					<NcIconSvgWrapper :path="mdiPackageVariantClosed" :size="64" />
+				</template>
+				<template #action>
+					<NcButton type="button" variant="primary" @click="showProductDialog = true">
+						Add product
+					</NcButton>
+				</template>
+			</NcEmptyContent>
+
+			<div v-else :class="$style.list">
+				<NcListItem
+					v-for="product in products"
+					:key="product.id"
+					:name="product.name"
+					one-line>
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiPackageVariant" :size="20" />
+					</template>
+					<template #subname>
+						<div :class="$style.subname">
+							<span v-if="categoryName(product)">
+								{{ categoryName(product) }}
+							</span>
+							<NcChip
+								v-if="product.barcode"
+								:text="product.barcode"
+								no-close />
+							<NcIconSvgWrapper
+								v-if="product.isFavorite"
+								:path="mdiStar"
+								:size="20"
+								:class="$style.favorite" />
+						</div>
+					</template>
+				</NcListItem>
+			</div>
+		</template>
+
 		<NewCategoryDialog
 			:open="showCategoryDialog"
 			@update:open="showCategoryDialog = $event"
@@ -241,6 +309,10 @@ async function onStoreCreated(store: Store) {
 			:open="showStoreDialog"
 			@update:open="showStoreDialog = $event"
 			@created="onStoreCreated" />
+		<NewProductDialog
+			:open="showProductDialog"
+			@update:open="showProductDialog = $event"
+			@created="onProductCreated" />
 	</div>
 </template>
 
@@ -319,5 +391,9 @@ async function onStoreCreated(store: Store) {
 
 .add-button {
 	margin-top: 6px;
+}
+
+.favorite {
+	color: var(--color-warning);
 }
 </style>
