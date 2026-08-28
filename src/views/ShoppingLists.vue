@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { mdiAlertCircle, mdiCart, mdiCartOff, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiCart, mdiCartOff, mdiChevronDown, mdiPlus } from '@mdi/js'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import AddProductDialog from '../components/AddProductDialog.vue'
 import NewListDialog from '../components/NewListDialog.vue'
-import { fetchCategories, fetchLists, fetchStores } from '../services/listsApi'
-import type { Category, ListStatus, ShoppingList, Store } from '../types'
+import { fetchCategories, fetchListItems, fetchLists, fetchStores } from '../services/listsApi'
+import type { Category, ListItem, ListStatus, ShoppingList, Store } from '../types'
 
 const lists = ref<ShoppingList[]>([])
 const stores = ref<Store[]>([])
@@ -17,6 +18,11 @@ const categories = ref<Category[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showDialog = ref(false)
+const expandedId = ref<string | null>(null)
+const itemsByList = ref<Record<string, ListItem[]>>({})
+const itemsLoading = ref<Record<string, boolean>>({})
+const itemsError = ref<Record<string, string>>({})
+const addProductListId = ref<string | null>(null)
 
 onMounted(loadData)
 
@@ -91,6 +97,63 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 	}
 	return 'secondary'
 }
+
+function toggleExpand(list: ShoppingList) {
+	if (expandedId.value === list.id) {
+		expandedId.value = null
+		return
+	}
+	expandedId.value = list.id
+	if (itemsByList.value[list.id] === undefined) {
+		loadItems(list.id)
+	}
+}
+
+async function loadItems(listId: string) {
+	itemsLoading.value = { ...itemsLoading.value, [listId]: true }
+	itemsError.value = { ...itemsError.value, [listId]: '' }
+	try {
+		itemsByList.value = { ...itemsByList.value, [listId]: await fetchListItems(listId) }
+	} catch {
+		itemsError.value = { ...itemsError.value, [listId]: 'Failed to load the items.' }
+	} finally {
+		itemsLoading.value = { ...itemsLoading.value, [listId]: false }
+	}
+}
+
+function onItemAdded(item: ListItem) {
+	const items = itemsByList.value[item.listId] ?? []
+	itemsByList.value = { ...itemsByList.value, [item.listId]: [...items, item] }
+	addProductListId.value = null
+}
+
+function listItems(listId: string): ListItem[] {
+	return itemsByList.value[listId] ?? []
+}
+
+function formatQuantity(quantity: number): string {
+	if (Number.isInteger(quantity)) {
+		return String(quantity)
+	}
+	return new Intl.NumberFormat(undefined, {
+		maximumFractionDigits: 2,
+	}).format(quantity)
+}
+
+function itemDetails(item: ListItem): string {
+	if (item.price === null) {
+		return ''
+	}
+	return formatTotal(item.price * item.quantity)
+}
+
+function itemSubname(item: ListItem): string {
+	const quantity = formatQuantity(item.quantity)
+	if (item.price === null) {
+		return quantity
+	}
+	return `${quantity} × ${formatTotal(item.price)}`
+}
 </script>
 
 <template>
@@ -142,26 +205,79 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 			</template>
 		</NcEmptyContent>
 
-		<ul v-else :class="$style.list">
-			<NcListItem v-for="list in lists"
+		<div v-else :class="$style.list">
+			<div
+				v-for="list in lists"
 				:key="list.id"
-				:class="$style.item"
-				:name="list.name"
-				:details="formatTotal(list.finalTotal)"
-				one-line>
-				<template #icon>
-					<NcIconSvgWrapper :path="mdiCart" :size="20" />
-				</template>
-				<template #subname>
-					<div :class="$style.subname">
-						<span>{{ subname(list) }}</span>
-						<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" no-close />
+				:class="$style.item">
+				<NcListItem
+					:name="list.name"
+					:details="formatTotal(list.finalTotal)"
+					one-line
+					@click="toggleExpand(list)">
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiCart" :size="20" />
+					</template>
+					<template #subname>
+						<div :class="$style.subname">
+							<span>{{ subname(list) }}</span>
+							<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" no-close />
+							<NcIconSvgWrapper
+								:path="mdiChevronDown"
+								:size="20"
+								:class="[$style.chevron, { [$style['chevron-open']]: expandedId === list.id }]" />
+						</div>
+					</template>
+				</NcListItem>
+
+				<div v-if="expandedId === list.id" :class="$style.items">
+					<div v-if="itemsLoading[list.id]" :class="$style.center">
+						<NcLoadingIcon />
 					</div>
-				</template>
-			</NcListItem>
-		</ul>
+
+					<p v-else-if="itemsError[list.id]" :class="$style['items-error']">
+						{{ itemsError[list.id] }}
+					</p>
+
+					<template v-else>
+						<ul v-if="listItems(list.id).length > 0" :class="$style['item-list']">
+							<NcListItem
+								v-for="item in listItems(list.id)"
+								:key="item.id"
+								:name="item.productName"
+								:details="itemDetails(item)"
+								compact
+								one-line>
+								<template #subname>
+									<span v-if="itemSubname(item)">{{ itemSubname(item) }}</span>
+								</template>
+							</NcListItem>
+						</ul>
+						<p v-else :class="$style['no-items']">
+							No items yet.
+						</p>
+
+						<NcButton
+							:class="$style['add-item-button']"
+							type="button"
+							variant="primary"
+							@click="addProductListId = list.id">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiPlus" :size="20" />
+							</template>
+							Add product
+						</NcButton>
+					</template>
+				</div>
+			</div>
+		</div>
 
 		<NewListDialog :open="showDialog" @update:open="showDialog = $event" @created="onCreated" />
+		<AddProductDialog
+			:open="addProductListId !== null"
+			:list-id="addProductListId ?? ''"
+			@update:open="addProductListId = null"
+			@added="onItemAdded" />
 	</div>
 </template>
 
@@ -186,7 +302,6 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 }
 
 .list {
-	list-style: none;
 	margin: 16px 0 0;
 	padding: 0;
 }
@@ -196,12 +311,48 @@ function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary'
 	align-items: center;
 	justify-content: flex-end;
 	gap: 8px;
-	margin-left: auto;
-	width: 100%;
+	margin-inline-start: auto;
+	min-width: 0;
 }
 
 .item {
 	width: 100%;
+}
+
+.items {
+	border-inline-start: 3px solid var(--color-border);
+	margin: 0 0 8px 16px;
+	padding: 8px 0 8px 16px;
+}
+
+.item-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.no-items {
+	color: var(--color-text-maxcontrast);
+	margin: 0;
+	padding: 8px 0;
+}
+
+.items-error {
+	color: var(--color-error);
+	margin: 0;
+	padding: 8px 0;
+}
+
+.add-item-button {
+	margin-top: 8px;
+}
+
+.chevron {
+	transition: transform 0.2s ease;
+}
+
+.chevron-open {
+	transform: rotate(180deg);
 }
 
 .add-button {
