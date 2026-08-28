@@ -20,3 +20,4 @@
 ## [2026-08-28] spec | Add products to a shopping list
 ## [2026-08-28] plan | Add products to a shopping list
 ## [2026-08-28] ticket | T2 (partial) — Add products to a shopping list
+## [2026-08-28] update | ticket-07-add-product-to-list — code-review fixes (findByIds name resolution, price/quantity bounds+rounding, transaction hardening, valid list markup, dialog retry/error states)

@@ -116,15 +116,15 @@ function onAdd() {
 	}
 }
 
-async function onCategoryCreated(category: Category) {
+function onCategoryCreated(category: Category) {
 	categories.value = [...categories.value, category].sort(byName)
 }
 
-async function onStoreCreated(store: Store) {
+function onStoreCreated(store: Store) {
 	stores.value = [...stores.value, store].sort((a, b) => a.name.localeCompare(b.name))
 }
 
-async function onProductCreated(product: Product) {
+function onProductCreated(product: Product) {
 	products.value = [...products.value, product].sort((a, b) => a.name.localeCompare(b.name))
 }
 </script>

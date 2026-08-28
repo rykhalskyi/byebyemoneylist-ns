@@ -58,8 +58,9 @@ POST /apps/byebyemoneylist/api/lists/{id}/items → 201 { item: {...} }  (body: 
 
 ## Status
 
-**Implemented (2026-08-28).** `composer lint`, `composer cs:check`, `composer psalm`, `composer test:unit` (37 tests, 134 assertions), `npm run lint`, `npm run build` pass; `composer openapi` regenerated (2 new paths). Migration applied on the dev instance and the API smoke-tested via `curl`: create list/product, add item with price+quantity (201), no price/default quantity (201), unknown product (422), negative quantity (422), list items (200 with `productName`); test data cleaned up.
+**Implemented (2026-08-28).** `composer lint`, `composer cs:check`, `composer psalm`, `composer test:unit` (42 tests, 157 assertions), `npm run lint`, `npm run build` pass; `composer openapi` regenerated (2 new paths). Migration applied on the dev instance and the API smoke-tested via `curl`: create list/product, add item with price+quantity (201), no price/default quantity (201), unknown product (422), negative quantity (422), list items (200 with `productName`); test data cleaned up.
 
 ## Updates
 
 - [2026-08-28]: Implemented per plan.
+- [2026-08-28]: Code-review fixes — item names resolved via `ProductMapper::findByIds()` (any owned product, not just normal); price/quantity validated (finite + DECIMAL(12,2) max) and rounded to 2 decimals; `beginTransaction` moved inside `try` with guarded `rollBack` in `ProductController`; expandable list rows restructured to valid markup (no nested `<li>`/`<a>`); `AddProductDialog` catalog-load failure now shows a Retry state; `NewProductDialog` merged open-watchers and surfaces category-load errors. Tests: +4 `ListItemControllerTest`, +1 `ProductControllerTest`.

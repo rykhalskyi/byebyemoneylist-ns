@@ -2097,7 +2097,7 @@
                         }
                     },
                     "422": {
-                        "description": "Product not found, price is negative, or quantity is not greater than zero",
+                        "description": "Product not found, price is negative or out of range, or quantity is not positive or out of range",
                         "content": {
                             "application/json": {
                                 "schema": {

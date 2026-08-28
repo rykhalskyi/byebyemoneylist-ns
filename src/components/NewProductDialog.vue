@@ -31,29 +31,26 @@ const canSubmit = computed(() => name.value.trim() !== '' && !submitting.value)
 
 watch(
 	() => props.open,
-	(open) => {
-		if (open) {
-			error.value = null
-			submitting.value = false
-			name.value = ''
-			category.value = null
-			barcode.value = ''
-			aliases.value = ''
-			favorite.value = false
-			requestAnimationFrame(() => nameField.value?.focus())
-		}
-	},
-)
-
-watch(
-	() => props.open,
 	async (open) => {
-		if (open) {
-			try {
-				categories.value = (await fetchCategories()).filter((item) => !item.income)
-			} catch {
-				loading.value = false
-			}
+		if (!open) {
+			return
+		}
+		error.value = null
+		submitting.value = false
+		name.value = ''
+		category.value = null
+		barcode.value = ''
+		aliases.value = ''
+		favorite.value = false
+		requestAnimationFrame(() => nameField.value?.focus())
+
+		loading.value = true
+		try {
+			categories.value = (await fetchCategories()).filter((item) => !item.income)
+		} catch {
+			error.value = 'Failed to load categories.'
+		} finally {
+			loading.value = false
 		}
 	},
 )

@@ -27,6 +27,7 @@ const price = ref('')
 const quantity = ref('1')
 const loading = ref(false)
 const submitting = ref(false)
+const catalogFailed = ref(false)
 const error = ref<string | null>(null)
 const searchField = ref<InstanceType<typeof NcTextField> | null>(null)
 const newProductField = ref<InstanceType<typeof NcTextField> | null>(null)
@@ -88,21 +89,24 @@ watch(
 			newProductName.value = ''
 			price.value = ''
 			quantity.value = '1'
-			loading.value = true
 			requestAnimationFrame(() => searchField.value?.focus())
-			fetchProducts()
-				.then((data) => {
-					products.value = data
-				})
-				.catch(() => {
-					error.value = 'Failed to load the product catalog.'
-				})
-				.finally(() => {
-					loading.value = false
-				})
+			loadCatalog()
 		}
 	},
 )
+
+async function loadCatalog() {
+	loading.value = true
+	catalogFailed.value = false
+	try {
+		products.value = await fetchProducts()
+	} catch {
+		catalogFailed.value = true
+		error.value = 'Failed to load the product catalog.'
+	} finally {
+		loading.value = false
+	}
+}
 
 function selectProduct(product: Product) {
 	selectedProduct.value = product
@@ -183,7 +187,22 @@ function openCreateNew() {
 					placeholder="Search by name, barcode or alias" />
 
 				<NcEmptyContent
-					v-if="products.length === 0"
+					v-if="catalogFailed"
+					:class="$style['empty-results']"
+					name="Could not load the product catalog"
+					description="Check your connection and try again.">
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiPackageVariant" :size="64" />
+					</template>
+					<template #action>
+						<NcButton type="button" variant="primary" @click="loadCatalog">
+							Retry
+						</NcButton>
+					</template>
+				</NcEmptyContent>
+
+				<NcEmptyContent
+					v-else-if="products.length === 0"
 					:class="$style['empty-results']"
 					name="No products in the catalog yet"
 					description="Create the product below to start building up your catalog.">

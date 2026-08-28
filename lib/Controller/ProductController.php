@@ -137,8 +137,10 @@ class ProductController extends OCSController {
 			$product->setBarcode(trim($barcode));
 		}
 
-		$this->db->beginTransaction();
+		$transactionStarted = false;
 		try {
+			$this->db->beginTransaction();
+			$transactionStarted = true;
 			$this->mapper->insert($product);
 			foreach ($cleanAliases as $alias) {
 				$aliasEntity = new ProductAliasEntity();
@@ -150,7 +152,9 @@ class ProductController extends OCSController {
 			}
 			$this->db->commit();
 		} catch (\Exception $e) {
-			$this->db->rollBack();
+			if ($transactionStarted) {
+				$this->db->rollBack();
+			}
 			$this->logger->error('Failed to create product', ['exception' => $e]);
 			return new DataResponse(['message' => 'Failed to create product'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}

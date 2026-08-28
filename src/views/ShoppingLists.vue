@@ -205,13 +205,12 @@ function itemSubname(item: ListItem): string {
 			</template>
 		</NcEmptyContent>
 
-		<ul v-else :class="$style.list">
-			<li
+		<div v-else :class="$style.list">
+			<div
 				v-for="list in lists"
 				:key="list.id"
 				:class="$style.item">
 				<NcListItem
-					:class="$style['full-width-item']"
 					:name="list.name"
 					:details="formatTotal(list.finalTotal)"
 					one-line
@@ -270,8 +269,8 @@ function itemSubname(item: ListItem): string {
 						</NcButton>
 					</template>
 				</div>
-			</li>
-		</ul>
+			</div>
+		</div>
 
 		<NewListDialog :open="showDialog" @update:open="showDialog = $event" @created="onCreated" />
 		<AddProductDialog
@@ -303,7 +302,6 @@ function itemSubname(item: ListItem): string {
 }
 
 .list {
-	list-style: none;
 	margin: 16px 0 0;
 	padding: 0;
 }
@@ -315,15 +313,6 @@ function itemSubname(item: ListItem): string {
 	gap: 8px;
 	margin-inline-start: auto;
 	min-width: 0;
-}
-
-.full-width-item :deep(.list-item__anchor),
-.full-width-item :deep(.list-item-content) {
-	width: 100%;
-}
-
-.full-width-item :deep(.list-item-content__main) {
-	flex: 1 1 auto;
 }
 
 .item {

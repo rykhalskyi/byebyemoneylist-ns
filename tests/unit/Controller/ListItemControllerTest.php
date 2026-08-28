@@ -99,8 +99,8 @@ final class ListItemControllerTest extends TestCase {
 			->willReturn([$item]);
 
 		$this->productMapper->expects($this->once())
-			->method('findAllByOwner')
-			->with('alice')
+			->method('findByIds')
+			->with(['22222222-3333-4444-8555-666666666666'], 'alice')
 			->willReturn([$this->product($productId, 'Milk')]);
 
 		$response = $this->controller->index($listId);
@@ -112,6 +112,35 @@ final class ListItemControllerTest extends TestCase {
 		$this->assertSame(1.99, $items[0]['price']);
 		$this->assertSame(1.5, $items[0]['quantity']);
 		$this->assertSame('2026-08-28T10:00:00+00:00', $items[0]['createdAt']);
+	}
+
+	public function testIndexResolvesNamesForAnyOwnedProduct(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$item = $this->item('33333333-4444-4555-8666-777777777777', $listId, $productId);
+
+		$this->itemMapper->expects($this->once())
+			->method('findByListId')
+			->with($listId)
+			->willReturn([$item]);
+
+		$this->productMapper->expects($this->once())
+			->method('findByIds')
+			->with([$productId], 'alice')
+			->willReturn([$this->product($productId, 'Subscription')]);
+
+		$response = $this->controller->index($listId);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('Subscription', $response->getData()['items'][0]['productName']);
 	}
 
 	public function testIndexReturnsUnauthorizedWhenNotLoggedIn(): void {
@@ -288,5 +317,81 @@ final class ListItemControllerTest extends TestCase {
 		$response = $this->controller->create($listId, $productId, -1.0);
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testCreateReturnsUnprocessableWhenQuantityTooLarge(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->productMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($productId, 'alice')
+			->willReturn($this->product($productId, 'Milk'));
+
+		$this->itemMapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create($listId, $productId, null, 10000000000.0);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testCreateReturnsUnprocessableWhenPriceTooLarge(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->productMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($productId, 'alice')
+			->willReturn($this->product($productId, 'Milk'));
+
+		$this->itemMapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create($listId, $productId, 10000000000.0);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testCreateRoundsPriceAndQuantityToTwoDecimals(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->productMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($productId, 'alice')
+			->willReturn($this->product($productId, 'Milk'));
+
+		$this->itemMapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ListItemEntity $item): ListItemEntity {
+				$item->setId('33333333-4444-4555-8666-777777777777');
+				return $item;
+			});
+
+		$response = $this->controller->create($listId, $productId, 1.999, 2.999);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame(2.0, $response->getData()['item']['price']);
+		$this->assertSame(3.0, $response->getData()['item']['quantity']);
 	}
 }

@@ -12,6 +12,7 @@ use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Entity\ListItemEntity;
+use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -26,6 +27,8 @@ use Psr\Log\LoggerInterface;
  * @psalm-suppress UnusedClass
  */
 class ListItemController extends OCSController {
+	private const MAX_DECIMAL = 9999999999.99;
+
 	private ListItemMapper $itemMapper;
 	private ListMapper $listMapper;
 	private ProductMapper $productMapper;
@@ -75,7 +78,12 @@ class ListItemController extends OCSController {
 		}
 
 		$items = $this->itemMapper->findByListId($id);
-		$productNames = $this->productNamesByProductId($userId);
+		$productNames = $this->productNamesByProductId(
+			$this->productMapper->findByIds(
+				array_values(array_map(fn (ListItemEntity $item): string => $item->getProductId() ?? '', $items)),
+				$userId,
+			),
+		);
 
 		$serialized = array_map(
 			fn (ListItemEntity $item): array => $this->serializeItem($item, $productNames[$item->getProductId() ?? ''] ?? ''),
@@ -100,7 +108,7 @@ class ListItemController extends OCSController {
 	 * 201: Item added
 	 * 401: Current user is not logged in
 	 * 404: List not found or not owned by the current user
-	 * 422: Product not found, price is negative, or quantity is not greater than zero
+	 * 422: Product not found, price is negative or out of range, or quantity is not positive or out of range
 	 * 500: Failed to add the item
 	 */
 	#[NoAdminRequired]
@@ -122,12 +130,16 @@ class ListItemController extends OCSController {
 		}
 
 		$quantity = $quantity ?? 1.0;
-		if ($quantity <= 0) {
+		if (!is_finite($quantity) || $quantity <= 0 || $quantity > self::MAX_DECIMAL) {
 			return new DataResponse(['message' => 'Quantity must be greater than zero'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
+		$quantity = round($quantity, 2);
 
-		if ($price !== null && $price < 0) {
+		if ($price !== null && (!is_finite($price) || $price < 0 || $price > self::MAX_DECIMAL)) {
 			return new DataResponse(['message' => 'Price must not be negative'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		if ($price !== null) {
+			$price = round($price, 2);
 		}
 
 		$item = new ListItemEntity();
@@ -153,11 +165,13 @@ class ListItemController extends OCSController {
 	}
 
 	/**
+	 * @param array<ProductEntity> $products
+	 *
 	 * @return array<string, string>
 	 */
-	private function productNamesByProductId(string $userId): array {
+	private function productNamesByProductId(array $products): array {
 		$names = [];
-		foreach ($this->productMapper->findAllByOwner($userId) as $product) {
+		foreach ($products as $product) {
 			$names[$product->getId()] = $product->getName() ?? '';
 		}
 		return $names;

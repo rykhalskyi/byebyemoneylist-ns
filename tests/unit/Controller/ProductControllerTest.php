@@ -25,26 +25,23 @@ final class ProductControllerTest extends TestCase {
 	private ProductAliasMapper $aliasMapper;
 	private CategoryMapper $categoryMapper;
 	private IUserSession $userSession;
+	private IDBConnection $db;
 
 	protected function setUp(): void {
 		$request = $this->createMock(IRequest::class);
 		$this->mapper = $this->createMock(ProductMapper::class);
 		$this->aliasMapper = $this->createMock(ProductAliasMapper::class);
 		$this->categoryMapper = $this->createMock(CategoryMapper::class);
-		$db = $this->createMock(IDBConnection::class);
+		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
-
-		$db->method('beginTransaction');
-		$db->method('commit');
-		$db->method('rollBack');
 
 		$this->controller = new ProductController(
 			$request,
 			$this->mapper,
 			$this->aliasMapper,
 			$this->categoryMapper,
-			$db,
+			$this->db,
 			$this->userSession,
 			$logger,
 		);
@@ -211,5 +208,23 @@ final class ProductControllerTest extends TestCase {
 		$response = $this->controller->create('Milk');
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}
+
+	public function testCreateRollsBackAndReturnsServerErrorWhenInsertFails(): void {
+		$this->mockUser('alice');
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('rollBack');
+		$this->db->expects($this->never())->method('commit');
+
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willThrowException(new \RuntimeException('boom'));
+
+		$this->aliasMapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create('Milk');
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 	}
 }

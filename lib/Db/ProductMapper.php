@@ -49,4 +49,25 @@ class ProductMapper extends QBMapper {
 			return null;
 		}
 	}
+
+	/**
+	 * Find the given products of the current user, regardless of type
+	 *
+	 * @param array<array-key, string> $productIds
+	 *
+	 * @return ProductEntity[]
+	 */
+	public function findByIds(array $productIds, string $userId): array {
+		if ($productIds === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->in('id', $qb->createNamedParameter($productIds, IQueryBuilder::PARAM_STR_ARRAY)));
+
+		return $this->findEntities($qb);
+	}
 }

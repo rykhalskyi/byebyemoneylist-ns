@@ -27,7 +27,6 @@ class ProductAliasEntity extends Entity {
 		return $this->owner;
 	}
 
-	/** @psalm-suppress PossiblyUnusedMethod */
 	public function setOwner(string $owner): void {
 		$this->owner = $owner;
 		$this->markFieldUpdated('owner');
