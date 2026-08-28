@@ -59,3 +59,19 @@ export interface ProductPayload {
 	aliases?: string[]
 	isFavorite?: boolean
 }
+
+export interface ListItem {
+	id: string
+	listId: string
+	productId: string
+	productName: string
+	price: number | null
+	quantity: number
+	createdAt: string | null
+}
+
+export interface ListItemPayload {
+	productId: string
+	price?: number | null
+	quantity?: number
+}

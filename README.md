@@ -1,6 +1,7 @@
 # Bye Bye Money List
 
-A template to get started with Nextcloud app development.
+Nextcloud application for shopping list and expenses management.
+
 
 ## Usage
 

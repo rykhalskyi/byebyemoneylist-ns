@@ -17,3 +17,6 @@
 ## [2026-08-28] spec | Products tab (Catalog page)
 ## [2026-08-28] plan | Products tab (Catalog page)
 ## [2026-08-28] ticket | T6 — Products tab (display + create)
+## [2026-08-28] spec | Add products to a shopping list
+## [2026-08-28] plan | Add products to a shopping list
+## [2026-08-28] ticket | T2 (partial) — Add products to a shopping list
