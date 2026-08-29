@@ -2,17 +2,6 @@
 
 Nextcloud application for shopping list and expenses management.
 
-
-## Usage
-
-- To get started easily use the [Appstore App generator](https://apps.nextcloud.com/developer/apps/generate) to
-  dynamically generate an App based on this repository with all the constants prefilled.
-- Alternatively you can use the "Use this template" button on the top of this page to create a new repository based on
-  this repository. Afterwards adjust all the necessary constants like App ID, namespace, descriptions etc.
-
-Once your app is ready follow the [instructions](https://nextcloudappstore.readthedocs.io/en/latest/developer.html) to
-upload it to the Appstore.
-
 ## Development setup (nextcloud-docker-dev)
 
 This project is developed against the [nextcloud-docker-dev](https://github.com/nextcloud/nextcloud-docker-dev)
@@ -29,7 +18,7 @@ so the app lives at `/var/www/html/apps-extra/byebyemoneylist`:
 services:
   nextcloud:
     volumes:
-      - /home/admin/Source/byebyemoneylist-ns:/var/www/html/apps-extra/byebyemoneylist
+      - [your-path-to]/byebyemoneylist-ns:/var/www/html/apps-extra/byebyemoneylist
 ```
 
 Afterwards apply the change and start the container:
@@ -44,7 +33,7 @@ docker compose up -d nextcloud
 The app is then picked up automatically from the `apps-extra` directory. To enable it either use `occ`:
 
 ```bash
-cd /home/admin/Source/nextcloud-docker-dev
+cd [your-path-to]/nextcloud-docker-dev
 ./scripts/occ.sh app:enable byebyemoneylist
 # or directly:
 docker compose exec --user www-data nextcloud ./occ app:enable byebyemoneylist
@@ -58,7 +47,7 @@ or enable it in the web interface (Apps → Disabled apps → Bye Bye Money List
 The frontend is compiled with Vite into the `js/` directory. After modifying `src/`, rebuild the assets:
 
 ```bash
-cd /home/admin/Source/byebyemoneylist-ns
+cd [your-path-to]/byebyemoneylist-ns
 npm install        # only needed once / after dependency changes
 npm run build
 ```
