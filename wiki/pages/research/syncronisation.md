@@ -1,4 +1,12 @@
-### Simple approach
+### The problem: Category, Store, Products and Shopping Lists synchronization between android client and nextcloud app.
+
+I want to have a possibility of synchronization of my data between android client and my NextCloud app (NCA).
+The problem is every client and every NCA has own ids for entities. I want to find a way to synchronize them.
+
+Phase 1. Client -> Server. I add data from clients to server.
+Phase 2. Server -> Client. Client saves new data from the server.
+
+### Simple approach for Category mapping:
 
 1. **Keep client/server IDs separate.** Create a mapping between them.
 2. **Compare categories using their full path**, not just the name:
@@ -128,3 +136,14 @@ Since you already have LLM on the client, I'd start with:
 Later, if you add LLM capability to the server, you can move the matching there **without changing the fundamental data model**.
 
 So yes: **client-side matching is a good option for your situation**, provided the server treats the client's matches as *proposals* and remains the authoritative owner of the resulting mappings.
+
+**Validate and Persist** stage can be supervised by user. User approves it.
+
+
+The same technique can be used for Stores, products and product lists.
+
+What if:
+- if products have the same not-null barcode value - it's perfect match.
+- in the list or product to save clients ids in similar way as in aliases. Each product on NCA will have mapping ids of clients products. and then client can understand if this product is in its catalog. 
+- after synchronization when some cases are not clear mark products, shops or categories like imported and demand user's review. User cab edit product, category or store.
+- add merge function for category, store, product. User can merge duplicates in one item. At merge user can edit item. For product it is possible to see all aliases and client ids (if client ids are introduced)
