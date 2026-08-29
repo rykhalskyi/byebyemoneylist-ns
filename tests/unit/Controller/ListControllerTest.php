@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Controller;
 
 use OCA\ByeByeMoneyList\Controller\ListController;
+use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
 use OCP\AppFramework\Http;
@@ -17,15 +18,17 @@ use Psr\Log\LoggerInterface;
 final class ListControllerTest extends TestCase {
 	private ListController $controller;
 	private ListMapper $mapper;
+	private ListItemMapper $itemMapper;
 	private IUserSession $userSession;
 
 	protected function setUp(): void {
 		$request = $this->createMock(IRequest::class);
 		$this->mapper = $this->createMock(ListMapper::class);
+		$this->itemMapper = $this->createMock(ListItemMapper::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
 
-		$this->controller = new ListController($request, $this->mapper, $this->userSession, $logger);
+		$this->controller = new ListController($request, $this->mapper, $this->itemMapper, $this->userSession, $logger);
 	}
 
 	private function mockUser(string $uid): IUser {
@@ -50,6 +53,11 @@ final class ListControllerTest extends TestCase {
 			->with('alice')
 			->willReturn([$list]);
 
+		$this->itemMapper->expects($this->once())
+			->method('sumCheckedByListIds')
+			->with(['11111111-2222-4333-8444-555555555555'])
+			->willReturn(['11111111-2222-4333-8444-555555555555' => 12.5]);
+
 		$response = $this->controller->index();
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -58,6 +66,7 @@ final class ListControllerTest extends TestCase {
 		$this->assertSame('Groceries', $lists[0]['name']);
 		$this->assertNull($lists[0]['storeId']);
 		$this->assertNull($lists[0]['categoryId']);
+		$this->assertSame(12.5, $lists[0]['totalPrice']);
 		$this->assertSame('2026-08-26T10:00:00+00:00', $lists[0]['createdAt']);
 	}
 

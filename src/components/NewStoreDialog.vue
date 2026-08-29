@@ -4,20 +4,23 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { createStore } from '../services/listsApi'
+import { createStore, updateStore } from '../services/listsApi'
 import type { Store } from '../types'
 
-const props = defineProps<{ open: boolean }>()
+const props = defineProps<{ open: boolean; entity?: Store }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
 	created: [store: Store]
+	updated: [store: Store]
 }>()
 
 const name = ref('')
 const submitting = ref(false)
 const error = ref<string | null>(null)
 const nameField = ref<InstanceType<typeof NcTextField> | null>(null)
+
+const isEditing = computed(() => props.entity !== undefined)
 
 const canSubmit = computed(() => name.value.trim() !== '' && !submitting.value)
 
@@ -27,7 +30,7 @@ watch(
 		if (open) {
 			error.value = null
 			submitting.value = false
-			name.value = ''
+			name.value = props.entity?.name ?? ''
 			requestAnimationFrame(() => nameField.value?.focus())
 		}
 	},
@@ -44,11 +47,13 @@ async function onSubmit() {
 	submitting.value = true
 	error.value = null
 	try {
-		const store = await createStore({ name: name.value.trim() })
-		emit('created', store)
+		const store = props.entity === undefined
+			? await createStore({ name: name.value.trim() })
+			: await updateStore(props.entity.id, { name: name.value.trim() })
+		emit(props.entity === undefined ? 'created' : 'updated', store)
 		emit('update:open', false)
 	} catch {
-		error.value = 'Failed to create the store. Please try again.'
+		error.value = isEditing.value ? 'Failed to update the store. Please try again.' : 'Failed to create the store. Please try again.'
 	} finally {
 		submitting.value = false
 	}
@@ -57,7 +62,7 @@ async function onSubmit() {
 
 <template>
 	<NcDialog
-		:name="'New store'"
+		:name="isEditing ? 'Edit store' : 'New store'"
 		:open="props.open"
 		size="normal"
 		is-form
@@ -87,7 +92,7 @@ async function onSubmit() {
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
-				Create
+				{{ isEditing ? 'Save' : 'Create' }}
 			</NcButton>
 		</template>
 	</NcDialog>

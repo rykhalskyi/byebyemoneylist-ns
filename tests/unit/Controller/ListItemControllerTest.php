@@ -394,4 +394,132 @@ final class ListItemControllerTest extends TestCase {
 		$this->assertSame(2.0, $response->getData()['item']['price']);
 		$this->assertSame(3.0, $response->getData()['item']['quantity']);
 	}
+
+	public function testUpdateTogglesChecked(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$item = $this->item($itemId, $listId, $productId);
+
+		$this->itemMapper->expects($this->once())
+			->method('findByIdAndListId')
+			->with($itemId, $listId)
+			->willReturn($item);
+
+		$this->itemMapper->expects($this->once())
+			->method('update')
+			->willReturnArgument(0);
+
+		$this->productMapper->expects($this->once())
+			->method('findByIds')
+			->with([$productId], 'alice')
+			->willReturn([$this->product($productId, 'Milk')]);
+
+		$response = $this->controller->update($listId, $itemId, true);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertTrue($response->getData()['item']['isChecked']);
+	}
+
+	public function testUpdateReturnsNotFoundWhenItemNotInList(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->itemMapper->expects($this->once())
+			->method('findByIdAndListId')
+			->with($itemId, $listId)
+			->willReturn(null);
+
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$response = $this->controller->update($listId, $itemId, true);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
+
+	public function testUpdateReturnsUnprocessableWhenQuantityNotPositive(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->itemMapper->expects($this->once())
+			->method('findByIdAndListId')
+			->willReturn($this->item($itemId, $listId, $productId));
+
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$response = $this->controller->update($listId, $itemId, null, null, 0);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testDestroyDeletesItem(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$item = $this->item($itemId, $listId, $productId);
+
+		$this->itemMapper->expects($this->once())
+			->method('findByIdAndListId')
+			->with($itemId, $listId)
+			->willReturn($item);
+
+		$this->itemMapper->expects($this->once())->method('delete')->with($item);
+
+		$response = $this->controller->destroy($listId, $itemId);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}
+
+	public function testDestroyReturnsNotFoundWhenItemNotInList(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->itemMapper->expects($this->once())
+			->method('findByIdAndListId')
+			->willReturn(null);
+
+		$this->itemMapper->expects($this->never())->method('delete');
+
+		$response = $this->controller->destroy($listId, $itemId);
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
 }

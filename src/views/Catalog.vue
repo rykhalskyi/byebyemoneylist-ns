@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { mdiAlertCircle, mdiPackageVariant, mdiPackageVariantClosed, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
+import { mdiAlertCircle, mdiDelete, mdiPackageVariant, mdiPackageVariantClosed, mdiPencil, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -10,7 +10,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NewCategoryDialog from '../components/NewCategoryDialog.vue'
 import NewProductDialog from '../components/NewProductDialog.vue'
 import NewStoreDialog from '../components/NewStoreDialog.vue'
-import { fetchCategories, fetchProducts, fetchStores } from '../services/listsApi'
+import { deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi'
 import type { Category, Product, Store } from '../types'
 
 type TabId = 'categories' | 'stores' | 'products'
@@ -35,6 +35,9 @@ const error = ref<string | null>(null)
 const showCategoryDialog = ref(false)
 const showStoreDialog = ref(false)
 const showProductDialog = ref(false)
+const editingCategory = ref<Category | null>(null)
+const editingStore = ref<Store | null>(null)
+const editingProduct = ref<Product | null>(null)
 
 const addButtonLabel = computed(() => {
 	switch (activeTab.value) {
@@ -106,6 +109,10 @@ function categoryName(product: Product): string {
 	return categories.value.find((candidate) => candidate.id === product.categoryId)?.name ?? ''
 }
 
+function categoryForProduct(product: Product): Category | null {
+	return categories.value.find((candidate) => candidate.id === product.categoryId) ?? null
+}
+
 function onAdd() {
 	if (activeTab.value === 'categories') {
 		showCategoryDialog.value = true
@@ -126,6 +133,63 @@ function onStoreCreated(store: Store) {
 
 function onProductCreated(product: Product) {
 	products.value = [...products.value, product].sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function onCategoryUpdated(category: Category) {
+	categories.value = categories.value.map((candidate) => (candidate.id === category.id ? category : candidate)).sort(byName)
+	editingCategory.value = null
+}
+
+function onStoreUpdated(store: Store) {
+	stores.value = stores.value.map((candidate) => (candidate.id === store.id ? store : candidate)).sort((a, b) => a.name.localeCompare(b.name))
+	editingStore.value = null
+}
+
+function onProductUpdated(product: Product) {
+	products.value = products.value.map((candidate) => (candidate.id === product.id ? product : candidate)).sort((a, b) => a.name.localeCompare(b.name))
+	editingProduct.value = null
+}
+
+async function onDeleteCategory(category: Category) {
+	categories.value = categories.value.filter((candidate) => candidate.id !== category.id)
+	try {
+		await deleteCategory(category.id)
+	} catch {
+		await loadData()
+	}
+}
+
+async function onDeleteStore(store: Store) {
+	stores.value = stores.value.filter((candidate) => candidate.id !== store.id)
+	try {
+		await deleteStore(store.id)
+	} catch {
+		await loadData()
+	}
+}
+
+async function onDeleteProduct(product: Product) {
+	products.value = products.value.filter((candidate) => candidate.id !== product.id)
+	try {
+		await deleteProduct(product.id)
+	} catch {
+		await loadData()
+	}
+}
+
+function closeCategoryDialog() {
+	showCategoryDialog.value = false
+	editingCategory.value = null
+}
+
+function closeStoreDialog() {
+	showStoreDialog.value = false
+	editingStore.value = null
+}
+
+function closeProductDialog() {
+	showProductDialog.value = false
+	editingProduct.value = null
 }
 </script>
 
@@ -200,16 +264,14 @@ function onProductCreated(product: Product) {
 					:style="{ paddingLeft: `${node.depth * 24}px` }">
 					<NcListItem :name="node.category.name" one-line>
 						<template #icon>
-							<span :class="$style['category-icon']">
-								<span
-									v-if="node.category.color"
-									:class="$style['color-dot']"
-									:style="{ backgroundColor: node.category.color }" />
+							<span
+								:class="$style['category-bubble']"
+								:style="node.category.color ? { backgroundColor: node.category.color } : {}">
 								<span v-if="node.category.emoji">{{ node.category.emoji }}</span>
 								<NcIconSvgWrapper
-									v-if="!node.category.emoji && !node.category.color"
+									v-else
 									:path="mdiTagMultiple"
-									:size="20" />
+									:size="16" />
 							</span>
 						</template>
 						<template #subname>
@@ -223,6 +285,24 @@ function onProductCreated(product: Product) {
 									variant="success"
 									no-close />
 							</div>
+						</template>
+						<template #extra-actions>
+							<NcButton
+								type="button"
+								:aria-label="`Edit ${node.category.name}`"
+								@click="editingCategory = node.category">
+								<template #icon>
+									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
+								</template>
+							</NcButton>
+							<NcButton
+								type="button"
+								:aria-label="`Delete ${node.category.name}`"
+								@click="onDeleteCategory(node.category)">
+								<template #icon>
+									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+								</template>
+							</NcButton>
 						</template>
 					</NcListItem>
 				</div>
@@ -253,6 +333,24 @@ function onProductCreated(product: Product) {
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiStore" :size="20" />
 					</template>
+					<template #extra-actions>
+						<NcButton
+							type="button"
+							:aria-label="`Edit ${store.name}`"
+							@click="editingStore = store">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiPencil" :size="20" />
+							</template>
+						</NcButton>
+						<NcButton
+							type="button"
+							:aria-label="`Delete ${store.name}`"
+							@click="onDeleteStore(store)">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+							</template>
+						</NcButton>
+					</template>
 				</NcListItem>
 			</div>
 		</template>
@@ -273,46 +371,86 @@ function onProductCreated(product: Product) {
 			</NcEmptyContent>
 
 			<div v-else :class="$style.list">
-				<NcListItem
+				<div
 					v-for="product in products"
 					:key="product.id"
-					:name="product.name"
-					one-line>
-					<template #icon>
-						<NcIconSvgWrapper :path="mdiPackageVariant" :size="20" />
-					</template>
-					<template #subname>
-						<div :class="$style.subname">
-							<span v-if="categoryName(product)">
-								{{ categoryName(product) }}
+					:class="$style['product-row']">
+					<NcListItem
+						:name="product.name"
+						one-line>
+						<template #icon>
+							<span
+								v-if="categoryForProduct(product)"
+								:class="$style['category-bubble']"
+								:style="{ backgroundColor: categoryForProduct(product)?.color ?? undefined }">
+								<span v-if="categoryForProduct(product)?.emoji">{{ categoryForProduct(product)?.emoji }}</span>
+								<NcIconSvgWrapper
+									v-else
+									:path="mdiTagMultiple"
+									:size="16" />
 							</span>
-							<NcChip
-								v-if="product.barcode"
-								:text="product.barcode"
-								no-close />
+							<NcIconSvgWrapper
+								v-else
+								:path="mdiPackageVariant"
+								:size="20" />
+						</template>
+						<template #subname>
+							<div :class="$style.subname">
+								<span v-if="categoryName(product)">
+									{{ categoryName(product) }}
+								</span>
+								<NcChip
+									v-if="product.barcode"
+									:text="product.barcode"
+									no-close />
 							<NcIconSvgWrapper
 								v-if="product.isFavorite"
 								:path="mdiStar"
 								:size="20"
 								:class="$style.favorite" />
-						</div>
-					</template>
-				</NcListItem>
+							</div>
+						</template>
+						<template #extra-actions>
+							<NcButton
+								type="button"
+								:aria-label="`Edit ${product.name}`"
+								@click="editingProduct = product">
+								<template #icon>
+									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
+								</template>
+							</NcButton>
+							<NcButton
+								type="button"
+								:aria-label="`Delete ${product.name}`"
+								@click="onDeleteProduct(product)">
+								<template #icon>
+									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+								</template>
+							</NcButton>
+						</template>
+					</NcListItem>
+				</div>
 			</div>
 		</template>
 
 		<NewCategoryDialog
-			:open="showCategoryDialog"
-			@update:open="showCategoryDialog = $event"
-			@created="onCategoryCreated" />
+			:open="showCategoryDialog || editingCategory !== null"
+			:entity="editingCategory ?? undefined"
+			@update:open="closeCategoryDialog"
+			@created="onCategoryCreated"
+			@updated="onCategoryUpdated" />
 		<NewStoreDialog
-			:open="showStoreDialog"
-			@update:open="showStoreDialog = $event"
-			@created="onStoreCreated" />
+			:open="showStoreDialog || editingStore !== null"
+			:entity="editingStore ?? undefined"
+			@update:open="closeStoreDialog"
+			@created="onStoreCreated"
+			@updated="onStoreUpdated" />
 		<NewProductDialog
-			:open="showProductDialog"
-			@update:open="showProductDialog = $event"
-			@created="onProductCreated" />
+			:open="showProductDialog || editingProduct !== null"
+			:entity="editingProduct ?? undefined"
+			@update:open="closeProductDialog"
+			@created="onProductCreated"
+			@updated="onProductUpdated" />
 	</div>
 </template>
 
@@ -366,18 +504,22 @@ function onProductCreated(product: Product) {
 	width: 100%;
 }
 
-.category-icon {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	min-width: 20px;
+.product-row {
+	border-inline-start: 3px solid transparent;
+	padding-inline-start: 8px;
 }
 
-.color-dot {
-	display: inline-block;
-	width: 12px;
-	height: 12px;
+.category-bubble {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
 	border-radius: 50%;
+	font-size: 16px;
+	line-height: 1;
+	background-color: var(--color-background-darker);
+	color: var(--color-main-background);
 }
 
 .subname {
@@ -385,7 +527,7 @@ function onProductCreated(product: Product) {
 	align-items: center;
 	justify-content: flex-end;
 	gap: 8px;
-	margin-left: auto;
+	margin-inline-start: auto;
 	width: 100%;
 }
 

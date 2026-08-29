@@ -2,23 +2,22 @@
 import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcColorPicker from '@nextcloud/vue/components/NcColorPicker'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmojiPicker from '@nextcloud/vue/components/NcEmojiPicker'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { createCategory, fetchCategories } from '../services/listsApi'
+import { createCategory, fetchCategories, updateCategory } from '../services/listsApi'
 import type { Category } from '../types'
+import { CATEGORY_COLOR_PALETTE } from '../constants/categoryColors'
 
-const props = defineProps<{ open: boolean }>()
+const props = defineProps<{ open: boolean; entity?: Category }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
 	created: [category: Category]
+	updated: [category: Category]
 }>()
-
-const COLORS = ['#e6194b', '#f58231', '#ffe119', '#3cb44b', '#42d4f4', '#4363d8', '#911eb4', '#a9a9a9']
 
 const name = ref('')
 const emoji = ref('')
@@ -31,33 +30,36 @@ const submitting = ref(false)
 const error = ref<string | null>(null)
 const nameField = ref<InstanceType<typeof NcTextField> | null>(null)
 
+const isEditing = computed(() => props.entity !== undefined)
+
 const canSubmit = computed(() => name.value.trim() !== '' && !submitting.value)
 
 watch(
 	() => props.open,
-	(open) => {
-		if (open) {
-			error.value = null
-			submitting.value = false
-			name.value = ''
-			emoji.value = ''
-			color.value = ''
-			parent.value = null
-			income.value = false
-			requestAnimationFrame(() => nameField.value?.focus())
-		}
-	},
-)
-
-watch(
-	() => props.open,
 	async (open) => {
-		if (open) {
-			try {
-				categories.value = await fetchCategories()
-			} catch {
-				loading.value = false
+		if (!open) {
+			return
+		}
+		error.value = null
+		submitting.value = false
+		const entity = props.entity
+		name.value = entity?.name ?? ''
+		emoji.value = entity?.emoji ?? ''
+		color.value = entity?.color ?? ''
+		parent.value = null
+		income.value = entity?.income ?? false
+		requestAnimationFrame(() => nameField.value?.focus())
+
+		loading.value = true
+		try {
+			categories.value = await fetchCategories()
+			if (entity?.parentId) {
+				parent.value = categories.value.find((candidate) => candidate.id === entity.parentId) ?? null
 			}
+		} catch {
+			error.value = 'Failed to load categories.'
+		} finally {
+			loading.value = false
 		}
 	},
 )
@@ -77,17 +79,20 @@ async function onSubmit() {
 	submitting.value = true
 	error.value = null
 	try {
-		const category = await createCategory({
+		const payload = {
 			name: name.value.trim(),
 			color: color.value || null,
 			emoji: emoji.value || null,
 			parentId: parent.value?.id ?? null,
 			income: income.value,
-		})
-		emit('created', category)
+		}
+		const category = props.entity === undefined
+			? await createCategory(payload)
+			: await updateCategory(props.entity.id, payload)
+		emit(props.entity === undefined ? 'created' : 'updated', category)
 		emit('update:open', false)
 	} catch {
-		error.value = 'Failed to create the category. Please try again.'
+		error.value = isEditing.value ? 'Failed to update the category. Please try again.' : 'Failed to create the category. Please try again.'
 	} finally {
 		submitting.value = false
 	}
@@ -96,7 +101,7 @@ async function onSubmit() {
 
 <template>
 	<NcDialog
-		:name="'New category'"
+		:name="isEditing ? 'Edit category' : 'New category'"
 		:open="props.open"
 		size="normal"
 		is-form
@@ -126,10 +131,23 @@ async function onSubmit() {
 
 			<div :class="$style.field">
 				<span :class="$style.label">Color</span>
-				<NcColorPicker
-					v-model="color"
-					:palette="COLORS"
-					:clearable="true" />
+				<div :class="$style['color-row']">
+					<button
+						v-for="candidate in CATEGORY_COLOR_PALETTE"
+						:key="candidate"
+						type="button"
+						:class="[$style['color-swatch'], { [$style.selected]: color === candidate }]"
+						:style="{ backgroundColor: candidate }"
+						:title="candidate"
+						@click="color = candidate" />
+					<button
+						type="button"
+						:class="[$style['color-swatch'], $style.clear, { [$style.selected]: color === '' }]"
+						title="No color"
+						@click="color = ''">
+						<span>✕</span>
+					</button>
+				</div>
 			</div>
 
 			<NcSelect
@@ -161,7 +179,7 @@ async function onSubmit() {
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
-				Create
+				{{ isEditing ? 'Save' : 'Create' }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -187,6 +205,37 @@ async function onSubmit() {
 
 .emoji-button {
 	justify-content: flex-start;
+}
+
+.color-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.color-swatch {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	padding: 0;
+	border: 2px solid var(--color-border);
+	cursor: pointer;
+	font-size: 14px;
+	color: var(--color-text-maxcontrast);
+}
+
+.color-swatch.selected {
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.color-swatch.clear {
+	background: transparent;
+	border-style: dashed;
 }
 
 .emoji-value {

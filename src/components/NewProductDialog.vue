@@ -6,14 +6,15 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { createProduct, fetchCategories } from '../services/listsApi'
+import { createProduct, fetchCategories, updateProduct } from '../services/listsApi'
 import type { Category, Product } from '../types'
 
-const props = defineProps<{ open: boolean }>()
+const props = defineProps<{ open: boolean; entity?: Product }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
 	created: [product: Product]
+	updated: [product: Product]
 }>()
 
 const name = ref('')
@@ -27,6 +28,8 @@ const submitting = ref(false)
 const error = ref<string | null>(null)
 const nameField = ref<InstanceType<typeof NcTextField> | null>(null)
 
+const isEditing = computed(() => props.entity !== undefined)
+
 const canSubmit = computed(() => name.value.trim() !== '' && !submitting.value)
 
 watch(
@@ -37,16 +40,20 @@ watch(
 		}
 		error.value = null
 		submitting.value = false
-		name.value = ''
+		const entity = props.entity
+		name.value = entity?.name ?? ''
 		category.value = null
-		barcode.value = ''
-		aliases.value = ''
-		favorite.value = false
+		barcode.value = entity?.barcode ?? ''
+		aliases.value = entity?.aliases.join(', ') ?? ''
+		favorite.value = entity?.isFavorite ?? false
 		requestAnimationFrame(() => nameField.value?.focus())
 
 		loading.value = true
 		try {
 			categories.value = (await fetchCategories()).filter((item) => !item.income)
+			if (entity?.categoryId) {
+				category.value = categories.value.find((candidate) => candidate.id === entity.categoryId) ?? null
+			}
 		} catch {
 			error.value = 'Failed to load categories.'
 		} finally {
@@ -66,7 +73,7 @@ async function onSubmit() {
 	submitting.value = true
 	error.value = null
 	try {
-		const product = await createProduct({
+		const payload = {
 			name: name.value.trim(),
 			categoryId: category.value?.id ?? null,
 			barcode: barcode.value.trim() || null,
@@ -75,11 +82,14 @@ async function onSubmit() {
 				.map((alias) => alias.trim())
 				.filter((alias) => alias !== ''),
 			isFavorite: favorite.value,
-		})
-		emit('created', product)
+		}
+		const product = props.entity === undefined
+			? await createProduct(payload)
+			: await updateProduct(props.entity.id, payload)
+		emit(props.entity === undefined ? 'created' : 'updated', product)
 		emit('update:open', false)
 	} catch {
-		error.value = 'Failed to create the product. Please try again.'
+		error.value = isEditing.value ? 'Failed to update the product. Please try again.' : 'Failed to create the product. Please try again.'
 	} finally {
 		submitting.value = false
 	}
@@ -88,7 +98,7 @@ async function onSubmit() {
 
 <template>
 	<NcDialog
-		:name="'New product'"
+		:name="isEditing ? 'Edit product' : 'New product'"
 		:open="props.open"
 		size="normal"
 		is-form
@@ -146,7 +156,7 @@ async function onSubmit() {
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
-				Create
+				{{ isEditing ? 'Save' : 'Create' }}
 			</NcButton>
 		</template>
 	</NcDialog>

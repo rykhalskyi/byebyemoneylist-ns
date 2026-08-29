@@ -38,4 +38,15 @@ class ProductAliasMapper extends QBMapper {
 
 		return $this->findEntities($qb);
 	}
+
+	/**
+	 * Delete all aliases for the given product of the current user
+	 */
+	public function deleteByProductId(string $productId, string $userId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->tableName)
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->eq('product_id', $qb->createNamedParameter($productId, IQueryBuilder::PARAM_STR)));
+		$qb->executeStatement();
+	}
 }

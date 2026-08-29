@@ -19,6 +19,7 @@ class ListItemEntity extends Entity {
 	protected ?string $productId = null;
 	protected ?float $price = null;
 	protected ?float $quantity = null;
+	protected ?bool $isChecked = false;
 	protected ?string $status = null;
 	protected ?DateTime $createdAt = null;
 
@@ -26,6 +27,7 @@ class ListItemEntity extends Entity {
 		$this->addType('id', Types::STRING);
 		$this->addType('price', Types::DECIMAL);
 		$this->addType('quantity', Types::DECIMAL);
+		$this->addType('isChecked', Types::BOOLEAN);
 		$this->addType('createdAt', Types::DATETIME);
 	}
 
@@ -73,6 +75,15 @@ class ListItemEntity extends Entity {
 	public function setQuantity(float $quantity): void {
 		$this->quantity = $quantity;
 		$this->markFieldUpdated('quantity');
+	}
+
+	public function getIsChecked(): ?bool {
+		return $this->isChecked;
+	}
+
+	public function setIsChecked(bool $isChecked): void {
+		$this->isChecked = $isChecked;
+		$this->markFieldUpdated('isChecked');
 	}
 
 	/** @psalm-suppress PossiblyUnusedMethod */

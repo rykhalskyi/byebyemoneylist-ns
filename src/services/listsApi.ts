@@ -1,6 +1,6 @@
 import axios from '@nextcloud/axios'
 import { generateOcsUrl } from '@nextcloud/router'
-import type { Category, CategoryPayload, ListItem, ListItemPayload, ListPayload, Product, ProductPayload, ShoppingList, Store, StorePayload } from '../types'
+import type { Category, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductPayload, ShoppingList, Store, StorePayload } from '../types'
 
 interface OcsData<T> {
 	ocs: {
@@ -45,12 +45,36 @@ export async function createCategory(payload: CategoryPayload): Promise<Category
 	return data.ocs.data.category
 }
 
+export async function updateCategory(id: string, payload: CategoryPayload): Promise<Category> {
+	const { data } = await axios.put<OcsData<{ category: Category }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/categories/${id}`),
+		payload,
+	)
+	return data.ocs.data.category
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/categories/${id}`))
+}
+
 export async function createStore(payload: StorePayload): Promise<Store> {
 	const { data } = await axios.post<OcsData<{ store: Store }>>(
 		generateOcsUrl('/apps/byebyemoneylist/api/stores'),
 		payload,
 	)
 	return data.ocs.data.store
+}
+
+export async function updateStore(id: string, payload: StorePayload): Promise<Store> {
+	const { data } = await axios.put<OcsData<{ store: Store }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/stores/${id}`),
+		payload,
+	)
+	return data.ocs.data.store
+}
+
+export async function deleteStore(id: string): Promise<void> {
+	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/stores/${id}`))
 }
 
 export async function fetchProducts(): Promise<Product[]> {
@@ -68,6 +92,18 @@ export async function createProduct(payload: ProductPayload): Promise<Product> {
 	return data.ocs.data.product
 }
 
+export async function updateProduct(id: string, payload: ProductPayload): Promise<Product> {
+	const { data } = await axios.put<OcsData<{ product: Product }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/products/${id}`),
+		payload,
+	)
+	return data.ocs.data.product
+}
+
+export async function deleteProduct(id: string): Promise<void> {
+	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/products/${id}`))
+}
+
 export async function fetchListItems(listId: string): Promise<ListItem[]> {
 	const { data } = await axios.get<OcsData<{ items: ListItem[] }>>(
 		generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/items`),
@@ -81,4 +117,16 @@ export async function addListItem(listId: string, payload: ListItemPayload): Pro
 		payload,
 	)
 	return data.ocs.data.item
+}
+
+export async function updateListItem(listId: string, itemId: string, payload: ListItemUpdatePayload): Promise<ListItem> {
+	const { data } = await axios.put<OcsData<{ item: ListItem }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/items/${itemId}`),
+		payload,
+	)
+	return data.ocs.data.item
+}
+
+export async function deleteListItem(listId: string, itemId: string): Promise<void> {
+	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/items/${itemId}`))
 }

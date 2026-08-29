@@ -8,6 +8,7 @@ use DateTime;
 use DateTimeInterface;
 use DateTimeZone;
 use OCA\ByeByeMoneyList\AppInfo\Application;
+use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
 use OCA\ByeByeMoneyList\Util\Uuid;
@@ -25,17 +26,20 @@ use Psr\Log\LoggerInterface;
  */
 class ListController extends OCSController {
 	private ListMapper $mapper;
+	private ListItemMapper $itemMapper;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
 
 	public function __construct(
 		IRequest $request,
 		ListMapper $mapper,
+		ListItemMapper $itemMapper,
 		IUserSession $userSession,
 		LoggerInterface $logger,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 		$this->mapper = $mapper;
+		$this->itemMapper = $itemMapper;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
 	}
@@ -45,7 +49,7 @@ class ListController extends OCSController {
 	 *
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{lists: list<array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, createdAt: ?string}>}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{lists: list<array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string}>}|array{message: string}, array{}>
 	 *
 	 * 200: Lists returned
 	 * 401: Current user is not logged in
@@ -58,12 +62,19 @@ class ListController extends OCSController {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$lists = array_values(array_map(
-			fn (ListEntity $list): array => $this->serializeList($list),
-			$this->mapper->findAllByOwner($userId),
+		$lists = $this->mapper->findAllByOwner($userId);
+		$listIds = array_values(array_map(
+			fn (ListEntity $list): string => $list->getId(),
+			$lists,
+		));
+		$totals = $this->itemMapper->sumCheckedByListIds($listIds);
+
+		$serialized = array_values(array_map(
+			fn (ListEntity $list): array => $this->serializeList($list, $totals[$list->getId()] ?? null),
+			$lists,
 		));
 
-		return new DataResponse(['lists' => $lists], Http::STATUS_OK);
+		return new DataResponse(['lists' => $serialized], Http::STATUS_OK);
 	}
 
 	/**
@@ -75,7 +86,7 @@ class ListController extends OCSController {
 	 * @param ?string $storeId Optional store id
 	 * @param ?string $categoryId Optional category id
 	 *
-	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, createdAt: ?string}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string}}|array{message: string}, array{}>
 	 *
 	 * 201: List created
 	 * 401: Current user is not logged in
@@ -123,9 +134,9 @@ class ListController extends OCSController {
 	}
 
 	/**
-	 * @return array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, createdAt: ?string}
+	 * @return array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string}
 	 */
-	private function serializeList(ListEntity $list): array {
+	private function serializeList(ListEntity $list, ?float $totalPrice = null): array {
 		$createdAt = $list->getCreatedAt();
 		return [
 			'id' => $list->getId(),
@@ -134,6 +145,7 @@ class ListController extends OCSController {
 			'categoryId' => $list->getCategoryId(),
 			'status' => $list->getStatus() ?? 'new',
 			'finalTotal' => $list->getFinalTotal(),
+			'totalPrice' => $totalPrice,
 			'createdAt' => $createdAt?->format(DateTimeInterface::ATOM),
 		];
 	}

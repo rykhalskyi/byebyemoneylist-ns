@@ -8,6 +8,9 @@ use OCA\ByeByeMoneyList\Controller\CategoryController;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Entity\CategoryEntity;
 use OCP\AppFramework\Http;
+use OCP\DB\QueryBuilder\IExpressionBuilder;
+use OCP\DB\QueryBuilder\IQueryBuilder;
+use OCP\IDBConnection;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -17,15 +20,17 @@ use Psr\Log\LoggerInterface;
 final class CategoryControllerTest extends TestCase {
 	private CategoryController $controller;
 	private CategoryMapper $mapper;
+	private IDBConnection $db;
 	private IUserSession $userSession;
 
 	protected function setUp(): void {
 		$request = $this->createMock(IRequest::class);
 		$this->mapper = $this->createMock(CategoryMapper::class);
+		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
 
-		$this->controller = new CategoryController($request, $this->mapper, $this->userSession, $logger);
+		$this->controller = new CategoryController($request, $this->mapper, $this->db, $this->userSession, $logger);
 	}
 
 	private function mockUser(string $uid): IUser {
@@ -33,6 +38,20 @@ final class CategoryControllerTest extends TestCase {
 		$user->method('getUID')->willReturn($uid);
 		$this->userSession->method('getUser')->willReturn($user);
 		return $user;
+	}
+
+	private function mockQueryBuilder(): void {
+		$qb = $this->createMock(IQueryBuilder::class);
+		$qb->method('update')->willReturnSelf();
+		$qb->method('set')->willReturnSelf();
+		$qb->method('where')->willReturnSelf();
+		$qb->method('andWhere')->willReturnSelf();
+		$qb->method('createNamedParameter')->willReturn('param');
+		$qb->method('executeStatement')->willReturn(1);
+		$expr = $this->createMock(IExpressionBuilder::class);
+		$expr->method('eq')->willReturn('1=1');
+		$qb->method('expr')->willReturn($expr);
+		$this->db->method('getQueryBuilder')->willReturn($qb);
 	}
 
 	public function testIndexReturnsOnlyCurrentUsersCategories(): void {
@@ -157,5 +176,102 @@ final class CategoryControllerTest extends TestCase {
 		$response = $this->controller->create('Food');
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}
+
+	public function testUpdateReturnsUpdatedCategory(): void {
+		$this->mockUser('alice');
+
+		$category = new CategoryEntity();
+		$category->setId('11111111-2222-4333-8444-555555555555');
+		$category->setOwner('alice');
+		$category->setName('Old');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('11111111-2222-4333-8444-555555555555', 'alice')
+			->willReturn($category);
+
+		$this->mapper->expects($this->once())
+			->method('update')
+			->willReturnArgument(0);
+
+		$response = $this->controller->update('11111111-2222-4333-8444-555555555555', 'Food', '#ff0000', '🍎', null, true);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$data = $response->getData()['category'];
+		$this->assertSame('Food', $data['name']);
+		$this->assertSame('#ff0000', $data['color']);
+		$this->assertSame('🍎', $data['emoji']);
+		$this->assertTrue($data['income']);
+	}
+
+	public function testUpdateReturnsNotFoundWhenNotOwned(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->willReturn(null);
+
+		$response = $this->controller->update('99999999-0000-4444-8555-777777777777', 'Food');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
+
+	public function testUpdateReturnsUnprocessableWhenSelfParent(): void {
+		$this->mockUser('alice');
+
+		$category = new CategoryEntity();
+		$category->setId('11111111-2222-4333-8444-555555555555');
+		$category->setOwner('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('11111111-2222-4333-8444-555555555555', 'alice')
+			->willReturn($category);
+
+		$this->mapper->expects($this->never())->method('update');
+
+		$response = $this->controller->update('11111111-2222-4333-8444-555555555555', 'Food', null, null, '11111111-2222-4333-8444-555555555555', false);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testDestroyDeletesCategory(): void {
+		$this->mockUser('alice');
+
+		$category = new CategoryEntity();
+		$category->setId('11111111-2222-4333-8444-555555555555');
+		$category->setOwner('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('11111111-2222-4333-8444-555555555555', 'alice')
+			->willReturn($category);
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$this->mockQueryBuilder();
+
+		$this->mapper->expects($this->once())->method('delete')->with($category);
+
+		$response = $this->controller->destroy('11111111-2222-4333-8444-555555555555');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}
+
+	public function testDestroyReturnsNotFoundWhenNotOwned(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->willReturn(null);
+
+		$this->mapper->expects($this->never())->method('delete');
+
+		$response = $this->controller->destroy('99999999-0000-4444-8555-777777777777');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 	}
 }
