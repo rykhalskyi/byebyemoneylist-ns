@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
-import NcColorPicker from '@nextcloud/vue/components/NcColorPicker'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmojiPicker from '@nextcloud/vue/components/NcEmojiPicker'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -132,22 +131,23 @@ async function onSubmit() {
 
 			<div :class="$style.field">
 				<span :class="$style.label">Color</span>
-				<NcColorPicker
-					v-model="color"
-					:palette="CATEGORY_COLOR_PALETTE"
-					:clearable="true">
-					<template #default="{ props: triggerProps }">
-						<NcButton
-							v-bind="triggerProps"
-							type="button"
-							:class="$style['color-button']">
-							<span
-								:class="$style['color-swatch']"
-								:style="{ backgroundColor: color || 'transparent' }" />
-							<span>{{ color ? color : 'Pick a color' }}</span>
-						</NcButton>
-					</template>
-				</NcColorPicker>
+				<div :class="$style['color-row']">
+					<button
+						v-for="candidate in CATEGORY_COLOR_PALETTE"
+						:key="candidate"
+						type="button"
+						:class="[$style['color-swatch'], { [$style.selected]: color === candidate }]"
+						:style="{ backgroundColor: candidate }"
+						:title="candidate"
+						@click="color = candidate" />
+					<button
+						type="button"
+						:class="[$style['color-swatch'], $style.clear, { [$style.selected]: color === '' }]"
+						title="No color"
+						@click="color = ''">
+						<span>✕</span>
+					</button>
+				</div>
 			</div>
 
 			<NcSelect
@@ -207,17 +207,35 @@ async function onSubmit() {
 	justify-content: flex-start;
 }
 
-.color-button {
-	justify-content: flex-start;
+.color-row {
+	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
+	align-items: center;
 }
 
 .color-swatch {
-	display: inline-block;
-	width: 20px;
-	height: 20px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
 	border-radius: 50%;
-	border: 1px solid var(--color-border);
+	padding: 0;
+	border: 2px solid var(--color-border);
+	cursor: pointer;
+	font-size: 14px;
+	color: var(--color-text-maxcontrast);
+}
+
+.color-swatch.selected {
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.color-swatch.clear {
+	background: transparent;
+	border-style: dashed;
 }
 
 .emoji-value {

@@ -10,12 +10,13 @@ import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import AddProductDialog from '../components/AddProductDialog.vue'
 import NewListDialog from '../components/NewListDialog.vue'
-import { deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchStores, updateListItem } from '../services/listsApi'
-import type { Category, ListItem, ListStatus, ShoppingList, Store } from '../types'
+import { deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores, updateListItem } from '../services/listsApi'
+import type { Category, ListItem, ListStatus, Product, ShoppingList, Store } from '../types'
 
 const lists = ref<ShoppingList[]>([])
 const stores = ref<Store[]>([])
 const categories = ref<Category[]>([])
+const products = ref<Product[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showDialog = ref(false)
@@ -31,14 +32,16 @@ async function loadData() {
 	loading.value = true
 	error.value = null
 	try {
-		const [listData, storeData, categoryData] = await Promise.all([
+		const [listData, storeData, categoryData, productData] = await Promise.all([
 			fetchLists(),
 			fetchStores(),
 			fetchCategories(),
+			fetchProducts(),
 		])
 		lists.value = listData
 		stores.value = storeData
 		categories.value = categoryData
+		products.value = productData
 	} catch {
 		error.value = 'Failed to load your shopping lists.'
 	} finally {
@@ -60,6 +63,11 @@ function categoryName(categoryId: string | null): string {
 
 function categoryColor(categoryId: string | null): string | null {
 	return categories.value.find((category) => category.id === categoryId)?.color ?? null
+}
+
+function productCategoryColor(item: ListItem): string | null {
+	const product = products.value.find((candidate) => candidate.id === item.productId)
+	return product?.categoryId ? categoryColor(product.categoryId) : null
 }
 
 function subname(list: ShoppingList): string {
@@ -306,7 +314,8 @@ function itemSubname(item: ListItem): string {
 								:name="item.productName"
 								:details="itemDetails(item)"
 								compact
-								one-line>
+								one-line
+								:style="productCategoryColor(item) ? { borderInlineStart: `2px solid ${productCategoryColor(item)}` } : {}">
 								<template #icon>
 									<NcCheckboxRadioSwitch
 										:model-value="item.isChecked"

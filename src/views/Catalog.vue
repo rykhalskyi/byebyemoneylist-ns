@@ -374,8 +374,7 @@ function closeProductDialog() {
 				<div
 					v-for="product in products"
 					:key="product.id"
-					:class="$style['product-row']"
-					:style="categoryForProduct(product)?.color ? { borderInlineStart: `3px solid ${categoryForProduct(product)?.color}` } : {}">
+					:class="$style['product-row']">
 					<NcListItem
 						:name="product.name"
 						one-line>
