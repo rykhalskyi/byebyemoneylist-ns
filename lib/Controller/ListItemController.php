@@ -165,6 +165,114 @@ class ListItemController extends OCSController {
 	}
 
 	/**
+	 * Update a list item (check state, price, quantity)
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @param string $id List id
+	 * @param string $itemId Item id
+	 * @param ?bool $isChecked Whether the item is checked
+	 * @param ?float $price Optional product price (must not be negative)
+	 * @param ?float $quantity Quantity as a float (must be greater than zero)
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{item: array{id: string, listId: string, productId: string, productName: string, price: ?float, quantity: float, isChecked: bool, createdAt: ?string}}|array{message: string}, array{}>
+	 *
+	 * 200: Item updated
+	 * 401: Current user is not logged in
+	 * 404: List or item not found or not owned by the current user
+	 * 422: Price is negative or out of range, or quantity is not positive or out of range
+	 * 500: Failed to update the item
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'PUT', url: '/api/lists/{id}/items/{itemId}')]
+	public function update(string $id, string $itemId, ?bool $isChecked = null, ?float $price = null, ?float $quantity = null): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$list = $this->listMapper->findByIdAndOwner($id, $userId);
+		if ($list === null) {
+			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$item = $this->itemMapper->findByIdAndListId($itemId, $id);
+		if ($item === null) {
+			return new DataResponse(['message' => 'Item not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if ($quantity !== null && (!is_finite($quantity) || $quantity <= 0 || $quantity > self::MAX_DECIMAL)) {
+			return new DataResponse(['message' => 'Quantity must be greater than zero'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		if ($quantity !== null) {
+			$item->setQuantity(round($quantity, 2));
+		}
+
+		if ($price !== null && (!is_finite($price) || $price < 0 || $price > self::MAX_DECIMAL)) {
+			return new DataResponse(['message' => 'Price must not be negative'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		if ($price !== null) {
+			$item->setPrice(round($price, 2));
+		}
+
+		if ($isChecked !== null) {
+			$item->setIsChecked($isChecked);
+		}
+
+		try {
+			$updated = $this->itemMapper->update($item);
+		} catch (\Exception $e) {
+			$this->logger->error('Failed to update list item', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to update item'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['item' => $this->serializeItem($updated, $this->productName($updated->getProductId() ?? '', $userId))], Http::STATUS_OK);
+	}
+
+	/**
+	 * Delete a list item
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @param string $id List id
+	 * @param string $itemId Item id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_INTERNAL_SERVER_ERROR, array{}|array{message: string}, array{}>
+	 *
+	 * 200: Item deleted
+	 * 401: Current user is not logged in
+	 * 404: List or item not found or not owned by the current user
+	 * 500: Failed to delete the item
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'DELETE', url: '/api/lists/{id}/items/{itemId}')]
+	public function destroy(string $id, string $itemId): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$list = $this->listMapper->findByIdAndOwner($id, $userId);
+		if ($list === null) {
+			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$item = $this->itemMapper->findByIdAndListId($itemId, $id);
+		if ($item === null) {
+			return new DataResponse(['message' => 'Item not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		try {
+			$this->itemMapper->delete($item);
+		} catch (\Exception $e) {
+			$this->logger->error('Failed to delete list item', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to delete item'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse([], Http::STATUS_OK);
+	}
+
+	/**
 	 * @param array<ProductEntity> $products
 	 *
 	 * @return array<string, string>
@@ -181,8 +289,18 @@ class ListItemController extends OCSController {
 		return $this->userSession->getUser()?->getUID();
 	}
 
+	private function productName(string $productId, string $userId): string {
+		$products = $this->productMapper->findByIds([$productId], $userId);
+		foreach ($products as $product) {
+			if ($product->getId() === $productId) {
+				return $product->getName() ?? '';
+			}
+		}
+		return '';
+	}
+
 	/**
-	 * @return array{id: string, listId: string, productId: string, productName: string, price: ?float, quantity: float, createdAt: ?string}
+	 * @return array{id: string, listId: string, productId: string, productName: string, price: ?float, quantity: float, isChecked: bool, createdAt: ?string}
 	 */
 	private function serializeItem(ListItemEntity $item, string $productName): array {
 		$createdAt = $item->getCreatedAt();
@@ -193,6 +311,7 @@ class ListItemController extends OCSController {
 			'productName' => $productName,
 			'price' => $item->getPrice(),
 			'quantity' => $item->getQuantity() ?? 1.0,
+			'isChecked' => $item->getIsChecked() ?? false,
 			'createdAt' => $createdAt?->format(DateTimeInterface::ATOM),
 		];
 	}

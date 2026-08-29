@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { mdiAlertCircle, mdiCart, mdiCartOff, mdiChevronDown, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiCart, mdiCartOff, mdiChevronDown, mdiDelete, mdiPlus } from '@mdi/js'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -9,7 +10,7 @@ import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import AddProductDialog from '../components/AddProductDialog.vue'
 import NewListDialog from '../components/NewListDialog.vue'
-import { fetchCategories, fetchListItems, fetchLists, fetchStores } from '../services/listsApi'
+import { deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchStores, updateListItem } from '../services/listsApi'
 import type { Category, ListItem, ListStatus, ShoppingList, Store } from '../types'
 
 const lists = ref<ShoppingList[]>([])
@@ -55,6 +56,10 @@ function storeName(storeId: string | null): string {
 
 function categoryName(categoryId: string | null): string {
 	return categories.value.find((category) => category.id === categoryId)?.name ?? ''
+}
+
+function categoryColor(categoryId: string | null): string | null {
+	return categories.value.find((category) => category.id === categoryId)?.color ?? null
 }
 
 function subname(list: ShoppingList): string {
@@ -129,6 +134,55 @@ function onItemAdded(item: ListItem) {
 
 function listItems(listId: string): ListItem[] {
 	return itemsByList.value[listId] ?? []
+}
+
+function checkedSum(list: ShoppingList): number {
+	const items = itemsByList.value[list.id]
+	if (items === undefined) {
+		return 0
+	}
+	return items
+		.filter((item) => item.isChecked && item.price !== null)
+		.reduce((sum, item) => sum + (item.price ?? 0) * item.quantity, 0)
+}
+
+function listTotal(list: ShoppingList): number | null {
+	if (list.finalTotal !== null) {
+		return list.finalTotal
+	}
+	if (itemsByList.value[list.id] !== undefined) {
+		return checkedSum(list)
+	}
+	return list.totalPrice
+}
+
+function priceText(list: ShoppingList): string | null {
+	const total = listTotal(list)
+	return total === null ? null : formatTotal(total)
+}
+
+function listMarkStyle(list: ShoppingList): Record<string, string> {
+	const color = categoryColor(list.categoryId)
+	return color === null ? {} : { 'border-inline-start': `3px solid ${color}` }
+}
+
+async function onToggleItem(list: ShoppingList, item: ListItem, checked: boolean) {
+	item.isChecked = checked
+	try {
+		await updateListItem(list.id, item.id, { isChecked: checked })
+	} catch {
+		item.isChecked = !checked
+	}
+}
+
+async function onDeleteItem(list: ShoppingList, item: ListItem) {
+	const items = itemsByList.value[list.id] ?? []
+	itemsByList.value = { ...itemsByList.value, [list.id]: items.filter((candidate) => candidate.id !== item.id) }
+	try {
+		await deleteListItem(list.id, item.id)
+	} catch {
+		await loadItems(list.id)
+	}
 }
 
 function formatQuantity(quantity: number): string {
@@ -209,7 +263,8 @@ function itemSubname(item: ListItem): string {
 			<div
 				v-for="list in lists"
 				:key="list.id"
-				:class="$style.item">
+				:class="$style.item"
+				:style="listMarkStyle(list)">
 				<NcListItem
 					:name="list.name"
 					:details="formatTotal(list.finalTotal)"
@@ -221,6 +276,10 @@ function itemSubname(item: ListItem): string {
 					<template #subname>
 						<div :class="$style.subname">
 							<span>{{ subname(list) }}</span>
+							<NcChip
+								v-if="priceText(list) !== null"
+								:text="priceText(list) ?? ''"
+								no-close />
 							<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" no-close />
 							<NcIconSvgWrapper
 								:path="mdiChevronDown"
@@ -248,8 +307,25 @@ function itemSubname(item: ListItem): string {
 								:details="itemDetails(item)"
 								compact
 								one-line>
+								<template #icon>
+									<NcCheckboxRadioSwitch
+										:model-value="item.isChecked"
+										:aria-label="`Check ${item.productName}`"
+										:disabled="itemsLoading[list.id]"
+										@update:model-value="onToggleItem(list, item, $event)" />
+								</template>
 								<template #subname>
 									<span v-if="itemSubname(item)">{{ itemSubname(item) }}</span>
+								</template>
+								<template #extra-actions>
+									<NcButton
+										type="button"
+										:aria-label="`Delete ${item.productName}`"
+										@click="onDeleteItem(list, item)">
+										<template #icon>
+											<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+										</template>
+									</NcButton>
 								</template>
 							</NcListItem>
 						</ul>
@@ -317,6 +393,8 @@ function itemSubname(item: ListItem): string {
 
 .item {
 	width: 100%;
+	border-inline-start: 3px solid transparent;
+	padding-inline-start: 8px;
 }
 
 .items {

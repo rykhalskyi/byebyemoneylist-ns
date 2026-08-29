@@ -7,6 +7,7 @@ export interface ShoppingList {
 	categoryId: string | null
 	status: ListStatus
 	finalTotal: number | null
+	totalPrice: number | null
 	createdAt: string | null
 }
 
@@ -67,11 +68,18 @@ export interface ListItem {
 	productName: string
 	price: number | null
 	quantity: number
+	isChecked: boolean
 	createdAt: string | null
 }
 
 export interface ListItemPayload {
 	productId: string
+	price?: number | null
+	quantity?: number
+}
+
+export interface ListItemUpdatePayload {
+	isChecked?: boolean
 	price?: number | null
 	quantity?: number
 }

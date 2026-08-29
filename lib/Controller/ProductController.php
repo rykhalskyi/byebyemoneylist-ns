@@ -6,6 +6,7 @@ namespace OCA\ByeByeMoneyList\Controller;
 
 use OCA\ByeByeMoneyList\AppInfo\Application;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
+use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ProductAliasMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Entity\ProductAliasEntity;
@@ -16,6 +17,7 @@ use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -28,6 +30,7 @@ class ProductController extends OCSController {
 	private ProductMapper $mapper;
 	private ProductAliasMapper $aliasMapper;
 	private CategoryMapper $categoryMapper;
+	private ListItemMapper $itemMapper;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
@@ -37,6 +40,7 @@ class ProductController extends OCSController {
 		ProductMapper $mapper,
 		ProductAliasMapper $aliasMapper,
 		CategoryMapper $categoryMapper,
+		ListItemMapper $itemMapper,
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
@@ -45,6 +49,7 @@ class ProductController extends OCSController {
 		$this->mapper = $mapper;
 		$this->aliasMapper = $aliasMapper;
 		$this->categoryMapper = $categoryMapper;
+		$this->itemMapper = $itemMapper;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -160,6 +165,141 @@ class ProductController extends OCSController {
 		}
 
 		return new DataResponse(['product' => $this->serializeProduct($product, $cleanAliases)], Http::STATUS_CREATED);
+	}
+
+	/**
+	 * Update a product for the current user (aliases fully replaced)
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @param string $id Product id
+	 * @param string $name Product name (required)
+	 * @param ?string $categoryId Optional category id (must belong to the current user and not be an income category)
+	 * @param ?string $barcode Optional product barcode
+	 * @param list<string> $aliases Optional product aliases
+	 * @param bool $isFavorite Whether the product is a favorite
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string}}|array{message: string}, array{}>
+	 *
+	 * 200: Product updated
+	 * 401: Current user is not logged in
+	 * 404: Product not found or not owned by the current user
+	 * 422: Name is missing or empty, category does not exist, or category is an income category
+	 * 500: Failed to update the product
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'PUT', url: '/api/products/{id}')]
+	public function update(string $id, string $name, ?string $categoryId = null, ?string $barcode = null, array $aliases = [], bool $isFavorite = false): DataResponse {
+		$userId = $this->userSession->getUser()?->getUID();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$product = $this->mapper->findByIdAndOwner($id, $userId);
+		if ($product === null) {
+			return new DataResponse(['message' => 'Product not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$name = trim($name);
+		if ($name === '') {
+			return new DataResponse(['message' => 'Name is required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		if ($categoryId !== null && $categoryId !== '') {
+			$category = $this->categoryMapper->findByIdAndOwner($categoryId, $userId);
+			if ($category === null) {
+				return new DataResponse(['message' => 'Category not found'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			if ($category->getIncome() ?? false) {
+				return new DataResponse(['message' => 'Category must not be an income category'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		$cleanAliases = $this->normalizeAliases($aliases);
+
+		$product->setName($name);
+		$product->setCategoryId($categoryId !== null && $categoryId !== '' ? $categoryId : null);
+		$product->setBarcode($barcode !== null && $barcode !== '' ? trim($barcode) : null);
+		$product->setIsFavorite($isFavorite);
+
+		$transactionStarted = false;
+		try {
+			$this->db->beginTransaction();
+			$transactionStarted = true;
+			$this->mapper->update($product);
+			$this->aliasMapper->deleteByProductId($product->getId(), $userId);
+			foreach ($cleanAliases as $alias) {
+				$aliasEntity = new ProductAliasEntity();
+				$aliasEntity->setId(Uuid::v4());
+				$aliasEntity->setOwner($userId);
+				$aliasEntity->setProductId($product->getId());
+				$aliasEntity->setAliasName($alias);
+				$this->aliasMapper->insert($aliasEntity);
+			}
+			$this->db->commit();
+		} catch (\Exception $e) {
+			if ($transactionStarted) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to update product', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to update product'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['product' => $this->serializeProduct($product, $cleanAliases)], Http::STATUS_OK);
+	}
+
+	/**
+	 * Delete a product for the current user (removes aliases and list items referencing it)
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @param string $id Product id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_INTERNAL_SERVER_ERROR, array{}|array{message: string}, array{}>
+	 *
+	 * 200: Product deleted
+	 * 401: Current user is not logged in
+	 * 404: Product not found or not owned by the current user
+	 * 500: Failed to delete the product
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'DELETE', url: '/api/products/{id}')]
+	public function destroy(string $id): DataResponse {
+		$userId = $this->userSession->getUser()?->getUID();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$product = $this->mapper->findByIdAndOwner($id, $userId);
+		if ($product === null) {
+			return new DataResponse(['message' => 'Product not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$transactionStarted = false;
+		try {
+			$this->db->beginTransaction();
+			$transactionStarted = true;
+
+			$this->aliasMapper->deleteByProductId($id, $userId);
+
+			$qb = $this->db->getQueryBuilder();
+			$qb->delete('bbml_list_items')
+				->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+				->andWhere($qb->expr()->eq('product_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_STR)));
+			$qb->executeStatement();
+
+			$this->mapper->delete($product);
+
+			$this->db->commit();
+		} catch (\Exception $e) {
+			if ($transactionStarted) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to delete product', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to delete product'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse([], Http::STATUS_OK);
 	}
 
 	/**
