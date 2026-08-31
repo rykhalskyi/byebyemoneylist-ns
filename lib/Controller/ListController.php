@@ -49,7 +49,7 @@ class ListController extends OCSController {
 	 *
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{lists: list<array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string}>}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{lists: list<array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool}>}|array{message: string}, array{}>
 	 *
 	 * 200: Lists returned
 	 * 401: Current user is not logged in
@@ -85,8 +85,13 @@ class ListController extends OCSController {
 	 * @param string $name List name (required)
 	 * @param ?string $storeId Optional store id
 	 * @param ?string $categoryId Optional category id
+	 * @param bool $isRecurring Whether the list recurs
+	 * @param string $recurringPeriod Recurring period (WEEK, MONTH, YEAR)
+	 * @param bool $isForwardEmpty Whether empty items are forwarded
+	 * @param bool $isSubscription Whether the list is a subscription
+	 * @param bool $isIncome Whether the list represents income
 	 *
-	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool}}|array{message: string}, array{}>
 	 *
 	 * 201: List created
 	 * 401: Current user is not logged in
@@ -95,7 +100,7 @@ class ListController extends OCSController {
 	 */
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'POST', url: '/api/lists')]
-	public function create(string $name, ?string $storeId = null, ?string $categoryId = null): DataResponse {
+	public function create(string $name, ?string $storeId = null, ?string $categoryId = null, bool $isRecurring = false, string $recurringPeriod = 'MONTH', bool $isForwardEmpty = true, bool $isSubscription = false, bool $isIncome = false): DataResponse {
 		$userId = $this->getCurrentUserId();
 		if ($userId === null) {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
@@ -117,6 +122,11 @@ class ListController extends OCSController {
 		if ($categoryId !== null && $categoryId !== '') {
 			$list->setCategoryId($categoryId);
 		}
+		$list->setIsRecurring($isRecurring);
+		$list->setRecurringPeriod($recurringPeriod);
+		$list->setIsForwardEmpty($isForwardEmpty);
+		$list->setIsSubscription($isSubscription);
+		$list->setIsIncome($isIncome);
 		$list->setCreatedAt(new DateTime('now', new DateTimeZone('UTC')));
 
 		try {
@@ -134,7 +144,7 @@ class ListController extends OCSController {
 	}
 
 	/**
-	 * @return array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string}
+	 * @return array{id: string, name: string, storeId: ?string, categoryId: ?string, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool}
 	 */
 	private function serializeList(ListEntity $list, ?float $totalPrice = null): array {
 		$createdAt = $list->getCreatedAt();
@@ -147,6 +157,11 @@ class ListController extends OCSController {
 			'finalTotal' => $list->getFinalTotal(),
 			'totalPrice' => $totalPrice,
 			'createdAt' => $createdAt?->format(DateTimeInterface::ATOM),
+			'isSubscription' => (bool)$list->getIsSubscription(),
+			'isIncome' => (bool)$list->getIsIncome(),
+			'isRecurring' => (bool)$list->getIsRecurring(),
+			'recurringPeriod' => $list->getRecurringPeriod() ?? 'MONTH',
+			'isForwardEmpty' => (bool)$list->getIsForwardEmpty(),
 		];
 	}
 }

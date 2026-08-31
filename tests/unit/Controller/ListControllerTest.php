@@ -68,6 +68,11 @@ final class ListControllerTest extends TestCase {
 		$this->assertNull($lists[0]['categoryId']);
 		$this->assertSame(12.5, $lists[0]['totalPrice']);
 		$this->assertSame('2026-08-26T10:00:00+00:00', $lists[0]['createdAt']);
+		$this->assertFalse($lists[0]['isSubscription']);
+		$this->assertFalse($lists[0]['isIncome']);
+		$this->assertFalse($lists[0]['isRecurring']);
+		$this->assertSame('MONTH', $lists[0]['recurringPeriod']);
+		$this->assertTrue($lists[0]['isForwardEmpty']);
 	}
 
 	public function testIndexReturnsUnauthorizedWhenNotLoggedIn(): void {
@@ -93,10 +98,33 @@ final class ListControllerTest extends TestCase {
 		$this->assertNull($list['storeId']);
 		$this->assertNull($list['categoryId']);
 		$this->assertSame('new', $list['status']);
+		$this->assertFalse($list['isSubscription']);
+		$this->assertFalse($list['isIncome']);
+		$this->assertFalse($list['isRecurring']);
+		$this->assertSame('MONTH', $list['recurringPeriod']);
+		$this->assertTrue($list['isForwardEmpty']);
 		$this->assertMatchesRegularExpression(
 			'/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/',
 			$list['id'],
 		);
+	}
+
+	public function testCreateWithFlags(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnArgument(0);
+
+		$response = $this->controller->create('Rent', null, null, true, 'MONTH', false, true, false);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$list = $response->getData()['list'];
+		$this->assertTrue($list['isRecurring']);
+		$this->assertSame('MONTH', $list['recurringPeriod']);
+		$this->assertFalse($list['isForwardEmpty']);
+		$this->assertTrue($list['isSubscription']);
+		$this->assertFalse($list['isIncome']);
 	}
 
 	public function testCreateWithStoreAndCategory(): void {

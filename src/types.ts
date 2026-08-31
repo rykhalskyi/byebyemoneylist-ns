@@ -51,6 +51,8 @@ export interface Product {
 	aliases: string[]
 	isFavorite: boolean
 	status: string
+	isSubscription: boolean
+	isIncome: boolean
 }
 
 export interface ProductPayload {
@@ -59,6 +61,8 @@ export interface ProductPayload {
 	barcode?: string | null
 	aliases?: string[]
 	isFavorite?: boolean
+	isSubscription?: boolean
+	isIncome?: boolean
 }
 
 export interface ListItem {

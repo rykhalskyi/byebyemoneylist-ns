@@ -147,3 +147,42 @@ What if:
 - in the list or product to save clients ids in similar way as in aliases. Each product on NCA will have mapping ids of clients products. and then client can understand if this product is in its catalog. 
 - after synchronization when some cases are not clear mark products, shops or categories like imported and demand user's review. User cab edit product, category or store.
 - add merge function for category, store, product. User can merge duplicates in one item. At merge user can edit item. For product it is possible to see all aliases and client ids (if client ids are introduced)
+
+## Phase One: NextCloud App API
+
+NextCloud App Repo: ~/Source/byebyemoneylist-ns/
+Client Repo: ~/Source/byebyemoneylist/
+
+1. Develop API methods:
+
+  Methods for client to request NextCLoud App data
+
+  - get categories
+  - get stores
+  - get products
+  - get lists
+
+  Methods to send clients data to NextCloud App
+
+  - set categories
+  - set stores
+  - set products
+  - set lists
+
+2. ClientId 
+  
+  - Add clientId UUID to the client. Is is constant for every client.
+  
+
+### Phase One A
+
+The very first step - category synchronization.
+
+- Since only client has LLM for now, client request categories from server. 
+- Client uses LLM to make mapping between servers and own categories as proposed above.
+- Client asks user to enhance own category list if theres some new for client categories.
+- If there're new categories for server (nextcloud app), client call set categories API and sends proposed new categories.
+- nextcloud app adds them to some list and waits user confirmation. 
+- After that categories can be added to the list.
+
+**Important** This schema is not final. you can suggest better solutions.

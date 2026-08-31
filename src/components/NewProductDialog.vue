@@ -9,7 +9,7 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { createProduct, fetchCategories, updateProduct } from '../services/listsApi'
 import type { Category, Product } from '../types'
 
-const props = defineProps<{ open: boolean; entity?: Product }>()
+const props = defineProps<{ open: boolean; entity?: Product; preset?: 'subscription' | 'income' }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
@@ -22,6 +22,8 @@ const category = ref<Category | null>(null)
 const barcode = ref('')
 const aliases = ref('')
 const favorite = ref(false)
+const subscription = ref(false)
+const income = ref(false)
 const categories = ref<Category[]>([])
 const loading = ref(false)
 const submitting = ref(false)
@@ -30,7 +32,15 @@ const nameField = ref<InstanceType<typeof NcTextField> | null>(null)
 
 const isEditing = computed(() => props.entity !== undefined)
 
+const availableCategories = computed(() => categories.value.filter((item) => item.income || !income.value))
+
 const canSubmit = computed(() => name.value.trim() !== '' && !submitting.value)
+
+watch(income, (isIncome) => {
+	if (!isIncome && category.value?.income) {
+		category.value = null
+	}
+})
 
 watch(
 	() => props.open,
@@ -46,11 +56,13 @@ watch(
 		barcode.value = entity?.barcode ?? ''
 		aliases.value = entity?.aliases.join(', ') ?? ''
 		favorite.value = entity?.isFavorite ?? false
+		subscription.value = entity?.isSubscription ?? props.preset === 'subscription'
+		income.value = entity?.isIncome ?? props.preset === 'income'
 		requestAnimationFrame(() => nameField.value?.focus())
 
 		loading.value = true
 		try {
-			categories.value = (await fetchCategories()).filter((item) => !item.income)
+			categories.value = await fetchCategories()
 			if (entity?.categoryId) {
 				category.value = categories.value.find((candidate) => candidate.id === entity.categoryId) ?? null
 			}
@@ -82,6 +94,8 @@ async function onSubmit() {
 				.map((alias) => alias.trim())
 				.filter((alias) => alias !== ''),
 			isFavorite: favorite.value,
+			isSubscription: subscription.value,
+			isIncome: income.value,
 		}
 		const product = props.entity === undefined
 			? await createProduct(payload)
@@ -119,7 +133,7 @@ async function onSubmit() {
 				label="name"
 				input-label="Category"
 				placeholder="No category"
-				:options="categories"
+				:options="availableCategories"
 				:loading="loading"
 				:disabled="submitting"
 				clearable />
@@ -139,6 +153,14 @@ async function onSubmit() {
 
 			<NcCheckboxRadioSwitch v-model="favorite" type="switch" :disabled="submitting">
 				Favorite
+			</NcCheckboxRadioSwitch>
+
+			<NcCheckboxRadioSwitch v-model="subscription" type="switch" :disabled="submitting">
+				Subscription
+			</NcCheckboxRadioSwitch>
+
+			<NcCheckboxRadioSwitch v-model="income" type="switch" :disabled="submitting">
+				Income
 			</NcCheckboxRadioSwitch>
 
 			<p v-if="error" :class="$style.error">
