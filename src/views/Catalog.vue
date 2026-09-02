@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { mdiAlertCircle, mdiArrowUp, mdiCalendarMonth, mdiDelete, mdiPackageVariant, mdiPackageVariantClosed, mdiPencil, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
+import { mdiAlertCircle, mdiArrowUp, mdiCalendarMonth, mdiCheck, mdiDelete, mdiPackageVariant, mdiPackageVariantClosed, mdiPencil, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -10,7 +10,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NewCategoryDialog from '../components/NewCategoryDialog.vue'
 import NewProductDialog from '../components/NewProductDialog.vue'
 import NewStoreDialog from '../components/NewStoreDialog.vue'
-import { deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi'
+import { confirmAllCategories, confirmCategory, deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi'
 import type { Category, Product, Store } from '../types'
 
 type TabId = 'categories' | 'stores' | 'products' | 'subscriptions' | 'income'
@@ -196,7 +196,31 @@ function onProductUpdated(product: Product) {
 	editingProduct.value = null
 }
 
+const pendingCategories = computed(() => categories.value.filter((cat) => cat.status === 'pending_review'))
+
+async function onConfirmCategory(category: Category) {
+	try {
+		const updated = await confirmCategory(category.id)
+		const index = categories.value.findIndex((candidate) => candidate.id === category.id)
+		if (index !== -1) {
+			categories.value[index] = updated
+		}
+	} catch {
+		await loadData()
+	}
+}
+
+async function onConfirmAll() {
+	try {
+		await confirmAllCategories()
+		await loadData()
+	} catch {
+		await loadData()
+	}
+}
+
 async function onDeleteCategory(category: Category) {
+
 	categories.value = categories.value.filter((candidate) => candidate.id !== category.id)
 	try {
 		await deleteCategory(category.id)
@@ -303,6 +327,12 @@ function closeProductDialog() {
 			</NcEmptyContent>
 
 			<div v-else :class="$style.list">
+				<div v-if="pendingCategories.length > 0" :class="$style['pending-banner']">
+					<span>{{ pendingCategories.length }} categories imported from client pending review</span>
+					<NcButton type="button" variant="primary" @click="onConfirmAll">
+						Approve all
+					</NcButton>
+				</div>
 				<div
 					v-for="node in flattenedCategories"
 					:key="node.category.id"
@@ -326,6 +356,11 @@ function closeProductDialog() {
 									{{ parentName(node.category) }}
 								</span>
 								<NcChip
+									v-if="node.category.status === 'pending_review'"
+									text="Pending Review"
+									variant="warning"
+									no-close />
+								<NcChip
 									v-if="node.category.income"
 									text="Income"
 									variant="success"
@@ -333,6 +368,15 @@ function closeProductDialog() {
 							</div>
 						</template>
 						<template #extra-actions>
+							<NcButton
+								v-if="node.category.status === 'pending_review'"
+								type="button"
+								:aria-label="`Approve ${node.category.name}`"
+								@click="onConfirmCategory(node.category)">
+								<template #icon>
+									<NcIconSvgWrapper :path="mdiCheck" :size="20" />
+								</template>
+							</NcButton>
 							<NcButton
 								type="button"
 								:aria-label="`Edit ${node.category.name}`"
@@ -594,5 +638,16 @@ function closeProductDialog() {
 
 .favorite {
 	color: var(--color-warning);
+}
+
+.pending-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background-color: var(--color-warning-light, #fef3c7);
+	color: var(--color-text-maxcontrast);
+	padding: 12px 16px;
+	border-radius: var(--border-radius-large, 8px);
+	margin-bottom: 16px;
 }
 </style>

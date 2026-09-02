@@ -113,7 +113,7 @@ The server decides whether to **accept and persist that mapping**.
 Since you already have LLM on the client, I'd start with:
 
 ```text
-                 SERVER
+                 SERVER (NextCloud App)
                    │
             category database
                    │
@@ -169,20 +169,38 @@ Client Repo: ~/Source/byebyemoneylist/
   - set products
   - set lists
 
-2. ClientId 
+  - set products
+  - set lists
+
+  All APIs must require authorization
+
+2. Client changes 
   
   - Add clientId UUID to the client. Is is constant for every client.
-  
+  - I want to have a feature flag on client to swith this feature on/off.
+  - store feature flag in /home/admin/Source/byebyemoneylist/local.properties
+  - feature flag unhides the menu in client settings (make new screen, the same like for LLM connection) /home/admin/Source/byebyemoneylist/app/src/main/java/com/otakeeesen/byebyemoneylist/ui/components/settings/SettingsScreen.kt
+  - on this screen user can input nextcloud credentials.
 
-### Phase One A
+### Phase One A: Category Synchronization (Multi-Language & Client-Driven)
 
-The very first step - category synchronization.
+The first phase focuses on Category synchronization across devices and languages.
 
-- Since only client has LLM for now, client request categories from server. 
-- Client uses LLM to make mapping between servers and own categories as proposed above.
-- Client asks user to enhance own category list if theres some new for client categories.
-- If there're new categories for server (nextcloud app), client call set categories API and sends proposed new categories.
-- nextcloud app adds them to some list and waits user confirmation. 
-- After that categories can be added to the list.
+#### Architectural Principles:
+1. **Client Priority**: The Android Client is the primary app (used more often and has richer custom categories).
+2. **Multi-Language LLM Matching**: Client LLM handles semantic cross-language matching (e.g. `Groceries` = `Lebensmittel` = `Продукти`).
+3. **Canonical Server ID**: Nextcloud App assigns and owns UUIDs (`id`). Android client adds a `serverId: String?` column in Room `categories` table.
+4. **Interactive Review**: Client displays proposed translations/matches, allowing the user to approve, merge, or create categories manually before committing.
 
-**Important** This schema is not final. you can suggest better solutions.
+#### API Endpoints Implemented on Nextcloud App (`byebyemoneylist-ns`):
+- `GET /api/categories` -> Returns all user categories.
+- `POST /api/categories` -> Creates a single category.
+- `POST /api/categories/batch` -> Creates multiple categories in a single transaction. Accepts `list<array{name: string, color?: ?string, emoji?: ?string, parentId?: ?string, income?: bool, tempId?: ?string}>` and returns created objects with server UUIDs and optional `tempId` mapping.
+
+#### Next Steps for Android Client (`byebyemoneylist`):
+1. Enable feature flag `NEXTCLOUD_SYNC_ENABLED=true` in `local.properties`.
+2. Add Room migration (v23 -> v24) adding `serverId` to `CategoryEntity`.
+3. Create `NextcloudApiClient` (Basic Auth against Nextcloud REST API).
+4. Create `MultiLanguageCategoryMatcher` (Exact match + LLM semantic translation match).
+5. Create Category Sync Review UI in Settings to inspect and approve sync actions.
+

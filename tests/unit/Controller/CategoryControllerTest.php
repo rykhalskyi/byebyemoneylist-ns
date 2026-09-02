@@ -155,6 +155,23 @@ final class CategoryControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}
 
+	public function testCreateAcceptsArgbColorAndNormalizesToRgb(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (CategoryEntity $category): CategoryEntity {
+				$this->assertSame('#6b6b6b', $category->getColor());
+				$category->setId('11111111-2222-4333-8444-555555555555');
+				return $category;
+			});
+
+		$response = $this->controller->create('Food', '#ff6b6b6b');
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame('#6b6b6b', $response->getData()['category']['color']);
+	}
+
 	public function testCreateReturnsUnprocessableWhenParentNotOwned(): void {
 		$this->mockUser('alice');
 
@@ -274,4 +291,228 @@ final class CategoryControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 	}
+
+	public function testBatchCreateReturnsCreatedCategories(): void {
+		$this->mockUser('alice');
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$insertedCategories = [];
+		$this->mapper->expects($this->exactly(2))
+			->method('insert')
+			->willReturnCallback(function (CategoryEntity $category) use (&$insertedCategories): CategoryEntity {
+				$insertedCategories[] = $category;
+				return $category;
+			});
+
+		$categoriesInput = [
+			['name' => 'Food', 'color' => '#ff0000', 'emoji' => '🍎', 'tempId' => 'temp-1'],
+			['name' => 'Transport', 'color' => '#ff00ff00', 'income' => false, 'tempId' => 'temp-2']
+		];
+
+		$response = $this->controller->batchCreate($categoriesInput);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$result = $response->getData()['categories'];
+		$this->assertCount(2, $result);
+		$this->assertSame('Food', $result[0]['name']);
+		$this->assertSame('temp-1', $result[0]['tempId']);
+		$this->assertSame('Transport', $result[1]['name']);
+		$this->assertSame('temp-2', $result[1]['tempId']);
+		$this->assertSame('#ff0000', $insertedCategories[0]->getColor());
+		$this->assertSame('#00ff00', $insertedCategories[1]->getColor());
+	}
+
+	public function testBatchCreateHandlesTempIdParentIdMapping(): void {
+		$this->mockUser('alice');
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+
+		$insertedCategories = [];
+		$this->mapper->expects($this->exactly(2))
+			->method('insert')
+			->willReturnCallback(function (CategoryEntity $category) use (&$insertedCategories): CategoryEntity {
+				$insertedCategories[] = $category;
+				return $category;
+			});
+
+		$categoriesInput = [
+			['name' => 'Food', 'tempId' => 'temp-parent'],
+			['name' => 'Bakery', 'parentId' => 'temp-parent', 'tempId' => 'temp-child']
+		];
+
+		$response = $this->controller->batchCreate($categoriesInput);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertCount(2, $insertedCategories);
+		$parentId = $insertedCategories[0]->getId();
+		$this->assertSame($parentId, $insertedCategories[1]->getParentId());
+	}
+
+	public function testBatchCreateResolvesTempParentRegardlessOfOrder(): void {
+		$this->mockUser('alice');
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$insertedCategories = [];
+		$this->mapper->expects($this->exactly(2))
+			->method('insert')
+			->willReturnCallback(function (CategoryEntity $category) use (&$insertedCategories): CategoryEntity {
+				$insertedCategories[] = $category;
+				return $category;
+			});
+
+		$categoriesInput = [
+			['name' => 'Bakery', 'parentId' => 'temp-parent', 'tempId' => 'temp-child'],
+			['name' => 'Food', 'tempId' => 'temp-parent']
+		];
+
+		$response = $this->controller->batchCreate($categoriesInput);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertCount(2, $insertedCategories);
+		$this->assertSame('Food', $insertedCategories[0]->getName());
+		$this->assertNull($insertedCategories[0]->getParentId());
+		$this->assertSame($insertedCategories[0]->getId(), $insertedCategories[1]->getParentId());
+	}
+
+	public function testBatchCreateOrdersRootsBeforeChildrenBeforeGrandchildren(): void {
+		$this->mockUser('alice');
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$insertedCategories = [];
+		$this->mapper->expects($this->exactly(3))
+			->method('insert')
+			->willReturnCallback(function (CategoryEntity $category) use (&$insertedCategories): CategoryEntity {
+				$insertedCategories[] = $category;
+				return $category;
+			});
+
+		$categoriesInput = [
+			['name' => 'Croissant', 'parentId' => 'temp-child', 'tempId' => 'temp-grandchild'],
+			['name' => 'Bakery', 'parentId' => 'temp-root', 'tempId' => 'temp-child'],
+			['name' => 'Food', 'tempId' => 'temp-root']
+		];
+
+		$response = $this->controller->batchCreate($categoriesInput);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertCount(3, $insertedCategories);
+		$this->assertSame('Food', $insertedCategories[0]->getName());
+		$this->assertSame('Bakery', $insertedCategories[1]->getName());
+		$this->assertSame('Croissant', $insertedCategories[2]->getName());
+		$this->assertNull($insertedCategories[0]->getParentId());
+		$this->assertSame($insertedCategories[0]->getId(), $insertedCategories[1]->getParentId());
+		$this->assertSame($insertedCategories[1]->getId(), $insertedCategories[2]->getParentId());
+	}
+
+	public function testBatchCreateCreatesOrphanedCategoryAsRootWhenParentNotFound(): void {
+		$this->mockUser('alice');
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$insertedCategories = [];
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (CategoryEntity $category) use (&$insertedCategories): CategoryEntity {
+				$insertedCategories[] = $category;
+				return $category;
+			});
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('missing-parent-id', 'alice')
+			->willReturn(null);
+
+		$response = $this->controller->batchCreate([
+			['name' => 'Bakery', 'parentId' => 'missing-parent-id', 'tempId' => 'temp-bakery']
+		]);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertCount(1, $insertedCategories);
+		$this->assertNull($insertedCategories[0]->getParentId());
+		$this->assertNull($response->getData()['categories'][0]['parentId']);
+	}
+
+	public function testBatchCreateResolvesExistingServerParent(): void {
+		$this->mockUser('alice');
+
+		$parent = new CategoryEntity();
+		$parent->setId('22222222-3333-4444-8555-666666666666');
+		$parent->setOwner('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('22222222-3333-4444-8555-666666666666', 'alice')
+			->willReturn($parent);
+
+		$insertedCategories = [];
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (CategoryEntity $category) use (&$insertedCategories): CategoryEntity {
+				$insertedCategories[] = $category;
+				return $category;
+			});
+
+		$response = $this->controller->batchCreate([
+			['name' => 'Dairy', 'parentId' => '22222222-3333-4444-8555-666666666666', 'tempId' => 'temp-dairy']
+		]);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertCount(1, $insertedCategories);
+		$this->assertSame('22222222-3333-4444-8555-666666666666', $insertedCategories[0]->getParentId());
+	}
+
+	public function testBatchCreateReturnsUnprocessableWhenEmpty(): void {
+		$this->mockUser('alice');
+
+		$response = $this->controller->batchCreate([]);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testConfirmUpdatesCategoryStatusToConfirmed(): void {
+		$this->mockUser('alice');
+
+		$category = new CategoryEntity();
+		$category->setId('11111111-2222-4333-8444-555555555555');
+		$category->setOwner('alice');
+		$category->setStatus('pending_review');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('11111111-2222-4333-8444-555555555555', 'alice')
+			->willReturn($category);
+
+		$this->mapper->expects($this->once())
+			->method('update')
+			->willReturnArgument(0);
+
+		$response = $this->controller->confirm('11111111-2222-4333-8444-555555555555');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('confirmed', $response->getData()['category']['status']);
+	}
+
+	public function testConfirmAllUpdatesPendingCategories(): void {
+		$this->mockUser('alice');
+
+		$this->mockQueryBuilder();
+
+		$response = $this->controller->confirmAll();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}
 }
+
+

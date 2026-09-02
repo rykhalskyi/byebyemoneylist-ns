@@ -23,6 +23,7 @@ export interface Category {
 	emoji: string | null
 	parentId: string | null
 	income: boolean
+	status?: string
 }
 
 export interface ListPayload {

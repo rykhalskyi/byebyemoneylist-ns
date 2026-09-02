@@ -57,6 +57,17 @@ export async function deleteCategory(id: string): Promise<void> {
 	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/categories/${id}`))
 }
 
+export async function confirmCategory(id: string): Promise<Category> {
+	const { data } = await axios.post<OcsData<{ category: Category }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/categories/${id}/confirm`),
+	)
+	return data.ocs.data.category
+}
+
+export async function confirmAllCategories(): Promise<void> {
+	await axios.post(generateOcsUrl('/apps/byebyemoneylist/api/categories/confirm-all'))
+}
+
 export async function createStore(payload: StorePayload): Promise<Store> {
 	const { data } = await axios.post<OcsData<{ store: Store }>>(
 		generateOcsUrl('/apps/byebyemoneylist/api/stores'),

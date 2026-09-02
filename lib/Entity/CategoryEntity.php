@@ -19,6 +19,7 @@ class CategoryEntity extends Entity {
 	protected ?string $emoji = null;
 	protected ?string $parentId = null;
 	protected ?bool $income = false;
+	protected ?string $status = 'confirmed';
 
 	public function __construct() {
 		$this->addType('id', Types::STRING);
@@ -85,4 +86,15 @@ class CategoryEntity extends Entity {
 		$this->income = $income;
 		$this->markFieldUpdated('income');
 	}
+
+	public function getStatus(): ?string {
+		return $this->status;
+	}
+
+	/** @psalm-suppress PossiblyUnusedMethod */
+	public function setStatus(string $status): void {
+		$this->status = $status;
+		$this->markFieldUpdated('status');
+	}
 }
+
