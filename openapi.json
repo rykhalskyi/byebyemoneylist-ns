@@ -1548,7 +1548,12 @@
                                                                             "status",
                                                                             "finalTotal",
                                                                             "totalPrice",
-                                                                            "createdAt"
+                                                                            "createdAt",
+                                                                            "isSubscription",
+                                                                            "isIncome",
+                                                                            "isRecurring",
+                                                                            "recurringPeriod",
+                                                                            "isForwardEmpty"
                                                                         ],
                                                                         "properties": {
                                                                             "id": {
@@ -1581,6 +1586,21 @@
                                                                             "createdAt": {
                                                                                 "type": "string",
                                                                                 "nullable": true
+                                                                            },
+                                                                            "isSubscription": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "isIncome": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "isRecurring": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "recurringPeriod": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "isForwardEmpty": {
+                                                                                "type": "boolean"
                                                                             }
                                                                         }
                                                                     }
@@ -1649,7 +1669,12 @@
                                                                                     "status",
                                                                                     "finalTotal",
                                                                                     "totalPrice",
-                                                                                    "createdAt"
+                                                                                    "createdAt",
+                                                                                    "isSubscription",
+                                                                                    "isIncome",
+                                                                                    "isRecurring",
+                                                                                    "recurringPeriod",
+                                                                                    "isForwardEmpty"
                                                                                 ],
                                                                                 "properties": {
                                                                                     "id": {
@@ -1682,6 +1707,21 @@
                                                                                     "createdAt": {
                                                                                         "type": "string",
                                                                                         "nullable": true
+                                                                                    },
+                                                                                    "isSubscription": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "isIncome": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "isRecurring": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "recurringPeriod": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "isForwardEmpty": {
+                                                                                        "type": "boolean"
                                                                                     }
                                                                                 }
                                                                             }
@@ -1772,6 +1812,31 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Optional category id"
+                                    },
+                                    "isRecurring": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the list recurs"
+                                    },
+                                    "recurringPeriod": {
+                                        "type": "string",
+                                        "default": "MONTH",
+                                        "description": "Recurring period (WEEK, MONTH, YEAR)"
+                                    },
+                                    "isForwardEmpty": {
+                                        "type": "boolean",
+                                        "default": true,
+                                        "description": "Whether empty items are forwarded"
+                                    },
+                                    "isSubscription": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the list is a subscription"
+                                    },
+                                    "isIncome": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the list represents income"
                                     }
                                 }
                             }
@@ -1829,7 +1894,12 @@
                                                                         "status",
                                                                         "finalTotal",
                                                                         "totalPrice",
-                                                                        "createdAt"
+                                                                        "createdAt",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -1862,6 +1932,21 @@
                                                                         "createdAt": {
                                                                             "type": "string",
                                                                             "nullable": true
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -1927,7 +2012,12 @@
                                                                                 "status",
                                                                                 "finalTotal",
                                                                                 "totalPrice",
-                                                                                "createdAt"
+                                                                                "createdAt",
+                                                                                "isSubscription",
+                                                                                "isIncome",
+                                                                                "isRecurring",
+                                                                                "recurringPeriod",
+                                                                                "isForwardEmpty"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -1960,6 +2050,21 @@
                                                                                 "createdAt": {
                                                                                     "type": "string",
                                                                                     "nullable": true
+                                                                                },
+                                                                                "isSubscription": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isIncome": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isRecurring": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "recurringPeriod": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isForwardEmpty": {
+                                                                                    "type": "boolean"
                                                                                 }
                                                                             }
                                                                         }
@@ -2046,7 +2151,12 @@
                                                                         "status",
                                                                         "finalTotal",
                                                                         "totalPrice",
-                                                                        "createdAt"
+                                                                        "createdAt",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -2079,6 +2189,21 @@
                                                                         "createdAt": {
                                                                             "type": "string",
                                                                             "nullable": true
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -2142,7 +2267,12 @@
                                                                         "status",
                                                                         "finalTotal",
                                                                         "totalPrice",
-                                                                        "createdAt"
+                                                                        "createdAt",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -2175,6 +2305,21 @@
                                                                         "createdAt": {
                                                                             "type": "string",
                                                                             "nullable": true
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -3910,7 +4055,7 @@
         "/ocs/v2.php/apps/byebyemoneylist/api/products": {
             "get": {
                 "operationId": "product-index",
-                "summary": "Get all normal products (not subscription, not income) for the current user",
+                "summary": "Get products for the current user",
                 "tags": [
                     "product"
                 ],
@@ -3923,6 +4068,15 @@
                     }
                 ],
                 "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Which products to return: normal (default), subscriptions, income or all",
+                        "schema": {
+                            "type": "string",
+                            "default": "normal"
+                        }
+                    },
                     {
                         "name": "OCS-APIRequest",
                         "in": "header",
@@ -3974,7 +4128,9 @@
                                                                             "categoryId",
                                                                             "aliases",
                                                                             "isFavorite",
-                                                                            "status"
+                                                                            "status",
+                                                                            "isSubscription",
+                                                                            "isIncome"
                                                                         ],
                                                                         "properties": {
                                                                             "id": {
@@ -4002,6 +4158,12 @@
                                                                             },
                                                                             "status": {
                                                                                 "type": "string"
+                                                                            },
+                                                                            "isSubscription": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "isIncome": {
+                                                                                "type": "boolean"
                                                                             }
                                                                         }
                                                                     }
@@ -4069,7 +4231,9 @@
                                                                                     "categoryId",
                                                                                     "aliases",
                                                                                     "isFavorite",
-                                                                                    "status"
+                                                                                    "status",
+                                                                                    "isSubscription",
+                                                                                    "isIncome"
                                                                                 ],
                                                                                 "properties": {
                                                                                     "id": {
@@ -4097,6 +4261,12 @@
                                                                                     },
                                                                                     "status": {
                                                                                         "type": "string"
+                                                                                    },
+                                                                                    "isSubscription": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "isIncome": {
+                                                                                        "type": "boolean"
                                                                                     }
                                                                                 }
                                                                             }
@@ -4180,7 +4350,7 @@
                                         "type": "string",
                                         "nullable": true,
                                         "default": null,
-                                        "description": "Optional category id (must belong to the current user and not be an income category)"
+                                        "description": "Optional category id (must belong to the current user; income categories only allowed for income products)"
                                     },
                                     "barcode": {
                                         "type": "string",
@@ -4200,6 +4370,16 @@
                                         "type": "boolean",
                                         "default": false,
                                         "description": "Whether the product is a favorite"
+                                    },
+                                    "isSubscription": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the product is a subscription"
+                                    },
+                                    "isIncome": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the product is an income source"
                                     }
                                 }
                             }
@@ -4256,7 +4436,9 @@
                                                                         "categoryId",
                                                                         "aliases",
                                                                         "isFavorite",
-                                                                        "status"
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4284,6 +4466,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -4348,7 +4536,9 @@
                                                                                 "categoryId",
                                                                                 "aliases",
                                                                                 "isFavorite",
-                                                                                "status"
+                                                                                "status",
+                                                                                "isSubscription",
+                                                                                "isIncome"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -4376,6 +4566,12 @@
                                                                                 },
                                                                                 "status": {
                                                                                     "type": "string"
+                                                                                },
+                                                                                "isSubscription": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isIncome": {
+                                                                                    "type": "boolean"
                                                                                 }
                                                                             }
                                                                         }
@@ -4425,7 +4621,7 @@
                         }
                     },
                     "422": {
-                        "description": "Name is missing or empty, category does not exist, or category is an income category",
+                        "description": "Name is missing or empty, category does not exist, or category is an income category for a non-income product",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4461,7 +4657,9 @@
                                                                         "categoryId",
                                                                         "aliases",
                                                                         "isFavorite",
-                                                                        "status"
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4489,6 +4687,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -4551,7 +4755,9 @@
                                                                         "categoryId",
                                                                         "aliases",
                                                                         "isFavorite",
-                                                                        "status"
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4579,6 +4785,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -4640,7 +4852,7 @@
                                         "type": "string",
                                         "nullable": true,
                                         "default": null,
-                                        "description": "Optional category id (must belong to the current user and not be an income category)"
+                                        "description": "Optional category id (must belong to the current user; income categories only allowed for income products)"
                                     },
                                     "barcode": {
                                         "type": "string",
@@ -4660,6 +4872,16 @@
                                         "type": "boolean",
                                         "default": false,
                                         "description": "Whether the product is a favorite"
+                                    },
+                                    "isSubscription": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the product is a subscription"
+                                    },
+                                    "isIncome": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the product is an income source"
                                     }
                                 }
                             }
@@ -4725,7 +4947,9 @@
                                                                         "categoryId",
                                                                         "aliases",
                                                                         "isFavorite",
-                                                                        "status"
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4753,6 +4977,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -4817,7 +5047,9 @@
                                                                                 "categoryId",
                                                                                 "aliases",
                                                                                 "isFavorite",
-                                                                                "status"
+                                                                                "status",
+                                                                                "isSubscription",
+                                                                                "isIncome"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -4845,6 +5077,12 @@
                                                                                 },
                                                                                 "status": {
                                                                                     "type": "string"
+                                                                                },
+                                                                                "isSubscription": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isIncome": {
+                                                                                    "type": "boolean"
                                                                                 }
                                                                             }
                                                                         }
@@ -4930,7 +5168,9 @@
                                                                         "categoryId",
                                                                         "aliases",
                                                                         "isFavorite",
-                                                                        "status"
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4958,6 +5198,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -4984,7 +5230,7 @@
                         }
                     },
                     "422": {
-                        "description": "Name is missing or empty, category does not exist, or category is an income category",
+                        "description": "Name is missing or empty, category does not exist, or category is an income category for a non-income product",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -5020,7 +5266,9 @@
                                                                         "categoryId",
                                                                         "aliases",
                                                                         "isFavorite",
-                                                                        "status"
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -5048,6 +5296,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -5110,7 +5364,9 @@
                                                                         "categoryId",
                                                                         "aliases",
                                                                         "isFavorite",
-                                                                        "status"
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -5138,6 +5394,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }

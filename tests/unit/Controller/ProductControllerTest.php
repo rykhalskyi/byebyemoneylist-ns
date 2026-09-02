@@ -73,13 +73,15 @@ final class ProductControllerTest extends TestCase {
 		$this->db->method('getQueryBuilder')->willReturn($qb);
 	}
 
-	private function product(string $id, string $name, ?string $categoryId = null): ProductEntity {
+	private function product(string $id, string $name, ?string $categoryId = null, bool $isSubscription = false, bool $isIncome = false): ProductEntity {
 		$product = new ProductEntity();
 		$product->setId($id);
 		$product->setOwner('alice');
 		$product->setName($name);
 		$product->setStatus('reviewed');
 		$product->setIsFavorite(false);
+		$product->setIsSubscription($isSubscription);
+		$product->setIsIncome($isIncome);
 		if ($categoryId !== null) {
 			$product->setCategoryId($categoryId);
 		}
@@ -114,6 +116,85 @@ final class ProductControllerTest extends TestCase {
 		$this->assertSame('Milk', $products[0]['name']);
 		$this->assertSame(['M'], $products[0]['aliases']);
 		$this->assertFalse($products[0]['isFavorite']);
+		$this->assertFalse($products[0]['isSubscription']);
+		$this->assertFalse($products[0]['isIncome']);
+	}
+
+	public function testIndexReturnsSubscriptionsWhenTypeIsSubscriptions(): void {
+		$this->mockUser('alice');
+
+		$subscription = $this->product('11111111-2222-4333-8444-555555555555', 'Netflix', null, true);
+
+		$this->mapper->expects($this->once())
+			->method('findSubscriptionsByOwner')
+			->with('alice')
+			->willReturn([$subscription]);
+
+		$this->aliasMapper->expects($this->once())
+			->method('findByProductIds')
+			->with(['11111111-2222-4333-8444-555555555555'], 'alice')
+			->willReturn([]);
+
+		$response = $this->controller->index('subscriptions');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$products = $response->getData()['products'];
+		$this->assertCount(1, $products);
+		$this->assertSame('Netflix', $products[0]['name']);
+		$this->assertTrue($products[0]['isSubscription']);
+		$this->assertFalse($products[0]['isIncome']);
+	}
+
+	public function testIndexReturnsIncomeWhenTypeIsIncome(): void {
+		$this->mockUser('alice');
+
+		$income = $this->product('11111111-2222-4333-8444-555555555555', 'Salary', null, false, true);
+
+		$this->mapper->expects($this->once())
+			->method('findIncomeByOwner')
+			->with('alice')
+			->willReturn([$income]);
+
+		$this->aliasMapper->expects($this->once())
+			->method('findByProductIds')
+			->with(['11111111-2222-4333-8444-555555555555'], 'alice')
+			->willReturn([]);
+
+		$response = $this->controller->index('income');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$products = $response->getData()['products'];
+		$this->assertCount(1, $products);
+		$this->assertSame('Salary', $products[0]['name']);
+		$this->assertFalse($products[0]['isSubscription']);
+		$this->assertTrue($products[0]['isIncome']);
+	}
+
+	public function testIndexReturnsAllWhenTypeIsAll(): void {
+		$this->mockUser('alice');
+
+		$normal = $this->product('11111111-2222-4333-8444-555555555551', 'Milk');
+		$subscription = $this->product('11111111-2222-4333-8444-555555555552', 'Netflix', null, true);
+		$income = $this->product('11111111-2222-4333-8444-555555555553', 'Salary', null, false, true);
+
+		$this->mapper->expects($this->once())
+			->method('findAllIncludingSpecialByOwner')
+			->with('alice')
+			->willReturn([$normal, $subscription, $income]);
+
+		$this->aliasMapper->expects($this->once())
+			->method('findByProductIds')
+			->with([
+				'11111111-2222-4333-8444-555555555551',
+				'11111111-2222-4333-8444-555555555552',
+				'11111111-2222-4333-8444-555555555553',
+			], 'alice')
+			->willReturn([]);
+
+		$response = $this->controller->index('all');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertCount(3, $response->getData()['products']);
 	}
 
 	public function testIndexReturnsUnauthorizedWhenNotLoggedIn(): void {
@@ -146,6 +227,29 @@ final class ProductControllerTest extends TestCase {
 		$this->assertSame(['M'], $product['aliases']);
 		$this->assertTrue($product['isFavorite']);
 		$this->assertSame('reviewed', $product['status']);
+		$this->assertFalse($product['isSubscription']);
+		$this->assertFalse($product['isIncome']);
+	}
+
+	public function testCreateReturnsSubscriptionAndIncomeProduct(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ProductEntity $product): ProductEntity {
+				$product->setId('11111111-2222-4333-8444-555555555555');
+				return $product;
+			});
+
+		$this->aliasMapper->expects($this->once())
+			->method('insert');
+
+		$response = $this->controller->create('Netflix', null, null, [], false, true, false);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$product = $response->getData()['product'];
+		$this->assertTrue($product['isSubscription']);
+		$this->assertFalse($product['isIncome']);
 	}
 
 	public function testCreateSetsCategoryWhenValid(): void {
@@ -221,6 +325,37 @@ final class ProductControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}
 
+	public function testCreateAllowsIncomeCategoryForIncomeProduct(): void {
+		$this->mockUser('alice');
+
+		$category = new CategoryEntity();
+		$category->setId('22222222-3333-4444-8555-666666666666');
+		$category->setOwner('alice');
+		$category->setName('Salary');
+		$category->setIncome(true);
+
+		$this->categoryMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('22222222-3333-4444-8555-666666666666', 'alice')
+			->willReturn($category);
+
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ProductEntity $product): ProductEntity {
+				$product->setId('11111111-2222-4333-8444-555555555555');
+				return $product;
+			});
+
+		$this->aliasMapper->expects($this->once())
+			->method('insert');
+
+		$response = $this->controller->create('Salary', '22222222-3333-4444-8555-666666666666', null, [], false, false, true);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame('22222222-3333-4444-8555-666666666666', $response->getData()['product']['categoryId']);
+		$this->assertTrue($response->getData()['product']['isIncome']);
+	}
+
 	public function testCreateReturnsUnauthorizedWhenNotLoggedIn(): void {
 		$this->userSession->method('getUser')->willReturn(null);
 
@@ -272,6 +407,44 @@ final class ProductControllerTest extends TestCase {
 		$this->assertSame('1234', $data['barcode']);
 		$this->assertSame(['M'], $data['aliases']);
 		$this->assertTrue($data['isFavorite']);
+		$this->assertFalse($data['isSubscription']);
+		$this->assertFalse($data['isIncome']);
+	}
+
+	public function testUpdateAllowsIncomeCategoryForIncomeProduct(): void {
+		$this->mockUser('alice');
+
+		$product = $this->product('11111111-2222-4333-8444-555555555555', 'Salary', null, false, true);
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('11111111-2222-4333-8444-555555555555', 'alice')
+			->willReturn($product);
+
+		$category = new CategoryEntity();
+		$category->setId('22222222-3333-4444-8555-666666666666');
+		$category->setOwner('alice');
+		$category->setName('Salary');
+		$category->setIncome(true);
+
+		$this->categoryMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('22222222-3333-4444-8555-666666666666', 'alice')
+			->willReturn($category);
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$this->mapper->expects($this->once())->method('update')->willReturnArgument(0);
+		$this->aliasMapper->expects($this->once())->method('deleteByProductId');
+		$this->aliasMapper->expects($this->once())->method('insert');
+
+		$response = $this->controller->update('11111111-2222-4333-8444-555555555555', 'Salary', '22222222-3333-4444-8555-666666666666', null, [], false, false, true);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('22222222-3333-4444-8555-666666666666', $response->getData()['product']['categoryId']);
+		$this->assertTrue($response->getData()['product']['isIncome']);
 	}
 
 	public function testUpdateReturnsNotFoundWhenNotOwned(): void {

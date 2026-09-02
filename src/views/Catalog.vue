@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { mdiAlertCircle, mdiDelete, mdiPackageVariant, mdiPackageVariantClosed, mdiPencil, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
+import { mdiAlertCircle, mdiArrowUp, mdiCalendarMonth, mdiDelete, mdiPackageVariant, mdiPackageVariantClosed, mdiPencil, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -13,7 +13,7 @@ import NewStoreDialog from '../components/NewStoreDialog.vue'
 import { deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi'
 import type { Category, Product, Store } from '../types'
 
-type TabId = 'categories' | 'stores' | 'products'
+type TabId = 'categories' | 'stores' | 'products' | 'subscriptions' | 'income'
 
 interface FlatCategory {
 	category: Category
@@ -24,6 +24,8 @@ const tabs: { id: TabId; label: string }[] = [
 	{ id: 'categories', label: 'Categories' },
 	{ id: 'stores', label: 'Stores' },
 	{ id: 'products', label: 'Products' },
+	{ id: 'subscriptions', label: 'Subscriptions' },
+	{ id: 'income', label: 'Income' },
 ]
 
 const activeTab = ref<TabId>('categories')
@@ -45,8 +47,52 @@ const addButtonLabel = computed(() => {
 		return 'Add category'
 	case 'stores':
 		return 'Add store'
+	case 'subscriptions':
+		return 'Add subscription'
+	case 'income':
+		return 'Add income source'
 	default:
 		return 'Add product'
+	}
+})
+
+const normalProducts = computed(() => products.value.filter((product) => !product.isSubscription && !product.isIncome))
+const subscriptionProducts = computed(() => products.value.filter((product) => product.isSubscription))
+const incomeProducts = computed(() => products.value.filter((product) => product.isIncome))
+
+const isProductTab = computed(() => activeTab.value === 'products' || activeTab.value === 'subscriptions' || activeTab.value === 'income')
+
+const activeProducts = computed<Product[]>(() => {
+	switch (activeTab.value) {
+	case 'subscriptions':
+		return subscriptionProducts.value
+	case 'income':
+		return incomeProducts.value
+	default:
+		return normalProducts.value
+	}
+})
+
+const emptyState = computed<{ title: string; description: string; icon: string }>(() => {
+	switch (activeTab.value) {
+	case 'subscriptions':
+		return {
+			title: 'No subscriptions yet',
+			description: 'Mark products as subscriptions to track recurring costs.',
+			icon: mdiCalendarMonth,
+		}
+	case 'income':
+		return {
+			title: 'No income sources yet',
+			description: 'Mark products as income to track your earnings.',
+			icon: mdiArrowUp,
+		}
+	default:
+		return {
+			title: 'No products yet',
+			description: 'Create your first product to build up your shopping catalog.',
+			icon: mdiPackageVariantClosed,
+		}
 	}
 })
 
@@ -86,7 +132,7 @@ async function loadData() {
 	loading.value = true
 	error.value = null
 	try {
-		const [categoryData, storeData, productData] = await Promise.all([fetchCategories(), fetchStores(), fetchProducts()])
+		const [categoryData, storeData, productData] = await Promise.all([fetchCategories(), fetchStores(), fetchProducts('all')])
 		categories.value = categoryData
 		stores.value = storeData
 		products.value = productData
@@ -355,24 +401,24 @@ function closeProductDialog() {
 			</div>
 		</template>
 
-		<template v-else>
+		<template v-else-if="isProductTab">
 			<NcEmptyContent
-				v-if="products.length === 0"
-				name="No products yet"
-				description="Create your first product to build up your shopping catalog.">
+				v-if="activeProducts.length === 0"
+				:name="emptyState.title"
+				:description="emptyState.description">
 				<template #icon>
-					<NcIconSvgWrapper :path="mdiPackageVariantClosed" :size="64" />
+					<NcIconSvgWrapper :path="emptyState.icon" :size="64" />
 				</template>
 				<template #action>
 					<NcButton type="button" variant="primary" @click="showProductDialog = true">
-						Add product
+						{{ addButtonLabel }}
 					</NcButton>
 				</template>
 			</NcEmptyContent>
 
 			<div v-else :class="$style.list">
 				<div
-					v-for="product in products"
+					v-for="product in activeProducts"
 					:key="product.id"
 					:class="$style['product-row']">
 					<NcListItem
@@ -396,6 +442,16 @@ function closeProductDialog() {
 						</template>
 						<template #subname>
 							<div :class="$style.subname">
+								<NcChip
+									v-if="product.isSubscription"
+									text="Subscription"
+									variant="primary"
+									no-close />
+								<NcChip
+									v-if="product.isIncome"
+									text="Income"
+									variant="success"
+									no-close />
 								<span v-if="categoryName(product)">
 									{{ categoryName(product) }}
 								</span>
@@ -403,11 +459,11 @@ function closeProductDialog() {
 									v-if="product.barcode"
 									:text="product.barcode"
 									no-close />
-							<NcIconSvgWrapper
-								v-if="product.isFavorite"
-								:path="mdiStar"
-								:size="20"
-								:class="$style.favorite" />
+								<NcIconSvgWrapper
+									v-if="product.isFavorite"
+									:path="mdiStar"
+									:size="20"
+									:class="$style.favorite" />
 							</div>
 						</template>
 						<template #extra-actions>
@@ -448,6 +504,7 @@ function closeProductDialog() {
 		<NewProductDialog
 			:open="showProductDialog || editingProduct !== null"
 			:entity="editingProduct ?? undefined"
+			:preset="activeTab === 'subscriptions' ? 'subscription' : activeTab === 'income' ? 'income' : undefined"
 			@update:open="closeProductDialog"
 			@created="onProductCreated"
 			@updated="onProductUpdated" />

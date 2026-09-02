@@ -11,7 +11,31 @@ use OCP\DB\Types;
 /**
  * @method string getId()
  * @method void setId(string $id)
- * @psalm-suppress PropertyNotSetInConstructor
+ * @method ?string getOwner()
+ * @method void setOwner(string $owner)
+ * @method ?string getName()
+ * @method void setName(string $name)
+ * @method ?string getStoreId()
+ * @method void setStoreId(?string $storeId)
+ * @method ?string getCategoryId()
+ * @method void setCategoryId(?string $categoryId)
+ * @method ?string getStatus()
+ * @method void setStatus(string $status)
+ * @method ?float getFinalTotal()
+ * @method void setFinalTotal(?float $finalTotal)
+ * @method ?DateTime getCreatedAt()
+ * @method void setCreatedAt(DateTime $createdAt)
+ * @method ?bool getIsSubscription()
+ * @method void setIsSubscription(bool $isSubscription)
+ * @method ?bool getIsIncome()
+ * @method void setIsIncome(bool $isIncome)
+ * @method ?bool getIsRecurring()
+ * @method void setIsRecurring(bool $isRecurring)
+ * @method ?string getRecurringPeriod()
+ * @method void setRecurringPeriod(string $recurringPeriod)
+ * @method ?bool getIsForwardEmpty()
+ * @method void setIsForwardEmpty(bool $isForwardEmpty)
+ * @psalm-suppress PropertyNotSetInConstructor, PossiblyUnusedProperty
  */
 class ListEntity extends Entity {
 	protected ?string $owner = null;
@@ -21,75 +45,20 @@ class ListEntity extends Entity {
 	protected ?string $status = null;
 	protected ?float $finalTotal = null;
 	protected ?DateTime $createdAt = null;
+	protected ?bool $isSubscription = false;
+	protected ?bool $isIncome = false;
+	protected ?bool $isRecurring = false;
+	protected ?string $recurringPeriod = 'MONTH';
+	protected ?bool $isForwardEmpty = true;
 
 	public function __construct() {
 		$this->addType('id', Types::STRING);
 		$this->addType('finalTotal', Types::DECIMAL);
 		$this->addType('createdAt', Types::DATETIME);
-	}
-
-	/** @psalm-suppress PossiblyUnusedMethod */
-	public function getOwner(): ?string {
-		return $this->owner;
-	}
-
-	public function setOwner(string $owner): void {
-		$this->owner = $owner;
-		$this->markFieldUpdated('owner');
-	}
-
-	public function getName(): ?string {
-		return $this->name;
-	}
-
-	public function setName(string $name): void {
-		$this->name = $name;
-		$this->markFieldUpdated('name');
-	}
-
-	public function getStoreId(): ?string {
-		return $this->storeId;
-	}
-
-	public function setStoreId(?string $storeId): void {
-		$this->storeId = $storeId;
-		$this->markFieldUpdated('storeId');
-	}
-
-	public function getCategoryId(): ?string {
-		return $this->categoryId;
-	}
-
-	public function setCategoryId(?string $categoryId): void {
-		$this->categoryId = $categoryId;
-		$this->markFieldUpdated('categoryId');
-	}
-
-	public function getStatus(): ?string {
-		return $this->status;
-	}
-
-	public function setStatus(string $status): void {
-		$this->status = $status;
-		$this->markFieldUpdated('status');
-	}
-
-	public function getFinalTotal(): ?float {
-		return $this->finalTotal;
-	}
-
-	/** @psalm-suppress PossiblyUnusedMethod */
-	public function setFinalTotal(?float $finalTotal): void {
-		$this->finalTotal = $finalTotal;
-		$this->markFieldUpdated('finalTotal');
-	}
-
-	public function getCreatedAt(): ?DateTime {
-		return $this->createdAt;
-	}
-
-	public function setCreatedAt(DateTime $createdAt): void {
-		$this->createdAt = $createdAt;
-		$this->markFieldUpdated('createdAt');
+		$this->addType('isSubscription', Types::BOOLEAN);
+		$this->addType('isIncome', Types::BOOLEAN);
+		$this->addType('isRecurring', Types::BOOLEAN);
+		$this->addType('recurringPeriod', Types::STRING);
+		$this->addType('isForwardEmpty', Types::BOOLEAN);
 	}
 }

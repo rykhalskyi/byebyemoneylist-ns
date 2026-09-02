@@ -77,9 +77,10 @@ export async function deleteStore(id: string): Promise<void> {
 	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/stores/${id}`))
 }
 
-export async function fetchProducts(): Promise<Product[]> {
+export async function fetchProducts(type?: 'normal' | 'subscriptions' | 'income' | 'all'): Promise<Product[]> {
 	const { data } = await axios.get<OcsData<{ products: Product[] }>>(
 		generateOcsUrl('/apps/byebyemoneylist/api/products'),
+		{ params: type ? { type } : {} },
 	)
 	return data.ocs.data.products
 }

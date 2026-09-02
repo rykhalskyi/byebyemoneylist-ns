@@ -56,24 +56,31 @@ class ProductController extends OCSController {
 	}
 
 	/**
-	 * Get all normal products (not subscription, not income) for the current user
+	 * Get products for the current user
+	 *
+	 * @param string $type Which products to return: normal (default), subscriptions, income or all
 	 *
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{products: list<array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string}>}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{products: list<array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool}>}|array{message: string}, array{}>
 	 *
 	 * 200: Products returned
 	 * 401: Current user is not logged in
 	 */
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'GET', url: '/api/products')]
-	public function index(): DataResponse {
+	public function index(string $type = 'normal'): DataResponse {
 		$userId = $this->userSession->getUser()?->getUID();
 		if ($userId === null) {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$products = $this->mapper->findAllByOwner($userId);
+		$products = match ($type) {
+			'subscriptions' => $this->mapper->findSubscriptionsByOwner($userId),
+			'income' => $this->mapper->findIncomeByOwner($userId),
+			'all' => $this->mapper->findAllIncludingSpecialByOwner($userId),
+			default => $this->mapper->findAllByOwner($userId),
+		};
 		$aliasesByProduct = $this->groupAliases(
 			$this->aliasMapper->findByProductIds(array_map(fn (ProductEntity $product): string => $product->getId(), $products), $userId)
 		);
@@ -92,21 +99,23 @@ class ProductController extends OCSController {
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
 	 * @param string $name Product name (required)
-	 * @param ?string $categoryId Optional category id (must belong to the current user and not be an income category)
+	 * @param ?string $categoryId Optional category id (must belong to the current user; income categories only allowed for income products)
 	 * @param ?string $barcode Optional product barcode
 	 * @param list<string> $aliases Optional product aliases (comma-separated in the request)
 	 * @param bool $isFavorite Whether the product is a favorite
+	 * @param bool $isSubscription Whether the product is a subscription
+	 * @param bool $isIncome Whether the product is an income source
 	 *
-	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool}}|array{message: string}, array{}>
 	 *
 	 * 201: Product created
 	 * 401: Current user is not logged in
-	 * 422: Name is missing or empty, category does not exist, or category is an income category
+	 * 422: Name is missing or empty, category does not exist, or category is an income category for a non-income product
 	 * 500: Failed to create the product
 	 */
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'POST', url: '/api/products')]
-	public function create(string $name, ?string $categoryId = null, ?string $barcode = null, array $aliases = [], bool $isFavorite = false): DataResponse {
+	public function create(string $name, ?string $categoryId = null, ?string $barcode = null, array $aliases = [], bool $isFavorite = false, bool $isSubscription = false, bool $isIncome = false): DataResponse {
 		$userId = $this->userSession->getUser()?->getUID();
 		if ($userId === null) {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
@@ -122,7 +131,7 @@ class ProductController extends OCSController {
 			if ($category === null) {
 				return new DataResponse(['message' => 'Category not found'], Http::STATUS_UNPROCESSABLE_ENTITY);
 			}
-			if ($category->getIncome() ?? false) {
+			if (($category->getIncome() ?? false) && !$isIncome) {
 				return new DataResponse(['message' => 'Category must not be an income category'], Http::STATUS_UNPROCESSABLE_ENTITY);
 			}
 		}
@@ -135,6 +144,8 @@ class ProductController extends OCSController {
 		$product->setName($name);
 		$product->setStatus('reviewed');
 		$product->setIsFavorite($isFavorite);
+		$product->setIsSubscription($isSubscription);
+		$product->setIsIncome($isIncome);
 		if ($categoryId !== null && $categoryId !== '') {
 			$product->setCategoryId($categoryId);
 		}
@@ -174,22 +185,24 @@ class ProductController extends OCSController {
 	 *
 	 * @param string $id Product id
 	 * @param string $name Product name (required)
-	 * @param ?string $categoryId Optional category id (must belong to the current user and not be an income category)
+	 * @param ?string $categoryId Optional category id (must belong to the current user; income categories only allowed for income products)
 	 * @param ?string $barcode Optional product barcode
 	 * @param list<string> $aliases Optional product aliases
 	 * @param bool $isFavorite Whether the product is a favorite
+	 * @param bool $isSubscription Whether the product is a subscription
+	 * @param bool $isIncome Whether the product is an income source
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool}}|array{message: string}, array{}>
 	 *
 	 * 200: Product updated
 	 * 401: Current user is not logged in
 	 * 404: Product not found or not owned by the current user
-	 * 422: Name is missing or empty, category does not exist, or category is an income category
+	 * 422: Name is missing or empty, category does not exist, or category is an income category for a non-income product
 	 * 500: Failed to update the product
 	 */
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'PUT', url: '/api/products/{id}')]
-	public function update(string $id, string $name, ?string $categoryId = null, ?string $barcode = null, array $aliases = [], bool $isFavorite = false): DataResponse {
+	public function update(string $id, string $name, ?string $categoryId = null, ?string $barcode = null, array $aliases = [], bool $isFavorite = false, bool $isSubscription = false, bool $isIncome = false): DataResponse {
 		$userId = $this->userSession->getUser()?->getUID();
 		if ($userId === null) {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
@@ -210,7 +223,7 @@ class ProductController extends OCSController {
 			if ($category === null) {
 				return new DataResponse(['message' => 'Category not found'], Http::STATUS_UNPROCESSABLE_ENTITY);
 			}
-			if ($category->getIncome() ?? false) {
+			if (($category->getIncome() ?? false) && !$isIncome) {
 				return new DataResponse(['message' => 'Category must not be an income category'], Http::STATUS_UNPROCESSABLE_ENTITY);
 			}
 		}
@@ -221,6 +234,8 @@ class ProductController extends OCSController {
 		$product->setCategoryId($categoryId !== null && $categoryId !== '' ? $categoryId : null);
 		$product->setBarcode($barcode !== null && $barcode !== '' ? trim($barcode) : null);
 		$product->setIsFavorite($isFavorite);
+		$product->setIsSubscription($isSubscription);
+		$product->setIsIncome($isIncome);
 
 		$transactionStarted = false;
 		try {
@@ -342,7 +357,7 @@ class ProductController extends OCSController {
 	/**
 	 * @param list<string> $aliases
 	 *
-	 * @return array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string}
+	 * @return array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool}
 	 */
 	private function serializeProduct(ProductEntity $product, array $aliases = []): array {
 		return [
@@ -353,6 +368,8 @@ class ProductController extends OCSController {
 			'aliases' => $aliases,
 			'isFavorite' => $product->getIsFavorite() ?? false,
 			'status' => $product->getStatus() ?? 'reviewed',
+			'isSubscription' => $product->getIsSubscription() ?? false,
+			'isIncome' => $product->getIsIncome() ?? false,
 		];
 	}
 }
