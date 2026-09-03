@@ -247,4 +247,8 @@ async function onSubmit() {
 	color: var(--color-error);
 	margin: 0;
 }
+
+:global(.nc-select__dropdown) {
+	z-index: 10002;
+}
 </style>
