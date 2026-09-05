@@ -25,6 +25,14 @@ use OCP\DB\Types;
  * @method void setFinalTotal(?float $finalTotal)
  * @method ?DateTime getCreatedAt()
  * @method void setCreatedAt(DateTime $createdAt)
+ * @method ?DateTime getPurchaseDate()
+ * @method void setPurchaseDate(?DateTime $purchaseDate)
+ * @method ?bool getIsFinished()
+ * @method void setIsFinished(bool $isFinished)
+ * @method ?int getPosition()
+ * @method void setPosition(int $position)
+ * @method ?DateTime getUpdatedAt()
+ * @method void setUpdatedAt(DateTime $updatedAt)
  * @method ?bool getIsSubscription()
  * @method void setIsSubscription(bool $isSubscription)
  * @method ?bool getIsIncome()
@@ -45,6 +53,10 @@ class ListEntity extends Entity {
 	protected ?string $status = null;
 	protected ?float $finalTotal = null;
 	protected ?DateTime $createdAt = null;
+	protected ?DateTime $purchaseDate = null;
+	protected ?bool $isFinished = false;
+	protected ?int $position = 0;
+	protected ?DateTime $updatedAt = null;
 	protected ?bool $isSubscription = false;
 	protected ?bool $isIncome = false;
 	protected ?bool $isRecurring = false;
@@ -55,6 +67,10 @@ class ListEntity extends Entity {
 		$this->addType('id', Types::STRING);
 		$this->addType('finalTotal', Types::DECIMAL);
 		$this->addType('createdAt', Types::DATETIME);
+		$this->addType('purchaseDate', Types::DATETIME);
+		$this->addType('isFinished', Types::BOOLEAN);
+		$this->addType('position', Types::INTEGER);
+		$this->addType('updatedAt', Types::DATETIME);
 		$this->addType('isSubscription', Types::BOOLEAN);
 		$this->addType('isIncome', Types::BOOLEAN);
 		$this->addType('isRecurring', Types::BOOLEAN);

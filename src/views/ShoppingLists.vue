@@ -150,7 +150,7 @@ function checkedSum(list: ShoppingList): number {
 		return 0
 	}
 	return items
-		.filter((item) => item.isChecked && item.price !== null)
+		.filter((item) => item.price !== null)
 		.reduce((sum, item) => sum + (item.price ?? 0) * item.quantity, 0)
 }
 
@@ -275,7 +275,6 @@ function itemSubname(item: ListItem): string {
 				:style="listMarkStyle(list)">
 				<NcListItem
 					:name="list.name"
-					:details="formatTotal(list.finalTotal)"
 					one-line
 					@click="toggleExpand(list)">
 					<template #icon>
@@ -316,13 +315,7 @@ function itemSubname(item: ListItem): string {
 								compact
 								one-line
 								:style="productCategoryColor(item) ? { borderInlineStart: `2px solid ${productCategoryColor(item)}` } : {}">
-								<template #icon>
-									<NcCheckboxRadioSwitch
-										:model-value="item.isChecked"
-										:aria-label="`Check ${item.productName}`"
-										:disabled="itemsLoading[list.id]"
-										@update:model-value="onToggleItem(list, item, $event)" />
-								</template>
+								
 								<template #subname>
 									<span v-if="itemSubname(item)">{{ itemSubname(item) }}</span>
 								</template>

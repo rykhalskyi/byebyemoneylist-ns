@@ -47,6 +47,16 @@ class ListItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Delete all items of a list (used on list deletion and item full-replace).
+	 */
+	public function deleteByListId(string $listId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->tableName)
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_STR)));
+		$qb->executeStatement();
+	}
+
+	/**
 	 * Sum of checked items' totals (price × quantity) grouped by list id.
 	 *
 	 * @param array<array-key, string> $listIds

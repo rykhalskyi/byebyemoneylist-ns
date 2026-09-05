@@ -24,3 +24,5 @@
 ## [2026-08-29] spec | Shopping List Improvements (Issue #8)
 ## [2026-08-29] plan | Shopping List Improvements (Issue #8)
 ## [2026-08-29] ticket | Issue #8 — Shopping List Improvements
+## [2026-09-05] ticket | T9 — List mirror API (shopping-list sync, server)
+## [2026-09-05] update | ticket-09-list-mirror-api — PR #18 review fixes (finalTotal null-clear on PUT, strict UTC ISO-8601 date parsing, blank dates as absent, removed unused ListMapper::deleteCategoriesByCategoryId)
