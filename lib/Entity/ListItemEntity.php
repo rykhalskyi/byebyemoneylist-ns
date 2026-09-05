@@ -21,14 +21,21 @@ class ListItemEntity extends Entity {
 	protected ?float $quantity = null;
 	protected ?bool $isChecked = false;
 	protected ?string $status = null;
+	protected ?int $position = 0;
+	protected ?float $discount = null;
+	protected ?string $customName = null;
 	protected ?DateTime $createdAt = null;
+	protected ?DateTime $updatedAt = null;
 
 	public function __construct() {
 		$this->addType('id', Types::STRING);
 		$this->addType('price', Types::DECIMAL);
 		$this->addType('quantity', Types::DECIMAL);
 		$this->addType('isChecked', Types::BOOLEAN);
+		$this->addType('position', Types::INTEGER);
+		$this->addType('discount', Types::DECIMAL);
 		$this->addType('createdAt', Types::DATETIME);
+		$this->addType('updatedAt', Types::DATETIME);
 	}
 
 	/** @psalm-suppress PossiblyUnusedMethod */
@@ -84,6 +91,44 @@ class ListItemEntity extends Entity {
 	public function setIsChecked(bool $isChecked): void {
 		$this->isChecked = $isChecked;
 		$this->markFieldUpdated('isChecked');
+	}
+
+	public function getPosition(): ?int {
+		return $this->position;
+	}
+
+	public function setPosition(int $position): void {
+		$this->position = $position;
+		$this->markFieldUpdated('position');
+	}
+
+	public function getDiscount(): ?float {
+		return $this->discount;
+	}
+
+	public function setDiscount(?float $discount): void {
+		$this->discount = $discount;
+		$this->markFieldUpdated('discount');
+	}
+
+	/** @psalm-suppress PossiblyUnusedMethod */
+	public function getCustomName(): ?string {
+		return $this->customName;
+	}
+
+	public function setCustomName(?string $customName): void {
+		$this->customName = $customName;
+		$this->markFieldUpdated('customName');
+	}
+
+	/** @psalm-suppress PossiblyUnusedMethod */
+	public function getUpdatedAt(): ?DateTime {
+		return $this->updatedAt;
+	}
+
+	public function setUpdatedAt(DateTime $updatedAt): void {
+		$this->updatedAt = $updatedAt;
+		$this->markFieldUpdated('updatedAt');
 	}
 
 	/** @psalm-suppress PossiblyUnusedMethod */

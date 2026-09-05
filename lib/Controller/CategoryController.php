@@ -378,8 +378,6 @@ class CategoryController extends OCSController {
 		return new DataResponse(['message' => 'All pending categories confirmed'], Http::STATUS_OK);
 	}
 
-
-
 	/**
 	 * Update a category for the current user
 	 *
@@ -486,6 +484,11 @@ class CategoryController extends OCSController {
 			$this->nullReference('bbml_products', 'category_id', $id, $userId);
 			$this->nullReference('bbml_lists', 'category_id', $id, $userId);
 			$this->reparentChildren('bbml_categories', $id, $userId);
+
+			$qb = $this->db->getQueryBuilder();
+			$qb->delete('bbml_list_categories')
+				->where($qb->expr()->eq('category_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_STR)));
+			$qb->executeStatement();
 
 			$this->mapper->delete($category);
 

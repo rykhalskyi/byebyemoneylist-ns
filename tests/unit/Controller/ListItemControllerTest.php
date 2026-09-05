@@ -522,4 +522,144 @@ final class ListItemControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 	}
+
+	public function testCreateWithPositionDiscountAndCustomName(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->productMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($productId, 'alice')
+			->willReturn($this->product($productId, 'Milk'));
+
+		$this->itemMapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ListItemEntity $item): ListItemEntity {
+				$item->setId('33333333-4444-4555-8666-777777777777');
+				return $item;
+			});
+
+		$response = $this->controller->create($listId, $productId, 2.5, 1.0, 3, 0.2, '  Milk 2%  ');
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$item = $response->getData()['item'];
+		$this->assertSame(3, $item['position']);
+		$this->assertSame(0.2, $item['discount']);
+		$this->assertSame('Milk 2%', $item['customName']);
+		$this->assertNotNull($item['updatedAt']);
+	}
+
+	public function testCreateRejectsNegativeDiscount(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->productMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($productId, 'alice')
+			->willReturn($this->product($productId, 'Milk'));
+
+		$this->itemMapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create($listId, $productId, null, null, 0, -0.5);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testCreateRejectsTooLongCustomName(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->productMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($productId, 'alice')
+			->willReturn($this->product($productId, 'Milk'));
+
+		$this->itemMapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create($listId, $productId, null, null, 0, null, str_repeat('x', 256));
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testUpdatePositionDiscountAndCustomName(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$item = $this->item($itemId, $listId, $productId);
+
+		$this->itemMapper->expects($this->once())
+			->method('findByIdAndListId')
+			->with($itemId, $listId)
+			->willReturn($item);
+
+		$this->itemMapper->expects($this->once())
+			->method('update')
+			->willReturnArgument(0);
+
+		$this->productMapper->expects($this->once())
+			->method('findByIds')
+			->with([$productId], 'alice')
+			->willReturn([$this->product($productId, 'Milk')]);
+
+		$response = $this->controller->update($listId, $itemId, null, null, null, 5, 0.3, 'Renamed');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$item = $response->getData()['item'];
+		$this->assertSame(5, $item['position']);
+		$this->assertSame(0.3, $item['discount']);
+		$this->assertSame('Renamed', $item['customName']);
+		$this->assertNotNull($item['updatedAt']);
+	}
+
+	public function testUpdateRejectsNegativeDiscount(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($listId, 'alice')
+			->willReturn($this->list($listId));
+
+		$this->itemMapper->expects($this->once())
+			->method('findByIdAndListId')
+			->willReturn($this->item($itemId, $listId, $productId));
+
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$response = $this->controller->update($listId, $itemId, null, null, null, null, -1.0);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
 }

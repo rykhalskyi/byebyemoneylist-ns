@@ -28,6 +28,7 @@
 - [tickets/ticket-06-products-tab](pages/tickets/ticket-06-products-tab.md) — T6: Products tab (display + create). Created 2026-08-28.
 - [tickets/ticket-07-add-product-to-list](pages/tickets/ticket-07-add-product-to-list.md) — T2 partial: Add products to a shopping list. Created 2026-08-28.
 - [tickets/ticket-08-shopping-list-improvements](pages/tickets/ticket-08-shopping-list-improvements.md) — Issue #8: Shopping List Improvements. Created 2026-08-29.
+- [tickets/ticket-09-list-mirror-api](pages/tickets/ticket-09-list-mirror-api.md) — T9: List mirror API (shopping-list sync, server). Created 2026-09-05.
 
 ## Research
 - [research/syncronisation.md] (pages/research/syncronisation.md) - Client side synchronisation research

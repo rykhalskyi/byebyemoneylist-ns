@@ -24,3 +24,4 @@
 ## [2026-08-29] spec | Shopping List Improvements (Issue #8)
 ## [2026-08-29] plan | Shopping List Improvements (Issue #8)
 ## [2026-08-29] ticket | Issue #8 — Shopping List Improvements
+## [2026-09-05] ticket | T9 — List mirror API (shopping-list sync, server)
