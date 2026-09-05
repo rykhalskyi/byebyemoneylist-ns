@@ -392,4 +392,71 @@ final class ListControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 	}
+
+	public function testUpdateClearsFinalTotalWhenNull(): void {
+		$this->mockUser('alice');
+
+		$list = $this->makeList('11111111-2222-4333-8444-555555555555', 'Groceries');
+		$list->setFinalTotal(42.0);
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('11111111-2222-4333-8444-555555555555', 'alice')
+			->willReturn($list);
+
+		$this->mapper->expects($this->once())
+			->method('update')
+			->willReturnArgument(0);
+
+		$this->mapper->expects($this->once())
+			->method('replaceCategoriesByListId')
+			->with('11111111-2222-4333-8444-555555555555', []);
+
+		$response = $this->controller->update('11111111-2222-4333-8444-555555555555', 'Groceries', finalTotal: null);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertNull($response->getData()['list']['finalTotal']);
+	}
+
+	public function testCreateAcceptsEmptyDateStrings(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnArgument(0);
+
+		$response = $this->controller->create('Groceries', purchaseDate: '', createDate: '');
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertNull($response->getData()['list']['purchaseDate']);
+		$this->assertNotNull($response->getData()['list']['createdAt']);
+	}
+
+	public function testCreateNormalizesOffsetDatesToUtc(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnArgument(0);
+
+		$response = $this->controller->create(
+			'Groceries',
+			purchaseDate: '2026-09-01T12:00:00.500+03:00',
+			createDate: '2026-08-20T10:00:00Z',
+		);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame('2026-09-01T09:00:00+00:00', $response->getData()['list']['purchaseDate']);
+		$this->assertSame('2026-08-20T10:00:00+00:00', $response->getData()['list']['createDate']);
+	}
+
+	public function testCreateRejectsDateWithoutTime(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create('Groceries', purchaseDate: '2026-09-05');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
 }

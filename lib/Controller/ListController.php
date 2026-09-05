@@ -133,12 +133,12 @@ class ListController extends OCSController {
 		}
 
 		$parsedCreateDate = $this->parseDate($createDate);
-		if ($createDate !== null && $parsedCreateDate === null) {
+		if ($parsedCreateDate === false) {
 			return new DataResponse(['message' => 'createDate must be a valid date'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
 		$parsedPurchaseDate = $this->parseDate($purchaseDate);
-		if ($purchaseDate !== null && $parsedPurchaseDate === null) {
+		if ($parsedPurchaseDate === false) {
 			return new DataResponse(['message' => 'purchaseDate must be a valid date'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
@@ -250,7 +250,7 @@ class ListController extends OCSController {
 		}
 
 		$parsedPurchaseDate = $this->parseDate($purchaseDate);
-		if ($purchaseDate !== null && $parsedPurchaseDate === null) {
+		if ($parsedPurchaseDate === false) {
 			return new DataResponse(['message' => 'purchaseDate must be a valid date'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
@@ -263,9 +263,7 @@ class ListController extends OCSController {
 			$list->setPosition(max(0, $position));
 		}
 		$list->setPurchaseDate($parsedPurchaseDate);
-		if ($finalTotal !== null) {
-			$list->setFinalTotal(round($finalTotal, 2));
-		}
+		$list->setFinalTotal($finalTotal === null ? null : round($finalTotal, 2));
 		if ($isFinished !== null) {
 			$list->setIsFinished($isFinished);
 			$currentStatus = $list->getStatus() ?? 'new';
@@ -387,15 +385,26 @@ class ListController extends OCSController {
 		return array_values(array_unique($ids));
 	}
 
-	private function parseDate(?string $value): ?DateTime {
-		if ($value === null || $value === '') {
+	/**
+	 * Parse an ISO-8601 date (with optional fractional seconds and a 'Z' or
+	 * ±hh:mm offset) and normalize it to UTC. Blank values mean "absent".
+	 *
+	 * @return DateTime|null|false DateTime = valid (UTC), null = absent/blank, false = invalid
+	 */
+	private function parseDate(?string $value): DateTime|null|false {
+		if ($value === null || trim($value) === '') {
 			return null;
+		}
+		$value = trim($value);
+		if (!preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/', $value)) {
+			return false;
 		}
 		try {
-			return new DateTime($value);
+			$date = new DateTime($value);
 		} catch (\Exception) {
-			return null;
+			return false;
 		}
+		return $date->setTimezone(new DateTimeZone('UTC'));
 	}
 
 	/**

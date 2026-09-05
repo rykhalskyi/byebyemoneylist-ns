@@ -112,14 +112,4 @@ class ListMapper extends QBMapper {
 			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_STR)));
 		$qb->executeStatement();
 	}
-
-	/**
-	 * Remove every junction row that references the given category
-	 */
-	public function deleteCategoriesByCategoryId(string $categoryId): void {
-		$qb = $this->db->getQueryBuilder();
-		$qb->delete('bbml_list_categories')
-			->where($qb->expr()->eq('category_id', $qb->createNamedParameter($categoryId, IQueryBuilder::PARAM_STR)));
-		$qb->executeStatement();
-	}
 }

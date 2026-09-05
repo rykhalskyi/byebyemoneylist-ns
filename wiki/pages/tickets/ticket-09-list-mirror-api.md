@@ -92,3 +92,17 @@ DELETE /api/lists/{id}/items/{itemId}                (unchanged — used by clie
   **pre-existing on `main`** (confirmed by running against the unmodified tree)
   and are unrelated to this ticket.
 - `php-cs-fixer` clean on all touched files; psalm introduces **no new** errors.
+
+## Updates
+
+- [2026-09-05]: Post-review fixes (PR #18). `PUT /api/lists/{id}` now clears
+  `finalTotal` when a null is pushed (previously the null-clearing scalar kept
+  its stored value, contradicting the full-state contract). `parseDate()` is now
+  strict ISO-8601 (requires `T`, `Z`/`±hh:mm` offset, optional fraction),
+  rejects relative/date-only input with 422, treats blank values as absent in
+  `create()` (previously blank `createDate`/`purchaseDate` 422'd while `update`
+  treated them as absent), and normalizes parsed values to UTC before persist
+  (avoids an offset-shift when DATETIME is round-tripped). Removed the unused
+  `ListMapper::deleteCategoriesByCategoryId()`; `CategoryController::destroy`
+  keeps its inline delete. Added unit tests: finalTotal null-clear, blank-date
+  acceptance, offset→UTC normalization, and date-without-time rejection.
