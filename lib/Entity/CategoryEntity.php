@@ -97,4 +97,3 @@ class CategoryEntity extends Entity {
 		$this->markFieldUpdated('status');
 	}
 }
-
