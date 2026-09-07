@@ -8495,7 +8495,9 @@
                                                                         "type": "object",
                                                                         "required": [
                                                                             "id",
-                                                                            "name"
+                                                                            "name",
+                                                                            "address",
+                                                                            "categoryIds"
                                                                         ],
                                                                         "properties": {
                                                                             "id": {
@@ -8503,6 +8505,16 @@
                                                                             },
                                                                             "name": {
                                                                                 "type": "string"
+                                                                            },
+                                                                            "address": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "categoryIds": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "type": "string"
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -8565,7 +8577,9 @@
                                                                                 "type": "object",
                                                                                 "required": [
                                                                                     "id",
-                                                                                    "name"
+                                                                                    "name",
+                                                                                    "address",
+                                                                                    "categoryIds"
                                                                                 ],
                                                                                 "properties": {
                                                                                     "id": {
@@ -8573,6 +8587,16 @@
                                                                                     },
                                                                                     "name": {
                                                                                         "type": "string"
+                                                                                    },
+                                                                                    "address": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryIds": {
+                                                                                        "type": "array",
+                                                                                        "items": {
+                                                                                            "type": "string"
+                                                                                        }
                                                                                     }
                                                                                 }
                                                                             }
@@ -8651,6 +8675,20 @@
                                     "name": {
                                         "type": "string",
                                         "description": "Store name (required)"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Optional store address (blank/empty clears)"
+                                    },
+                                    "categoryIds": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Optional category ids (each must belong to the current user)",
+                                        "items": {
+                                            "type": "string"
+                                        }
                                     }
                                 }
                             }
@@ -8702,7 +8740,9 @@
                                                                     "type": "object",
                                                                     "required": [
                                                                         "id",
-                                                                        "name"
+                                                                        "name",
+                                                                        "address",
+                                                                        "categoryIds"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -8710,6 +8750,16 @@
                                                                         },
                                                                         "name": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "address": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -8769,7 +8819,9 @@
                                                                             "type": "object",
                                                                             "required": [
                                                                                 "id",
-                                                                                "name"
+                                                                                "name",
+                                                                                "address",
+                                                                                "categoryIds"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -8777,6 +8829,16 @@
                                                                                 },
                                                                                 "name": {
                                                                                     "type": "string"
+                                                                                },
+                                                                                "address": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryIds": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    }
                                                                                 }
                                                                             }
                                                                         }
@@ -8826,7 +8888,7 @@
                         }
                     },
                     "422": {
-                        "description": "Name is missing or empty",
+                        "description": "Name is missing or empty, or a category does not belong to the current user",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -8857,7 +8919,9 @@
                                                                     "type": "object",
                                                                     "required": [
                                                                         "id",
-                                                                        "name"
+                                                                        "name",
+                                                                        "address",
+                                                                        "categoryIds"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -8865,6 +8929,16 @@
                                                                         },
                                                                         "name": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "address": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -8922,7 +8996,9 @@
                                                                     "type": "object",
                                                                     "required": [
                                                                         "id",
-                                                                        "name"
+                                                                        "name",
+                                                                        "address",
+                                                                        "categoryIds"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -8930,6 +9006,16 @@
                                                                         },
                                                                         "name": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "address": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -8961,7 +9047,8 @@
         "/ocs/v2.php/apps/byebyemoneylist/api/stores/{id}": {
             "put": {
                 "operationId": "store-update",
-                "summary": "Update a store for the current user",
+                "summary": "Update a store for the current user (client-authoritative full-state push)",
+                "description": "The store is the source of truth: every provided field is applied and a null/blank `address` clears the stored value; `categoryIds` is fully replaced (empty clears).",
                 "tags": [
                     "store"
                 ],
@@ -8986,6 +9073,20 @@
                                     "name": {
                                         "type": "string",
                                         "description": "Store name (required)"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Optional store address (null/blank clears)"
+                                    },
+                                    "categoryIds": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Optional category ids (each must belong to the current user)",
+                                        "items": {
+                                            "type": "string"
+                                        }
                                     }
                                 }
                             }
@@ -9046,7 +9147,9 @@
                                                                     "type": "object",
                                                                     "required": [
                                                                         "id",
-                                                                        "name"
+                                                                        "name",
+                                                                        "address",
+                                                                        "categoryIds"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -9054,6 +9157,16 @@
                                                                         },
                                                                         "name": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "address": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -9113,7 +9226,9 @@
                                                                             "type": "object",
                                                                             "required": [
                                                                                 "id",
-                                                                                "name"
+                                                                                "name",
+                                                                                "address",
+                                                                                "categoryIds"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -9121,6 +9236,16 @@
                                                                                 },
                                                                                 "name": {
                                                                                     "type": "string"
+                                                                                },
+                                                                                "address": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryIds": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    }
                                                                                 }
                                                                             }
                                                                         }
@@ -9201,7 +9326,9 @@
                                                                     "type": "object",
                                                                     "required": [
                                                                         "id",
-                                                                        "name"
+                                                                        "name",
+                                                                        "address",
+                                                                        "categoryIds"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -9209,6 +9336,16 @@
                                                                         },
                                                                         "name": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "address": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -9235,7 +9372,7 @@
                         }
                     },
                     "422": {
-                        "description": "Name is missing or empty",
+                        "description": "Name is missing or empty, or a category does not belong to the current user",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -9266,7 +9403,9 @@
                                                                     "type": "object",
                                                                     "required": [
                                                                         "id",
-                                                                        "name"
+                                                                        "name",
+                                                                        "address",
+                                                                        "categoryIds"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -9274,6 +9413,16 @@
                                                                         },
                                                                         "name": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "address": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -9331,7 +9480,9 @@
                                                                     "type": "object",
                                                                     "required": [
                                                                         "id",
-                                                                        "name"
+                                                                        "name",
+                                                                        "address",
+                                                                        "categoryIds"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -9339,6 +9490,16 @@
                                                                         },
                                                                         "name": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "address": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -9368,7 +9529,7 @@
             },
             "delete": {
                 "operationId": "store-destroy",
-                "summary": "Delete a store for the current user (nulls out lists.store_id references)",
+                "summary": "Delete a store for the current user (nulls out lists.store_id references and removes the store-category links)",
                 "tags": [
                     "store"
                 ],
