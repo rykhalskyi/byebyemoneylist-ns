@@ -47,6 +47,7 @@ final class StoreControllerTest extends TestCase {
 	private function mockQueryBuilder(): void {
 		$qb = $this->createMock(IQueryBuilder::class);
 		$qb->method('update')->willReturnSelf();
+		$qb->method('delete')->willReturnSelf();
 		$qb->method('set')->willReturnSelf();
 		$qb->method('where')->willReturnSelf();
 		$qb->method('andWhere')->willReturnSelf();

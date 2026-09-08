@@ -8433,6 +8433,785 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/byebyemoneylist/api/products/{productId}/prices": {
+            "get": {
+                "operationId": "product_price-index",
+                "summary": "Get all price records for one of the current user's products",
+                "tags": [
+                    "product_price"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Prices returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "prices"
+                                                            ],
+                                                            "properties": {
+                                                                "prices": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "id",
+                                                                            "productId",
+                                                                            "storeId",
+                                                                            "value",
+                                                                            "date",
+                                                                            "createdAt"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "productId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "storeId": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "value": {
+                                                                                "type": "number",
+                                                                                "format": "double"
+                                                                            },
+                                                                            "date": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "prices"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "prices": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "id",
+                                                                                    "productId",
+                                                                                    "storeId",
+                                                                                    "value",
+                                                                                    "date",
+                                                                                    "createdAt"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "id": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "productId": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "storeId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "value": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "date": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "createdAt": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found or not owned by the current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "prices"
+                                                            ],
+                                                            "properties": {
+                                                                "prices": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "id",
+                                                                            "productId",
+                                                                            "storeId",
+                                                                            "value",
+                                                                            "date",
+                                                                            "createdAt"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "productId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "storeId": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "value": {
+                                                                                "type": "number",
+                                                                                "format": "double"
+                                                                            },
+                                                                            "date": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/byebyemoneylist/api/product-prices/batch": {
+            "post": {
+                "operationId": "product_price-batch-upsert",
+                "summary": "Create or update price records for the current user (idempotent upsert)",
+                "description": "The Android app keeps one current price per (product, optional store) and updates it in place, so each record is identified by that pair: re-syncing a record updates its stored value and date instead of inserting a duplicate. A store that is null/blank means \"product-wide price\" (not tied to a store). All records are upserted in one transaction; an invalid record fails the batch.",
+                "tags": [
+                    "product_price"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "prices": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Price records to upsert (required)",
+                                        "items": {
+                                            "type": "object",
+                                            "required": [
+                                                "productId",
+                                                "value",
+                                                "date"
+                                            ],
+                                            "properties": {
+                                                "productId": {
+                                                    "type": "string"
+                                                },
+                                                "storeId": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "value": {
+                                                    "type": "number",
+                                                    "format": "double"
+                                                },
+                                                "date": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Prices upserted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "prices"
+                                                            ],
+                                                            "properties": {
+                                                                "prices": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "id",
+                                                                            "productId",
+                                                                            "storeId",
+                                                                            "value",
+                                                                            "date",
+                                                                            "createdAt"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "productId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "storeId": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "value": {
+                                                                                "type": "number",
+                                                                                "format": "double"
+                                                                            },
+                                                                            "date": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "prices"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "prices": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "id",
+                                                                                    "productId",
+                                                                                    "storeId",
+                                                                                    "value",
+                                                                                    "date",
+                                                                                    "createdAt"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "id": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "productId": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "storeId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "value": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "date": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "createdAt": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Prices array is empty or contains an invalid record (product/store not owned, value invalid, date invalid)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "prices"
+                                                            ],
+                                                            "properties": {
+                                                                "prices": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "id",
+                                                                            "productId",
+                                                                            "storeId",
+                                                                            "value",
+                                                                            "date",
+                                                                            "createdAt"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "productId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "storeId": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "value": {
+                                                                                "type": "number",
+                                                                                "format": "double"
+                                                                            },
+                                                                            "date": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to upsert the prices",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "prices"
+                                                            ],
+                                                            "properties": {
+                                                                "prices": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "id",
+                                                                            "productId",
+                                                                            "storeId",
+                                                                            "value",
+                                                                            "date",
+                                                                            "createdAt"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "productId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "storeId": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "value": {
+                                                                                "type": "number",
+                                                                                "format": "double"
+                                                                            },
+                                                                            "date": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/byebyemoneylist/api/stores": {
             "get": {
                 "operationId": "store-index",
@@ -9772,5 +10551,10 @@
             }
         }
     },
-    "tags": []
+    "tags": [
+        {
+            "name": "product_price",
+            "description": "Product price records: a price a user recorded for a product (optionally at a store). The Android app syncs its price records one-way (device → server); each record mirrors the app's \"one current price per (product, store)\" model, so re-syncing a record updates its stored value/date instead of inserting a duplicate."
+        }
+    ]
 }
