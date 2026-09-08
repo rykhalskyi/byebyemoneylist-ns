@@ -10,11 +10,14 @@ use OCP\DB\Types;
 /**
  * @method string getId()
  * @method void setId(string $id)
+ * @method ?string getAddress()
+ * @method void setAddress(?string $address)
  * @psalm-suppress PropertyNotSetInConstructor
  */
 class StoreEntity extends Entity {
 	protected ?string $owner = null;
 	protected ?string $name = null;
+	protected ?string $address = null;
 
 	public function __construct() {
 		$this->addType('id', Types::STRING);
@@ -39,5 +42,15 @@ class StoreEntity extends Entity {
 	public function setName(string $name): void {
 		$this->name = $name;
 		$this->markFieldUpdated('name');
+	}
+
+	public function getAddress(): ?string {
+		return $this->address;
+	}
+
+	/** @psalm-suppress PossiblyUnusedMethod */
+	public function setAddress(?string $address): void {
+		$this->address = $address;
+		$this->markFieldUpdated('address');
 	}
 }

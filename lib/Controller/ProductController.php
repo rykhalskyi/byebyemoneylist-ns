@@ -303,6 +303,12 @@ class ProductController extends OCSController {
 				->andWhere($qb->expr()->eq('product_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_STR)));
 			$qb->executeStatement();
 
+			$qb = $this->db->getQueryBuilder();
+			$qb->delete('bbml_product_prices')
+				->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+				->andWhere($qb->expr()->eq('product_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_STR)));
+			$qb->executeStatement();
+
 			$this->mapper->delete($product);
 
 			$this->db->commit();

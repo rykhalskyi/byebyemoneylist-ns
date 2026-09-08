@@ -241,7 +241,7 @@ final class ProductControllerTest extends TestCase {
 				return $product;
 			});
 
-		$this->aliasMapper->expects($this->once())
+		$this->aliasMapper->expects($this->never())
 			->method('insert');
 
 		$response = $this->controller->create('Netflix', null, null, [], false, true, false);
@@ -346,7 +346,7 @@ final class ProductControllerTest extends TestCase {
 				return $product;
 			});
 
-		$this->aliasMapper->expects($this->once())
+		$this->aliasMapper->expects($this->never())
 			->method('insert');
 
 		$response = $this->controller->create('Salary', '22222222-3333-4444-8555-666666666666', null, [], false, false, true);
@@ -438,7 +438,7 @@ final class ProductControllerTest extends TestCase {
 
 		$this->mapper->expects($this->once())->method('update')->willReturnArgument(0);
 		$this->aliasMapper->expects($this->once())->method('deleteByProductId');
-		$this->aliasMapper->expects($this->once())->method('insert');
+		$this->aliasMapper->expects($this->never())->method('insert');
 
 		$response = $this->controller->update('11111111-2222-4333-8444-555555555555', 'Salary', '22222222-3333-4444-8555-666666666666', null, [], false, false, true);
 
