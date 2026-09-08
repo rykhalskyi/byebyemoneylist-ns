@@ -283,7 +283,7 @@ class StoreController extends OCSController {
 		$normalized = [];
 		foreach ($categoryIds as $categoryId) {
 			if (!is_string($categoryId)) {
-				continue;
+				return null;
 			}
 			$categoryId = trim($categoryId);
 			if ($categoryId === '') {

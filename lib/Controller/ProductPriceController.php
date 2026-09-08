@@ -152,8 +152,14 @@ class ProductPriceController extends OCSController {
 			}
 
 			$value = isset($record['value']) && is_numeric($record['value']) ? round((float)$record['value'], 2) : null;
-			if ($value === null || $value < 0 || $value > self::MAX_DECIMAL) {
+			if ($value === null) {
+				return new DataResponse(['message' => "value is required and must be a number at index {$index}"], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			if ($value < 0) {
 				return new DataResponse(['message' => "Value must not be negative at index {$index}"], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			if ($value > self::MAX_DECIMAL) {
+				return new DataResponse(['message' => "Value exceeds maximum allowed at index {$index}"], Http::STATUS_UNPROCESSABLE_ENTITY);
 			}
 
 			$date = $this->parseDate($record['date'] ?? null);

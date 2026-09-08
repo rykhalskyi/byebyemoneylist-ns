@@ -163,6 +163,16 @@ final class StoreControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}
 
+	public function testCreateRejectsNonStringCategoryId(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create('Market', null, ['c-1', 123]);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
 	public function testCreateReturnsUnprocessableWhenNameEmpty(): void {
 		$this->mockUser('alice');
 
@@ -253,6 +263,24 @@ final class StoreControllerTest extends TestCase {
 		$this->mapper->expects($this->never())->method('update');
 
 		$response = $this->controller->update('11111111-2222-4333-8444-555555555555', 'Name', null, ['99999999-0000-4444-8555-777777777777']);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testUpdateRejectsNonStringCategoryId(): void {
+		$this->mockUser('alice');
+
+		$store = new StoreEntity();
+		$store->setId('11111111-2222-4333-8444-555555555555');
+		$store->setOwner('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->willReturn($store);
+
+		$this->mapper->expects($this->never())->method('update');
+
+		$response = $this->controller->update('11111111-2222-4333-8444-555555555555', 'Name', null, ['c-1', 123]);
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}

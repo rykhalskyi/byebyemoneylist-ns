@@ -136,7 +136,7 @@ class CategoryController extends OCSController {
 	 * referenced parent cannot be found, the category is created as a root
 	 * instead of failing the whole batch.
 	 *
-	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement, DocblockTypeContradiction, RedundantConditionGivenDocblockType, RedundantCastGivenDocblockType, InvalidArrayOffset
 	 *
 	 * @param list<array{name: string, color?: ?string, emoji?: ?string, parentId?: ?string, income?: bool, tempId?: ?string}> $categories Categories list to create (required)
 	 *
