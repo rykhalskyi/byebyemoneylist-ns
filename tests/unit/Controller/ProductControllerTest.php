@@ -487,6 +487,45 @@ final class ProductControllerTest extends TestCase {
 		$this->assertFalse($data['isIncome']);
 	}
 
+	public function testUpdateIncludesLastPriceWhenPresent(): void {
+		$this->mockUser('alice');
+
+		$productId = '11111111-2222-4333-8444-555555555555';
+		$product = $this->product($productId, 'Milk');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($productId, 'alice')
+			->willReturn($product);
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$this->mapper->expects($this->once())->method('update')->willReturnArgument(0);
+		$this->aliasMapper->expects($this->once())->method('deleteByProductId');
+		$this->aliasMapper->expects($this->never())->method('insert');
+
+		$price = new ProductPriceEntity();
+		$price->setId('33333333-4444-4555-8666-777777777777');
+		$price->setOwner('alice');
+		$price->setProductId($productId);
+		$price->setValue(3.75);
+		$price->setPriceDate(new DateTime('2026-02-03T04:05:06Z'));
+
+		$this->priceMapper->expects($this->once())
+			->method('findLatestByProductIds')
+			->with([$productId], 'alice')
+			->willReturn([$productId => $price]);
+
+		$response = $this->controller->update($productId, 'Milk', null, null, []);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$data = $response->getData()['product'];
+		$this->assertSame(3.75, $data['lastPrice']);
+		$this->assertSame('2026-02-03T04:05:06+00:00', $data['lastPriceDate']);
+	}
+
 	public function testUpdateAllowsIncomeCategoryForIncomeProduct(): void {
 		$this->mockUser('alice');
 

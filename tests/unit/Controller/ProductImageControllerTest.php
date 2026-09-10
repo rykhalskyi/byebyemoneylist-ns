@@ -121,6 +121,49 @@ final class ProductImageControllerTest extends TestCase {
 		@unlink($tmp);
 	}
 
+	public function testUploadRollsBackNewFileWhenPersistingFails(): void {
+		$this->mockUser('alice');
+
+		$previousPath = 'product-pictures/alice/11111111-2222-4333-8444-555555555555.jpg';
+		$this->productMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->willReturn($this->product($previousPath));
+
+		[$tmp] = $this->uploadedFileParse();
+		$this->request->method('getUploadedFile')->willReturn([
+			'name' => 'milk.png',
+			'type' => 'image/png',
+			'tmp_name' => $tmp,
+			'error' => UPLOAD_ERR_OK,
+			'size' => 9,
+		]);
+
+		$this->mimeTypeDetector->expects($this->once())
+			->method('detectContent')
+			->with($tmp)
+			->willReturn('image/png');
+
+		$path = 'product-pictures/alice/11111111-2222-4333-8444-555555555555.png';
+		$this->pictureService->expects($this->once())
+			->method('store')
+			->with('alice', '11111111-2222-4333-8444-555555555555', $tmp, 'png')
+			->willReturn($path);
+
+		$this->pictureService->expects($this->once())
+			->method('delete')
+			->with('alice', $path);
+
+		$this->productMapper->expects($this->once())
+			->method('update')
+			->willThrowException(new \RuntimeException('db down'));
+
+		$response = $this->controller->upload('11111111-2222-4333-8444-555555555555');
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+
+		@unlink($tmp);
+	}
+
 	public function testUploadRejectsUnsupportedMimeType(): void {
 		$this->mockUser('alice');
 

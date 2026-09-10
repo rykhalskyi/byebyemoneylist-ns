@@ -219,7 +219,7 @@ function openCreateNew() {
 						compact
 						@click="selectProduct(product)">
 						<template #subname>
-							<span v-if="product.barcode" :class="$style.result - subname">
+							<span v-if="product.barcode" :class="$style['result-subname']">
 								{{ product.barcode }}
 							</span>
 						</template>

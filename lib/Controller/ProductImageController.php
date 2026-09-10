@@ -118,6 +118,21 @@ class ProductImageController extends OCSController {
 		}
 
 		$previousPath = $product->getPicturePath();
+		$product->setPicturePath($path);
+		try {
+			$this->productMapper->update($product);
+		} catch (\Exception $e) {
+			$this->logger->error('Failed to store product picture', ['exception' => $e]);
+			if ($previousPath !== $path) {
+				try {
+					$this->pictureService->delete($userId, $path);
+				} catch (\Exception $cleanupError) {
+					$this->logger->warning('Failed to clean up the new product picture', ['exception' => $cleanupError]);
+				}
+			}
+			return new DataResponse(['message' => 'Failed to store the picture'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
 		if ($previousPath !== null && $previousPath !== $path) {
 			try {
 				$this->pictureService->delete($userId, $previousPath);
@@ -125,9 +140,6 @@ class ProductImageController extends OCSController {
 				$this->logger->warning('Failed to remove replaced product picture', ['exception' => $e]);
 			}
 		}
-
-		$product->setPicturePath($path);
-		$this->productMapper->update($product);
 
 		$data = $this->pictureService->getData($userId, $path);
 		if ($data === null) {
@@ -164,15 +176,20 @@ class ProductImageController extends OCSController {
 			return new DataResponse(['message' => 'Product not found'], Http::STATUS_NOT_FOUND);
 		}
 
+		$path = $product->getPicturePath();
+		$product->setPicturePath(null);
 		try {
-			$this->pictureService->delete($userId, $product->getPicturePath());
+			$this->productMapper->update($product);
 		} catch (\Exception $e) {
 			$this->logger->error('Failed to delete product picture', ['exception' => $e]);
 			return new DataResponse(['message' => 'Failed to delete the picture'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		$product->setPicturePath(null);
-		$this->productMapper->update($product);
+		try {
+			$this->pictureService->delete($userId, $path);
+		} catch (\Exception $e) {
+			$this->logger->warning('Failed to remove product picture file', ['exception' => $e]);
+		}
 
 		return new DataResponse([], Http::STATUS_OK);
 	}

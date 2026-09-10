@@ -278,7 +278,15 @@ class ProductController extends OCSController {
 			return new DataResponse(['message' => 'Failed to update product'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		return new DataResponse(['product' => $this->serializeProduct($product, $cleanAliases)], Http::STATUS_OK);
+		$latestPrices = $this->priceMapper->findLatestByProductIds([$product->getId()], $userId);
+
+		return new DataResponse([
+			'product' => $this->serializeProduct(
+				$product,
+				$cleanAliases,
+				$latestPrices[$product->getId()] ?? null,
+			),
+		], Http::STATUS_OK);
 	}
 
 	/**

@@ -61,21 +61,26 @@ watch(
 
 		loading.value = true
 		pictureLoading.value = true
-		try {
-			prices.value = await fetchProductPrices(product.id)
-		} catch {
-			error.value = 'Failed to load the price history.'
-		} finally {
-			loading.value = false
-		}
-
-		try {
-			picture.value = await fetchProductPicture(product.id)
-		} catch {
-			pictureError.value = 'Failed to load the picture.'
-		} finally {
-			pictureLoading.value = false
-		}
+		await Promise.all([
+			(async () => {
+				try {
+					prices.value = await fetchProductPrices(product.id)
+				} catch {
+					error.value = 'Failed to load the price history.'
+				} finally {
+					loading.value = false
+				}
+			})(),
+			(async () => {
+				try {
+					picture.value = await fetchProductPicture(product.id)
+				} catch {
+					pictureError.value = 'Failed to load the picture.'
+				} finally {
+					pictureLoading.value = false
+				}
+			})(),
+		])
 	},
 )
 
