@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import type { Category, ShoppingList, Store } from '../types.ts'
+
 import { computed, onMounted, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { createList, fetchCategories, fetchStores } from '../services/listsApi'
-import type { Category, ShoppingList, Store } from '../types'
+import { createList, fetchCategories, fetchStores } from '../services/listsApi.ts'
 
 const props = defineProps<{ open: boolean }>()
 
@@ -79,10 +80,10 @@ async function onSubmit() {
 
 <template>
 	<NcDialog
-		:name="'New list'"
+		name="New list"
 		:open="props.open"
 		size="normal"
-		is-form
+		isForm
 		@submit="onSubmit"
 		@update:open="emit('update:open', $event)">
 		<div :class="$style.form">
@@ -93,11 +94,11 @@ async function onSubmit() {
 				placeholder="e.g. Weekly groceries"
 				:disabled="submitting"
 				:error="name.trim() === '' && name.length > 0"
-				helper-text="The list name is required." />
+				helperText="The list name is required." />
 			<NcSelect
 				v-model="store"
 				label="name"
-				input-label="Store"
+				inputLabel="Store"
 				placeholder="Select a store (optional)"
 				:options="stores"
 				:loading="loading"
@@ -106,7 +107,7 @@ async function onSubmit() {
 			<NcSelect
 				v-model="category"
 				label="name"
-				input-label="Category"
+				inputLabel="Category"
 				placeholder="Select a category (optional)"
 				:options="categories"
 				:loading="loading"
@@ -117,7 +118,8 @@ async function onSubmit() {
 			</p>
 		</div>
 		<template #actions>
-			<NcButton type="button"
+			<NcButton
+				type="button"
 				variant="secondary"
 				:disabled="submitting"
 				@click="onCancel">

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import type { Category, ListItem, ListStatus, Product, ShoppingList, Store } from '../types.ts'
+
 import { mdiAlertCircle, mdiCart, mdiCartOff, mdiChevronDown, mdiDelete, mdiPlus } from '@mdi/js'
+import { onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -10,8 +11,8 @@ import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import AddProductDialog from '../components/AddProductDialog.vue'
 import NewListDialog from '../components/NewListDialog.vue'
-import { deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores, updateListItem } from '../services/listsApi'
-import type { Category, ListItem, ListStatus, Product, ShoppingList, Store } from '../types'
+import { deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
+import { formatDate, formatTotal } from '../utils/format.ts'
 
 const lists = ref<ShoppingList[]>([])
 const stores = ref<Store[]>([])
@@ -74,27 +75,6 @@ function subname(list: ShoppingList): string {
 	const parts = [storeName(list.storeId), categoryName(list.categoryId)].filter(Boolean)
 	const date = formatDate(list.createdAt)
 	return [parts.join(' · '), date].filter(Boolean).join(' · ')
-}
-
-function formatDate(iso: string | null): string {
-	if (iso === null) {
-		return ''
-	}
-	const date = new Date(iso)
-	if (Number.isNaN(date.getTime())) {
-		return ''
-	}
-	return date.toLocaleDateString(undefined, { dateStyle: 'medium' })
-}
-
-function formatTotal(total: number | null): string {
-	if (total === null) {
-		return ''
-	}
-	return new Intl.NumberFormat(undefined, {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(total)
 }
 
 function statusLabel(status: ListStatus): string {
@@ -172,15 +152,6 @@ function priceText(list: ShoppingList): string | null {
 function listMarkStyle(list: ShoppingList): Record<string, string> {
 	const color = categoryColor(list.categoryId)
 	return color === null ? {} : { 'border-inline-start': `3px solid ${color}` }
-}
-
-async function onToggleItem(list: ShoppingList, item: ListItem, checked: boolean) {
-	item.isChecked = checked
-	try {
-		await updateListItem(list.id, item.id, { isChecked: checked })
-	} catch {
-		item.isChecked = !checked
-	}
 }
 
 async function onDeleteItem(list: ShoppingList, item: ListItem) {
@@ -275,7 +246,7 @@ function itemSubname(item: ListItem): string {
 				:style="listMarkStyle(list)">
 				<NcListItem
 					:name="list.name"
-					one-line
+					oneLine
 					@click="toggleExpand(list)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiCart" :size="20" />
@@ -286,8 +257,8 @@ function itemSubname(item: ListItem): string {
 							<NcChip
 								v-if="priceText(list) !== null"
 								:text="priceText(list) ?? ''"
-								no-close />
-							<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" no-close />
+								noClose />
+							<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" noClose />
 							<NcIconSvgWrapper
 								:path="mdiChevronDown"
 								:size="20"
@@ -313,9 +284,8 @@ function itemSubname(item: ListItem): string {
 								:name="item.productName"
 								:details="itemDetails(item)"
 								compact
-								one-line
+								oneLine
 								:style="productCategoryColor(item) ? { borderInlineStart: `2px solid ${productCategoryColor(item)}` } : {}">
-								
 								<template #subname>
 									<span v-if="itemSubname(item)">{{ itemSubname(item) }}</span>
 								</template>
@@ -353,7 +323,7 @@ function itemSubname(item: ListItem): string {
 		<NewListDialog :open="showDialog" @update:open="showDialog = $event" @created="onCreated" />
 		<AddProductDialog
 			:open="addProductListId !== null"
-			:list-id="addProductListId ?? ''"
+			:listId="addProductListId ?? ''"
 			@update:open="addProductListId = null"
 			@added="onItemAdded" />
 	</div>

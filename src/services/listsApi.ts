@@ -1,6 +1,7 @@
+import type { Category, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductPayload, ProductPicture, ProductPrice, ShoppingList, Store, StorePayload } from '../types.ts'
+
 import axios from '@nextcloud/axios'
 import { generateOcsUrl } from '@nextcloud/router'
-import type { Category, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductPayload, ShoppingList, Store, StorePayload } from '../types'
 
 interface OcsData<T> {
 	ocs: {
@@ -9,9 +10,7 @@ interface OcsData<T> {
 }
 
 export async function fetchLists(): Promise<ShoppingList[]> {
-	const { data } = await axios.get<OcsData<{ lists: ShoppingList[] }>>(
-		generateOcsUrl('/apps/byebyemoneylist/api/lists'),
-	)
+	const { data } = await axios.get<OcsData<{ lists: ShoppingList[] }>>(generateOcsUrl('/apps/byebyemoneylist/api/lists'))
 	return data.ocs.data.lists
 }
 
@@ -24,16 +23,12 @@ export async function createList(payload: ListPayload): Promise<ShoppingList> {
 }
 
 export async function fetchStores(): Promise<Store[]> {
-	const { data } = await axios.get<OcsData<{ stores: Store[] }>>(
-		generateOcsUrl('/apps/byebyemoneylist/api/stores'),
-	)
+	const { data } = await axios.get<OcsData<{ stores: Store[] }>>(generateOcsUrl('/apps/byebyemoneylist/api/stores'))
 	return data.ocs.data.stores
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-	const { data } = await axios.get<OcsData<{ categories: Category[] }>>(
-		generateOcsUrl('/apps/byebyemoneylist/api/categories'),
-	)
+	const { data } = await axios.get<OcsData<{ categories: Category[] }>>(generateOcsUrl('/apps/byebyemoneylist/api/categories'))
 	return data.ocs.data.categories
 }
 
@@ -58,9 +53,7 @@ export async function deleteCategory(id: string): Promise<void> {
 }
 
 export async function confirmCategory(id: string): Promise<Category> {
-	const { data } = await axios.post<OcsData<{ category: Category }>>(
-		generateOcsUrl(`/apps/byebyemoneylist/api/categories/${id}/confirm`),
-	)
+	const { data } = await axios.post<OcsData<{ category: Category }>>(generateOcsUrl(`/apps/byebyemoneylist/api/categories/${id}/confirm`))
 	return data.ocs.data.category
 }
 
@@ -116,10 +109,32 @@ export async function deleteProduct(id: string): Promise<void> {
 	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/products/${id}`))
 }
 
-export async function fetchListItems(listId: string): Promise<ListItem[]> {
-	const { data } = await axios.get<OcsData<{ items: ListItem[] }>>(
-		generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/items`),
+export async function fetchProductPrices(productId: string): Promise<ProductPrice[]> {
+	const { data } = await axios.get<OcsData<{ prices: ProductPrice[] }>>(generateOcsUrl(`/apps/byebyemoneylist/api/products/${productId}/prices`))
+	return data.ocs.data.prices
+}
+
+export async function uploadProductPicture(id: string, file: File): Promise<ProductPicture> {
+	const formData = new FormData()
+	formData.append('picture', file)
+	const { data } = await axios.post<OcsData<{ picture: ProductPicture }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/products/${id}/picture`),
+		formData,
 	)
+	return data.ocs.data.picture
+}
+
+export async function deleteProductPicture(id: string): Promise<void> {
+	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/products/${id}/picture`))
+}
+
+export async function fetchProductPicture(id: string): Promise<ProductPicture | null> {
+	const { data } = await axios.get<OcsData<{ picture: ProductPicture | null }>>(generateOcsUrl(`/apps/byebyemoneylist/api/products/${id}/picture`))
+	return data.ocs.data.picture
+}
+
+export async function fetchListItems(listId: string): Promise<ListItem[]> {
+	const { data } = await axios.get<OcsData<{ items: ListItem[] }>>(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/items`))
 	return data.ocs.data.items
 }
 

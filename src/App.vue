@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { mdiCart, mdiChartPie, mdiCog, mdiPackageVariant, mdiViewDashboard } from '@mdi/js'
 import { computed, ref } from 'vue'
-import { mdiViewDashboard, mdiCart, mdiChartPie, mdiPackageVariant, mdiCog } from '@mdi/js'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcContent from '@nextcloud/vue/components/NcContent'
 import Menu from './components/Menu.vue'
@@ -25,7 +25,7 @@ function onSelect(id: string) {
 </script>
 
 <template>
-	<NcContent app-name="byebyemoneylist">
+	<NcContent appName="byebyemoneylist">
 		<Menu :items="items" @select="onSelect" />
 		<NcAppContent :class="$style.content">
 			<ShoppingLists v-if="currentView === 'lists'" />

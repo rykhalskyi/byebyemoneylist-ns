@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Controller;
 
+use DateTime;
 use OCA\ByeByeMoneyList\Controller\ProductController;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ProductAliasMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
+use OCA\ByeByeMoneyList\Db\ProductPriceMapper;
 use OCA\ByeByeMoneyList\Entity\CategoryEntity;
 use OCA\ByeByeMoneyList\Entity\ProductAliasEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
+use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
+use OCA\ByeByeMoneyList\Service\ProductPictureService;
 use OCP\AppFramework\Http;
 use OCP\DB\QueryBuilder\IExpressionBuilder;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -28,6 +32,8 @@ final class ProductControllerTest extends TestCase {
 	private ProductAliasMapper $aliasMapper;
 	private CategoryMapper $categoryMapper;
 	private ListItemMapper $itemMapper;
+	private ProductPriceMapper $priceMapper;
+	private ProductPictureService $pictureService;
 	private IUserSession $userSession;
 	private IDBConnection $db;
 
@@ -37,6 +43,8 @@ final class ProductControllerTest extends TestCase {
 		$this->aliasMapper = $this->createMock(ProductAliasMapper::class);
 		$this->categoryMapper = $this->createMock(CategoryMapper::class);
 		$this->itemMapper = $this->createMock(ListItemMapper::class);
+		$this->priceMapper = $this->createMock(ProductPriceMapper::class);
+		$this->pictureService = $this->createMock(ProductPictureService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
@@ -47,6 +55,8 @@ final class ProductControllerTest extends TestCase {
 			$this->aliasMapper,
 			$this->categoryMapper,
 			$this->itemMapper,
+			$this->priceMapper,
+			$this->pictureService,
 			$this->db,
 			$this->userSession,
 			$logger,
@@ -203,6 +213,72 @@ final class ProductControllerTest extends TestCase {
 		$response = $this->controller->index();
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}
+
+	public function testIndexIncludesLastPriceWhenPresent(): void {
+		$this->mockUser('alice');
+
+		$productId = '11111111-2222-4333-8444-555555555555';
+		$milk = $this->product($productId, 'Milk');
+
+		$this->mapper->expects($this->once())
+			->method('findAllByOwner')
+			->with('alice')
+			->willReturn([$milk]);
+
+		$this->aliasMapper->expects($this->once())
+			->method('findByProductIds')
+			->with([$productId], 'alice')
+			->willReturn([]);
+
+		$price = new ProductPriceEntity();
+		$price->setId('33333333-4444-4555-8666-777777777777');
+		$price->setOwner('alice');
+		$price->setProductId($productId);
+		$price->setValue(2.5);
+		$price->setPriceDate(new DateTime('2026-01-02T03:04:05Z'));
+		$price->setCreatedAt(new DateTime('2026-01-02T03:04:05Z'));
+
+		$this->priceMapper->expects($this->once())
+			->method('findLatestByProductIds')
+			->with([$productId], 'alice')
+			->willReturn([$productId => $price]);
+
+		$response = $this->controller->index();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$product = $response->getData()['products'][0];
+		$this->assertSame(2.5, $product['lastPrice']);
+		$this->assertSame('2026-01-02T03:04:05+00:00', $product['lastPriceDate']);
+	}
+
+	public function testIndexOmitsLastPriceWhenAbsent(): void {
+		$this->mockUser('alice');
+
+		$productId = '11111111-2222-4333-8444-555555555555';
+		$milk = $this->product($productId, 'Milk');
+
+		$this->mapper->expects($this->once())
+			->method('findAllByOwner')
+			->with('alice')
+			->willReturn([$milk]);
+
+		$this->aliasMapper->expects($this->once())
+			->method('findByProductIds')
+			->with([$productId], 'alice')
+			->willReturn([]);
+
+		$this->priceMapper->expects($this->once())
+			->method('findLatestByProductIds')
+			->with([$productId], 'alice')
+			->willReturn([]);
+
+		$response = $this->controller->index();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$product = $response->getData()['products'][0];
+		$this->assertNull($product['lastPrice']);
+		$this->assertNull($product['lastPriceDate']);
 	}
 
 	public function testCreateReturnsCreatedProduct(): void {

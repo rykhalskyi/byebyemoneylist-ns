@@ -14,6 +14,8 @@ export interface ShoppingList {
 export interface Store {
 	id: string
 	name: string
+	address: string | null
+	categoryIds: string[]
 }
 
 export interface Category {
@@ -42,6 +44,8 @@ export interface CategoryPayload {
 
 export interface StorePayload {
 	name: string
+	address?: string | null
+	categoryIds?: string[]
 }
 
 export interface Product {
@@ -54,6 +58,23 @@ export interface Product {
 	status: string
 	isSubscription: boolean
 	isIncome: boolean
+	lastPrice: number | null
+	lastPriceDate: string | null
+	hasPicture: boolean
+}
+
+export interface ProductPicture {
+	dataUrl: string
+	mime: string
+}
+
+export interface ProductPrice {
+	id: string
+	productId: string
+	storeId: string | null
+	value: number
+	date: string | null
+	createdAt: string | null
 }
 
 export interface ProductPayload {

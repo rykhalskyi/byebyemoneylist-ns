@@ -26,3 +26,7 @@
 ## [2026-08-29] ticket | Issue #8 — Shopping List Improvements
 ## [2026-09-05] ticket | T9 — List mirror API (shopping-list sync, server)
 ## [2026-09-05] update | ticket-09-list-mirror-api — PR #18 review fixes (finalTotal null-clear on PUT, strict UTC ISO-8601 date parsing, blank dates as absent, removed unused ListMapper::deleteCategoriesByCategoryId)
+## [2026-09-10] ticket | T10 — Catalog: confirmation dialog on deletion
+## [2026-09-10] ticket | T11 — Stores: category chooser + address in dialog and list
+## [2026-09-10] ticket | T12 — Products: last price + info dialog with price history
+## [2026-09-10] ticket | T13 — Products: image upload, deletion and display

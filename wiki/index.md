@@ -29,6 +29,10 @@
 - [tickets/ticket-07-add-product-to-list](pages/tickets/ticket-07-add-product-to-list.md) — T2 partial: Add products to a shopping list. Created 2026-08-28.
 - [tickets/ticket-08-shopping-list-improvements](pages/tickets/ticket-08-shopping-list-improvements.md) — Issue #8: Shopping List Improvements. Created 2026-08-29.
 - [tickets/ticket-09-list-mirror-api](pages/tickets/ticket-09-list-mirror-api.md) — T9: List mirror API (shopping-list sync, server). Created 2026-09-05.
+- [tickets/ticket-10-delete-confirmation](pages/tickets/ticket-10-delete-confirmation.md) — T10: Catalog deletion confirmation dialog. Created 2026-09-10.
+- [tickets/ticket-11-store-category-address](pages/tickets/ticket-11-store-category-address.md) — T11: Store category chooser + address in dialog and list. Created 2026-09-10.
+- [tickets/ticket-12-product-last-price-info-dialog](pages/tickets/ticket-12-product-last-price-info-dialog.md) — T12: Product last price + info dialog with price history. Created 2026-09-10.
+- [tickets/ticket-13-product-pictures](pages/tickets/ticket-13-product-pictures.md) — T13: Product image upload, deletion and display. Created 2026-09-10.
 
 ## Research
 - [research/syncronisation.md] (pages/research/syncronisation.md) - Client side synchronisation research

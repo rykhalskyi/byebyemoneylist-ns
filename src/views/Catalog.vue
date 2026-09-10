@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import type { Category, Product, Store } from '../types.ts'
+
 import { mdiAlertCircle, mdiArrowUp, mdiCalendarMonth, mdiCheck, mdiDelete, mdiPackageVariant, mdiPackageVariantClosed, mdiPencil, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
+import { computed, onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import NewCategoryDialog from '../components/NewCategoryDialog.vue'
 import NewProductDialog from '../components/NewProductDialog.vue'
 import NewStoreDialog from '../components/NewStoreDialog.vue'
-import { confirmAllCategories, confirmCategory, deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi'
-import type { Category, Product, Store } from '../types'
+import ProductInfoDialog from '../components/ProductInfoDialog.vue'
+import { confirmAllCategories, confirmCategory, deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi.ts'
+import { formatTotal } from '../utils/format.ts'
 
 type TabId = 'categories' | 'stores' | 'products' | 'subscriptions' | 'income'
 
@@ -20,7 +24,7 @@ interface FlatCategory {
 	depth: number
 }
 
-const tabs: { id: TabId; label: string }[] = [
+const tabs: { id: TabId, label: string }[] = [
 	{ id: 'categories', label: 'Categories' },
 	{ id: 'stores', label: 'Stores' },
 	{ id: 'products', label: 'Products' },
@@ -40,19 +44,40 @@ const showProductDialog = ref(false)
 const editingCategory = ref<Category | null>(null)
 const editingStore = ref<Store | null>(null)
 const editingProduct = ref<Product | null>(null)
+const infoProduct = ref<Product | null>(null)
+
+interface DeleteTargetCategory {
+	type: 'category'
+	entity: Category
+}
+
+interface DeleteTargetStore {
+	type: 'store'
+	entity: Store
+}
+
+interface DeleteTargetProduct {
+	type: 'product'
+	entity: Product
+}
+
+type DeleteTarget = DeleteTargetCategory | DeleteTargetStore | DeleteTargetProduct
+
+const pendingDelete = ref<DeleteTarget | null>(null)
+const deleting = ref(false)
 
 const addButtonLabel = computed(() => {
 	switch (activeTab.value) {
-	case 'categories':
-		return 'Add category'
-	case 'stores':
-		return 'Add store'
-	case 'subscriptions':
-		return 'Add subscription'
-	case 'income':
-		return 'Add income source'
-	default:
-		return 'Add product'
+		case 'categories':
+			return 'Add category'
+		case 'stores':
+			return 'Add store'
+		case 'subscriptions':
+			return 'Add subscription'
+		case 'income':
+			return 'Add income source'
+		default:
+			return 'Add product'
 	}
 })
 
@@ -64,35 +89,35 @@ const isProductTab = computed(() => activeTab.value === 'products' || activeTab.
 
 const activeProducts = computed<Product[]>(() => {
 	switch (activeTab.value) {
-	case 'subscriptions':
-		return subscriptionProducts.value
-	case 'income':
-		return incomeProducts.value
-	default:
-		return normalProducts.value
+		case 'subscriptions':
+			return subscriptionProducts.value
+		case 'income':
+			return incomeProducts.value
+		default:
+			return normalProducts.value
 	}
 })
 
-const emptyState = computed<{ title: string; description: string; icon: string }>(() => {
+const emptyState = computed<{ title: string, description: string, icon: string }>(() => {
 	switch (activeTab.value) {
-	case 'subscriptions':
-		return {
-			title: 'No subscriptions yet',
-			description: 'Mark products as subscriptions to track recurring costs.',
-			icon: mdiCalendarMonth,
-		}
-	case 'income':
-		return {
-			title: 'No income sources yet',
-			description: 'Mark products as income to track your earnings.',
-			icon: mdiArrowUp,
-		}
-	default:
-		return {
-			title: 'No products yet',
-			description: 'Create your first product to build up your shopping catalog.',
-			icon: mdiPackageVariantClosed,
-		}
+		case 'subscriptions':
+			return {
+				title: 'No subscriptions yet',
+				description: 'Mark products as subscriptions to track recurring costs.',
+				icon: mdiCalendarMonth,
+			}
+		case 'income':
+			return {
+				title: 'No income sources yet',
+				description: 'Mark products as income to track your earnings.',
+				icon: mdiArrowUp,
+			}
+		default:
+			return {
+				title: 'No products yet',
+				description: 'Create your first product to build up your shopping catalog.',
+				icon: mdiPackageVariantClosed,
+			}
 	}
 })
 
@@ -126,6 +151,25 @@ const flattenedCategories = computed<FlatCategory[]>(() => {
 	return flattened
 })
 
+const deleteTitle = computed(() => {
+	switch (pendingDelete.value?.type) {
+		case 'category':
+			return 'Delete category'
+		case 'store':
+			return 'Delete store'
+		default:
+			return 'Delete product'
+	}
+})
+
+const deleteMessage = computed(() => {
+	const target = pendingDelete.value
+	if (target === null) {
+		return ''
+	}
+	return `Delete "${target.entity.name}"? This cannot be undone.`
+})
+
 onMounted(loadData)
 
 async function loadData() {
@@ -155,8 +199,23 @@ function categoryName(product: Product): string {
 	return categories.value.find((candidate) => candidate.id === product.categoryId)?.name ?? ''
 }
 
+function lastPriceText(product: Product): string | null {
+	return product.lastPrice === null ? null : formatTotal(product.lastPrice)
+}
+
 function categoryForProduct(product: Product): Category | null {
 	return categories.value.find((candidate) => candidate.id === product.categoryId) ?? null
+}
+
+function storeCategories(store: Store): Category[] {
+	return store.categoryIds
+		.map((id) => categories.value.find((candidate) => candidate.id === id))
+		.filter((category): category is Category => category !== undefined)
+}
+
+function storeMarkStyle(store: Store): Record<string, string> {
+	const color = storeCategories(store)[0]?.color
+	return color ? { borderInlineStartColor: color } : {}
 }
 
 function onAdd() {
@@ -220,7 +279,6 @@ async function onConfirmAll() {
 }
 
 async function onDeleteCategory(category: Category) {
-
 	categories.value = categories.value.filter((candidate) => candidate.id !== category.id)
 	try {
 		await deleteCategory(category.id)
@@ -247,6 +305,36 @@ async function onDeleteProduct(product: Product) {
 	}
 }
 
+function askDelete(target: DeleteTarget) {
+	pendingDelete.value = target
+}
+
+function closeConfirmDialog(open: boolean) {
+	if (!open && !deleting.value) {
+		pendingDelete.value = null
+	}
+}
+
+async function onConfirmDelete() {
+	const target = pendingDelete.value
+	if (target === null) {
+		return
+	}
+	deleting.value = true
+	try {
+		if (target.type === 'category') {
+			await onDeleteCategory(target.entity)
+		} else if (target.type === 'store') {
+			await onDeleteStore(target.entity)
+		} else {
+			await onDeleteProduct(target.entity)
+		}
+	} finally {
+		deleting.value = false
+		pendingDelete.value = null
+	}
+}
+
 function closeCategoryDialog() {
 	showCategoryDialog.value = false
 	editingCategory.value = null
@@ -260,6 +348,10 @@ function closeStoreDialog() {
 function closeProductDialog() {
 	showProductDialog.value = false
 	editingProduct.value = null
+}
+
+function closeInfoDialog() {
+	infoProduct.value = null
 }
 </script>
 
@@ -338,7 +430,7 @@ function closeProductDialog() {
 					:key="node.category.id"
 					:class="$style['tree-item']"
 					:style="{ paddingLeft: `${node.depth * 24}px` }">
-					<NcListItem :name="node.category.name" one-line>
+					<NcListItem :name="node.category.name" oneLine>
 						<template #icon>
 							<span
 								:class="$style['category-bubble']"
@@ -359,12 +451,12 @@ function closeProductDialog() {
 									v-if="node.category.status === 'pending_review'"
 									text="Pending Review"
 									variant="warning"
-									no-close />
+									noClose />
 								<NcChip
 									v-if="node.category.income"
 									text="Income"
 									variant="success"
-									no-close />
+									noClose />
 							</div>
 						</template>
 						<template #extra-actions>
@@ -388,7 +480,7 @@ function closeProductDialog() {
 							<NcButton
 								type="button"
 								:aria-label="`Delete ${node.category.name}`"
-								@click="onDeleteCategory(node.category)">
+								@click="askDelete({ type: 'category', entity: node.category })">
 								<template #icon>
 									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
 								</template>
@@ -415,33 +507,38 @@ function closeProductDialog() {
 			</NcEmptyContent>
 
 			<div v-else :class="$style.list">
-				<NcListItem
+				<div
 					v-for="store in stores"
 					:key="store.id"
-					:name="store.name"
-					one-line>
-					<template #icon>
-						<NcIconSvgWrapper :path="mdiStore" :size="20" />
-					</template>
-					<template #extra-actions>
-						<NcButton
-							type="button"
-							:aria-label="`Edit ${store.name}`"
-							@click="editingStore = store">
-							<template #icon>
-								<NcIconSvgWrapper :path="mdiPencil" :size="20" />
-							</template>
-						</NcButton>
-						<NcButton
-							type="button"
-							:aria-label="`Delete ${store.name}`"
-							@click="onDeleteStore(store)">
-							<template #icon>
-								<NcIconSvgWrapper :path="mdiDelete" :size="20" />
-							</template>
-						</NcButton>
-					</template>
-				</NcListItem>
+					:class="$style['store-row']"
+					:style="storeMarkStyle(store)">
+					<NcListItem :name="store.name">
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiStore" :size="20" />
+						</template>
+						<template v-if="store.address" #subname>
+							<span :class="$style['store-address']">{{ store.address }}</span>
+						</template>
+						<template #extra-actions>
+							<NcButton
+								type="button"
+								:aria-label="`Edit ${store.name}`"
+								@click="editingStore = store">
+								<template #icon>
+									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
+								</template>
+							</NcButton>
+							<NcButton
+								type="button"
+								:aria-label="`Delete ${store.name}`"
+								@click="askDelete({ type: 'store', entity: store })">
+								<template #icon>
+									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+								</template>
+							</NcButton>
+						</template>
+					</NcListItem>
+				</div>
 			</div>
 		</template>
 
@@ -467,7 +564,8 @@ function closeProductDialog() {
 					:class="$style['product-row']">
 					<NcListItem
 						:name="product.name"
-						one-line>
+						oneLine
+						@click="infoProduct = product">
 						<template #icon>
 							<span
 								v-if="categoryForProduct(product)"
@@ -490,19 +588,23 @@ function closeProductDialog() {
 									v-if="product.isSubscription"
 									text="Subscription"
 									variant="primary"
-									no-close />
+									noClose />
 								<NcChip
 									v-if="product.isIncome"
 									text="Income"
 									variant="success"
-									no-close />
+									noClose />
 								<span v-if="categoryName(product)">
 									{{ categoryName(product) }}
 								</span>
 								<NcChip
+									v-if="lastPriceText(product) !== null"
+									:text="lastPriceText(product) ?? ''"
+									noClose />
+								<NcChip
 									v-if="product.barcode"
 									:text="product.barcode"
-									no-close />
+									noClose />
 								<NcIconSvgWrapper
 									v-if="product.isFavorite"
 									:path="mdiStar"
@@ -514,7 +616,7 @@ function closeProductDialog() {
 							<NcButton
 								type="button"
 								:aria-label="`Edit ${product.name}`"
-								@click="editingProduct = product">
+								@click.stop="editingProduct = product">
 								<template #icon>
 									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
 								</template>
@@ -522,7 +624,7 @@ function closeProductDialog() {
 							<NcButton
 								type="button"
 								:aria-label="`Delete ${product.name}`"
-								@click="onDeleteProduct(product)">
+								@click.stop="askDelete({ type: 'product', entity: product })">
 								<template #icon>
 									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
 								</template>
@@ -552,6 +654,20 @@ function closeProductDialog() {
 			@update:open="closeProductDialog"
 			@created="onProductCreated"
 			@updated="onProductUpdated" />
+		<ProductInfoDialog
+			:open="infoProduct !== null"
+			:product="infoProduct ?? undefined"
+			:categories="categories"
+			:stores="stores"
+			@update:open="closeInfoDialog"
+			@updated="onProductUpdated" />
+		<ConfirmDialog
+			:open="pendingDelete !== null"
+			:title="deleteTitle"
+			:message="deleteMessage"
+			:busy="deleting"
+			@update:open="closeConfirmDialog"
+			@confirm="onConfirmDelete" />
 	</div>
 </template>
 
@@ -608,6 +724,21 @@ function closeProductDialog() {
 .product-row {
 	border-inline-start: 3px solid transparent;
 	padding-inline-start: 8px;
+}
+
+.store-row {
+	border-inline-start: 3px solid transparent;
+	padding-inline-start: 8px;
+}
+
+.store-address {
+	display: block;
+	min-width: 0;
+	max-width: 100%;
+	color: var(--color-text-maxcontrast);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .category-bubble {
