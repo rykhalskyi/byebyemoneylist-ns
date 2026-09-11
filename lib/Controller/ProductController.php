@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace OCA\ByeByeMoneyList\Controller;
 
+use DateTimeInterface;
 use OCA\ByeByeMoneyList\AppInfo\Application;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ProductAliasMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
+use OCA\ByeByeMoneyList\Db\ProductPriceMapper;
 use OCA\ByeByeMoneyList\Entity\ProductAliasEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
+use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
+use OCA\ByeByeMoneyList\Service\ProductPictureService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -31,6 +35,8 @@ class ProductController extends OCSController {
 	private ProductAliasMapper $aliasMapper;
 	private CategoryMapper $categoryMapper;
 	private ListItemMapper $itemMapper;
+	private ProductPriceMapper $priceMapper;
+	private ProductPictureService $pictureService;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
@@ -41,6 +47,8 @@ class ProductController extends OCSController {
 		ProductAliasMapper $aliasMapper,
 		CategoryMapper $categoryMapper,
 		ListItemMapper $itemMapper,
+		ProductPriceMapper $priceMapper,
+		ProductPictureService $pictureService,
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
@@ -50,6 +58,8 @@ class ProductController extends OCSController {
 		$this->aliasMapper = $aliasMapper;
 		$this->categoryMapper = $categoryMapper;
 		$this->itemMapper = $itemMapper;
+		$this->priceMapper = $priceMapper;
+		$this->pictureService = $pictureService;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -62,7 +72,7 @@ class ProductController extends OCSController {
 	 *
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{products: list<array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool}>}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{products: list<array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}>}|array{message: string}, array{}>
 	 *
 	 * 200: Products returned
 	 * 401: Current user is not logged in
@@ -84,9 +94,17 @@ class ProductController extends OCSController {
 		$aliasesByProduct = $this->groupAliases(
 			$this->aliasMapper->findByProductIds(array_map(fn (ProductEntity $product): string => $product->getId(), $products), $userId)
 		);
+		$latestPrices = $this->priceMapper->findLatestByProductIds(
+			array_values(array_map(fn (ProductEntity $product): string => $product->getId(), $products)),
+			$userId,
+		);
 
 		$serialized = array_map(
-			fn (ProductEntity $product): array => $this->serializeProduct($product, $aliasesByProduct[$product->getId()] ?? []),
+			fn (ProductEntity $product): array => $this->serializeProduct(
+				$product,
+				$aliasesByProduct[$product->getId()] ?? [],
+				$latestPrices[$product->getId()] ?? null,
+			),
 			$products,
 		);
 
@@ -106,7 +124,7 @@ class ProductController extends OCSController {
 	 * @param bool $isSubscription Whether the product is a subscription
 	 * @param bool $isIncome Whether the product is an income source
 	 *
-	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}}|array{message: string}, array{}>
 	 *
 	 * 201: Product created
 	 * 401: Current user is not logged in
@@ -192,7 +210,7 @@ class ProductController extends OCSController {
 	 * @param bool $isSubscription Whether the product is a subscription
 	 * @param bool $isIncome Whether the product is an income source
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}}|array{message: string}, array{}>
 	 *
 	 * 200: Product updated
 	 * 401: Current user is not logged in
@@ -260,7 +278,15 @@ class ProductController extends OCSController {
 			return new DataResponse(['message' => 'Failed to update product'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		return new DataResponse(['product' => $this->serializeProduct($product, $cleanAliases)], Http::STATUS_OK);
+		$latestPrices = $this->priceMapper->findLatestByProductIds([$product->getId()], $userId);
+
+		return new DataResponse([
+			'product' => $this->serializeProduct(
+				$product,
+				$cleanAliases,
+				$latestPrices[$product->getId()] ?? null,
+			),
+		], Http::STATUS_OK);
 	}
 
 	/**
@@ -290,6 +316,8 @@ class ProductController extends OCSController {
 			return new DataResponse(['message' => 'Product not found'], Http::STATUS_NOT_FOUND);
 		}
 
+		$picturePath = $product->getPicturePath();
+
 		$transactionStarted = false;
 		try {
 			$this->db->beginTransaction();
@@ -318,6 +346,12 @@ class ProductController extends OCSController {
 			}
 			$this->logger->error('Failed to delete product', ['exception' => $e]);
 			return new DataResponse(['message' => 'Failed to delete product'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		try {
+			$this->pictureService->delete($userId, $picturePath);
+		} catch (\Exception $e) {
+			$this->logger->warning('Failed to delete product picture', ['exception' => $e]);
 		}
 
 		return new DataResponse([], Http::STATUS_OK);
@@ -363,9 +397,9 @@ class ProductController extends OCSController {
 	/**
 	 * @param list<string> $aliases
 	 *
-	 * @return array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool}
+	 * @return array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}
 	 */
-	private function serializeProduct(ProductEntity $product, array $aliases = []): array {
+	private function serializeProduct(ProductEntity $product, array $aliases = [], ?ProductPriceEntity $lastPrice = null): array {
 		return [
 			'id' => $product->getId(),
 			'name' => $product->getName() ?? '',
@@ -376,6 +410,9 @@ class ProductController extends OCSController {
 			'status' => $product->getStatus() ?? 'reviewed',
 			'isSubscription' => $product->getIsSubscription() ?? false,
 			'isIncome' => $product->getIsIncome() ?? false,
+			'lastPrice' => $lastPrice?->getValue(),
+			'lastPriceDate' => $lastPrice?->getPriceDate()?->format(DateTimeInterface::ATOM),
+			'hasPicture' => $product->getPicturePath() !== null,
 		];
 	}
 }

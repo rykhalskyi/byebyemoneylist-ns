@@ -12,9 +12,9 @@ export interface MenuItem {
 
 const props = defineProps<{ items: MenuItem[] }>()
 
-const activeId = ref(props.items[0]?.id ?? '')
-
 const emit = defineEmits<{ select: [id: string] }>()
+
+const activeId = ref(props.items[0]?.id ?? '')
 
 function onSelect(id: string) {
 	activeId.value = id

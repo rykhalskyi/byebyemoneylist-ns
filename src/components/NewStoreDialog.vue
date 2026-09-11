@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import type { Category, Store } from '../types.ts'
+
 import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { createStore, updateStore } from '../services/listsApi'
-import type { Store } from '../types'
+import { createStore, fetchCategories, updateStore } from '../services/listsApi.ts'
 
-const props = defineProps<{ open: boolean; entity?: Store }>()
+const props = defineProps<{ open: boolean, entity?: Store }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
@@ -16,6 +18,10 @@ const emit = defineEmits<{
 }>()
 
 const name = ref('')
+const address = ref('')
+const selectedCategories = ref<Category[]>([])
+const categories = ref<Category[]>([])
+const loading = ref(false)
 const submitting = ref(false)
 const error = ref<string | null>(null)
 const nameField = ref<InstanceType<typeof NcTextField> | null>(null)
@@ -26,12 +32,29 @@ const canSubmit = computed(() => name.value.trim() !== '' && !submitting.value)
 
 watch(
 	() => props.open,
-	(open) => {
-		if (open) {
-			error.value = null
-			submitting.value = false
-			name.value = props.entity?.name ?? ''
-			requestAnimationFrame(() => nameField.value?.focus())
+	async (open) => {
+		if (!open) {
+			return
+		}
+		error.value = null
+		submitting.value = false
+		const entity = props.entity
+		name.value = entity?.name ?? ''
+		address.value = entity?.address ?? ''
+		selectedCategories.value = []
+		requestAnimationFrame(() => nameField.value?.focus())
+
+		loading.value = true
+		try {
+			categories.value = await fetchCategories()
+			if (entity !== undefined) {
+				const ids = new Set(entity.categoryIds)
+				selectedCategories.value = categories.value.filter((category) => ids.has(category.id))
+			}
+		} catch {
+			error.value = 'Failed to load categories.'
+		} finally {
+			loading.value = false
 		}
 	},
 )
@@ -47,9 +70,14 @@ async function onSubmit() {
 	submitting.value = true
 	error.value = null
 	try {
+		const payload = {
+			name: name.value.trim(),
+			address: address.value.trim() || null,
+			categoryIds: selectedCategories.value.map((category) => category.id),
+		}
 		const store = props.entity === undefined
-			? await createStore({ name: name.value.trim() })
-			: await updateStore(props.entity.id, { name: name.value.trim() })
+			? await createStore(payload)
+			: await updateStore(props.entity.id, payload)
 		emit(props.entity === undefined ? 'created' : 'updated', store)
 		emit('update:open', false)
 	} catch {
@@ -65,7 +93,7 @@ async function onSubmit() {
 		:name="isEditing ? 'Edit store' : 'New store'"
 		:open="props.open"
 		size="normal"
-		is-form
+		isForm
 		@submit="onSubmit"
 		@update:open="emit('update:open', $event)">
 		<div :class="$style.form">
@@ -76,13 +104,33 @@ async function onSubmit() {
 				placeholder="e.g. Aldi"
 				:disabled="submitting"
 				:error="name.trim() === '' && name.length > 0"
-				helper-text="The store name is required." />
+				helperText="The store name is required." />
+
+			<NcTextField
+				v-model="address"
+				label="Address"
+				placeholder="e.g. Hauptstraße 1, 10115 Berlin"
+				:disabled="submitting" />
+
+			<NcSelect
+				v-model="selectedCategories"
+				label="name"
+				inputLabel="Categories"
+				placeholder="No categories"
+				:options="categories"
+				:loading="loading"
+				:disabled="submitting"
+				:multiple="true"
+				:keepOpen="true"
+				clearable />
+
 			<p v-if="error" :class="$style.error">
 				{{ error }}
 			</p>
 		</div>
 		<template #actions>
-			<NcButton type="button"
+			<NcButton
+				type="button"
 				variant="secondary"
 				:disabled="submitting"
 				@click="onCancel">

@@ -6892,7 +6892,10 @@
                                                                             "isFavorite",
                                                                             "status",
                                                                             "isSubscription",
-                                                                            "isIncome"
+                                                                            "isIncome",
+                                                                            "lastPrice",
+                                                                            "lastPriceDate",
+                                                                            "hasPicture"
                                                                         ],
                                                                         "properties": {
                                                                             "id": {
@@ -6925,6 +6928,18 @@
                                                                                 "type": "boolean"
                                                                             },
                                                                             "isIncome": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "lastPrice": {
+                                                                                "type": "number",
+                                                                                "format": "double",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "lastPriceDate": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "hasPicture": {
                                                                                 "type": "boolean"
                                                                             }
                                                                         }
@@ -6995,7 +7010,10 @@
                                                                                     "isFavorite",
                                                                                     "status",
                                                                                     "isSubscription",
-                                                                                    "isIncome"
+                                                                                    "isIncome",
+                                                                                    "lastPrice",
+                                                                                    "lastPriceDate",
+                                                                                    "hasPicture"
                                                                                 ],
                                                                                 "properties": {
                                                                                     "id": {
@@ -7028,6 +7046,18 @@
                                                                                         "type": "boolean"
                                                                                     },
                                                                                     "isIncome": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "lastPrice": {
+                                                                                        "type": "number",
+                                                                                        "format": "double",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "lastPriceDate": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "hasPicture": {
                                                                                         "type": "boolean"
                                                                                     }
                                                                                 }
@@ -7200,7 +7230,10 @@
                                                                         "isFavorite",
                                                                         "status",
                                                                         "isSubscription",
-                                                                        "isIncome"
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -7233,6 +7266,18 @@
                                                                             "type": "boolean"
                                                                         },
                                                                         "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -7300,7 +7345,10 @@
                                                                                 "isFavorite",
                                                                                 "status",
                                                                                 "isSubscription",
-                                                                                "isIncome"
+                                                                                "isIncome",
+                                                                                "lastPrice",
+                                                                                "lastPriceDate",
+                                                                                "hasPicture"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -7333,6 +7381,18 @@
                                                                                     "type": "boolean"
                                                                                 },
                                                                                 "isIncome": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "lastPrice": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "lastPriceDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "hasPicture": {
                                                                                     "type": "boolean"
                                                                                 }
                                                                             }
@@ -7421,7 +7481,10 @@
                                                                         "isFavorite",
                                                                         "status",
                                                                         "isSubscription",
-                                                                        "isIncome"
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -7454,6 +7517,18 @@
                                                                             "type": "boolean"
                                                                         },
                                                                         "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -7519,7 +7594,10 @@
                                                                         "isFavorite",
                                                                         "status",
                                                                         "isSubscription",
-                                                                        "isIncome"
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -7552,6 +7630,18 @@
                                                                             "type": "boolean"
                                                                         },
                                                                         "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -7711,7 +7801,10 @@
                                                                         "isFavorite",
                                                                         "status",
                                                                         "isSubscription",
-                                                                        "isIncome"
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -7744,6 +7837,18 @@
                                                                             "type": "boolean"
                                                                         },
                                                                         "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -7811,7 +7916,10 @@
                                                                                 "isFavorite",
                                                                                 "status",
                                                                                 "isSubscription",
-                                                                                "isIncome"
+                                                                                "isIncome",
+                                                                                "lastPrice",
+                                                                                "lastPriceDate",
+                                                                                "hasPicture"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -7844,6 +7952,18 @@
                                                                                     "type": "boolean"
                                                                                 },
                                                                                 "isIncome": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "lastPrice": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "lastPriceDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "hasPicture": {
                                                                                     "type": "boolean"
                                                                                 }
                                                                             }
@@ -7932,7 +8052,10 @@
                                                                         "isFavorite",
                                                                         "status",
                                                                         "isSubscription",
-                                                                        "isIncome"
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -7965,6 +8088,18 @@
                                                                             "type": "boolean"
                                                                         },
                                                                         "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -8030,7 +8165,10 @@
                                                                         "isFavorite",
                                                                         "status",
                                                                         "isSubscription",
-                                                                        "isIncome"
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -8063,6 +8201,18 @@
                                                                             "type": "boolean"
                                                                         },
                                                                         "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -8128,7 +8278,10 @@
                                                                         "isFavorite",
                                                                         "status",
                                                                         "isSubscription",
-                                                                        "isIncome"
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -8161,6 +8314,18 @@
                                                                             "type": "boolean"
                                                                         },
                                                                         "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -8409,6 +8574,966 @@
                                                     "anyOf": [
                                                         {
                                                             "type": "object"
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/byebyemoneylist/api/products/{id}/picture": {
+            "post": {
+                "operationId": "product_image-upload",
+                "summary": "Upload (or replace) the picture of one of the current user's products",
+                "tags": [
+                    "product_image"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Picture stored",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "picture"
+                                                            ],
+                                                            "properties": {
+                                                                "picture": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "dataUrl",
+                                                                        "mime"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "dataUrl": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mime": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "picture"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "picture": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "dataUrl",
+                                                                                "mime"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "dataUrl": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "mime": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found or not owned by the current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "picture"
+                                                            ],
+                                                            "properties": {
+                                                                "picture": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "dataUrl",
+                                                                        "mime"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "dataUrl": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mime": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing file, too large, or unsupported image type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "picture"
+                                                            ],
+                                                            "properties": {
+                                                                "picture": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "dataUrl",
+                                                                        "mime"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "dataUrl": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mime": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to store the picture",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "picture"
+                                                            ],
+                                                            "properties": {
+                                                                "picture": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "dataUrl",
+                                                                        "mime"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "dataUrl": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mime": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "product_image-destroy",
+                "summary": "Delete the picture of one of the current user's products",
+                "tags": [
+                    "product_image"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Picture deleted (or the product had none)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object"
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object"
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found or not owned by the current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object"
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete the picture",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object"
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "operationId": "product_image-show",
+                "summary": "Get the picture of one of the current user's products as a base64 data URL",
+                "tags": [
+                    "product_image"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Product id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Picture returned (may be null when the product has no picture)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "picture"
+                                                            ],
+                                                            "properties": {
+                                                                "picture": {
+                                                                    "type": "object",
+                                                                    "nullable": true,
+                                                                    "required": [
+                                                                        "dataUrl",
+                                                                        "mime"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "dataUrl": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mime": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "picture"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "picture": {
+                                                                            "type": "object",
+                                                                            "nullable": true,
+                                                                            "required": [
+                                                                                "dataUrl",
+                                                                                "mime"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "dataUrl": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "mime": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found or not owned by the current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "picture"
+                                                            ],
+                                                            "properties": {
+                                                                "picture": {
+                                                                    "type": "object",
+                                                                    "nullable": true,
+                                                                    "required": [
+                                                                        "dataUrl",
+                                                                        "mime"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "dataUrl": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mime": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to read the picture",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "picture"
+                                                            ],
+                                                            "properties": {
+                                                                "picture": {
+                                                                    "type": "object",
+                                                                    "nullable": true,
+                                                                    "required": [
+                                                                        "dataUrl",
+                                                                        "mime"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "dataUrl": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mime": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
                                                         },
                                                         {
                                                             "type": "object",
@@ -10552,6 +11677,10 @@
         }
     },
     "tags": [
+        {
+            "name": "product_image",
+            "description": "Product pictures: store one image per product in the app's private appdata and serve it as a base64 data URL for the product info dialog."
+        },
         {
             "name": "product_price",
             "description": "Product price records: a price a user recorded for a product (optionally at a store). The Android app syncs its price records one-way (device → server); each record mirrors the app's \"one current price per (product, store)\" model, so re-syncing a record updates its stored value/date instead of inserting a duplicate."

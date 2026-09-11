@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import type { ListItem, Product } from '../types.ts'
+
 import { mdiPackageVariant, mdiPlus } from '@mdi/js'
+import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -8,10 +10,9 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { addListItem, createProduct, fetchProducts } from '../services/listsApi'
-import type { ListItem, Product } from '../types'
+import { addListItem, createProduct, fetchProducts } from '../services/listsApi.ts'
 
-const props = defineProps<{ open: boolean; listId: string }>()
+const props = defineProps<{ open: boolean, listId: string }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
@@ -73,9 +74,7 @@ const priceValid = computed(() => {
 	return value === null || value >= 0
 })
 
-const canSubmit = computed(
-	() => selectedProduct.value !== null && quantityValid.value && priceValid.value && !submitting.value,
-)
+const canSubmit = computed(() => selectedProduct.value !== null && quantityValid.value && priceValid.value && !submitting.value)
 
 watch(
 	() => props.open,
@@ -170,7 +169,7 @@ function openCreateNew() {
 
 <template>
 	<NcDialog
-		:name="'Add product'"
+		name="Add product"
 		:open="props.open"
 		size="normal"
 		@update:open="emit('update:open', $event)">
@@ -220,7 +219,7 @@ function openCreateNew() {
 						compact
 						@click="selectProduct(product)">
 						<template #subname>
-							<span v-if="product.barcode" :class="$style.result-subname">
+							<span v-if="product.barcode" :class="$style['result-subname']">
 								{{ product.barcode }}
 							</span>
 						</template>
@@ -251,7 +250,7 @@ function openCreateNew() {
 							placeholder="e.g. Milk"
 							:disabled="submitting"
 							:error="newProductName.trim() === '' && newProductName.length > 0"
-							helper-text="The product is added to your catalog." />
+							helperText="The product is added to your catalog." />
 						<div :class="$style['new-product-actions']">
 							<NcButton
 								type="button"
@@ -279,7 +278,7 @@ function openCreateNew() {
 				<div :class="$style.selected">
 					<NcListItem
 						:name="selectedProduct.name"
-						one-line>
+						oneLine>
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiPackageVariant" :size="20" />
 						</template>
@@ -314,7 +313,7 @@ function openCreateNew() {
 						placeholder="e.g. 1.5"
 						:disabled="submitting"
 						:error="parsedQuantity !== null && !quantityValid"
-						helper-text="Any number of units, e.g. 1.5 kg." />
+						helperText="Any number of units, e.g. 1.5 kg." />
 				</div>
 			</template>
 

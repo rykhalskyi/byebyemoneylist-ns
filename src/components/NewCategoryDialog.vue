@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Category } from '../types.ts'
+
 import { computed, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -7,11 +9,10 @@ import NcEmojiPicker from '@nextcloud/vue/components/NcEmojiPicker'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { createCategory, fetchCategories, updateCategory } from '../services/listsApi'
-import type { Category } from '../types'
-import { CATEGORY_COLOR_PALETTE } from '../constants/categoryColors'
+import { CATEGORY_COLOR_PALETTE } from '../constants/categoryColors.ts'
+import { createCategory, fetchCategories, updateCategory } from '../services/listsApi.ts'
 
-const props = defineProps<{ open: boolean; entity?: Category }>()
+const props = defineProps<{ open: boolean, entity?: Category }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
@@ -104,7 +105,7 @@ async function onSubmit() {
 		:name="isEditing ? 'Edit category' : 'New category'"
 		:open="props.open"
 		size="normal"
-		is-form
+		isForm
 		@submit="onSubmit"
 		@update:open="emit('update:open', $event)">
 		<div :class="$style.form">
@@ -115,7 +116,7 @@ async function onSubmit() {
 				placeholder="e.g. Food"
 				:disabled="submitting"
 				:error="name.trim() === '' && name.length > 0"
-				helper-text="The category name is required." />
+				helperText="The category name is required." />
 
 			<div :class="$style.field">
 				<span :class="$style.label">Emoji</span>
@@ -153,7 +154,7 @@ async function onSubmit() {
 			<NcSelect
 				v-model="parent"
 				label="name"
-				input-label="Parent category"
+				inputLabel="Parent category"
 				placeholder="No parent (top level)"
 				:options="categories"
 				:loading="loading"
@@ -169,7 +170,8 @@ async function onSubmit() {
 			</p>
 		</div>
 		<template #actions>
-			<NcButton type="button"
+			<NcButton
+				type="button"
 				variant="secondary"
 				:disabled="submitting"
 				@click="onCancel">
