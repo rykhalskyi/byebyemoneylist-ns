@@ -30,3 +30,6 @@
 ## [2026-09-10] ticket | T11 — Stores: category chooser + address in dialog and list
 ## [2026-09-10] ticket | T12 — Products: last price + info dialog with price history
 ## [2026-09-10] ticket | T13 — Products: image upload, deletion and display
+## [2026-09-11] spec | Catalog per-tab fuzzy search + paged lists (T14)
+## [2026-09-11] plan | Catalog per-tab fuzzy search + paged lists (T14)
+## [2026-09-11] ticket | T14 — Catalog per-tab fuzzy search + paged lists

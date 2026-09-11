@@ -1,21 +1,26 @@
 <script setup lang="ts">
+import type Fuse from 'fuse.js'
 import type { Category, Product, Store } from '../types.ts'
+import type { CategorySearchItem } from '../utils/search.ts'
 
-import { mdiAlertCircle, mdiArrowUp, mdiCalendarMonth, mdiCheck, mdiDelete, mdiPackageVariant, mdiPackageVariantClosed, mdiPencil, mdiPlus, mdiStar, mdiStore, mdiStoreOff, mdiTagMultiple, mdiTagOff } from '@mdi/js'
-import { computed, onMounted, ref } from 'vue'
+import { mdiAlertCircle, mdiArrowUp, mdiCalendarMonth, mdiMagnify, mdiPackageVariantClosed, mdiPlus, mdiStoreOff, mdiTagOff } from '@mdi/js'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
-import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import CatalogSearch from '../components/catalog/CatalogSearch.vue'
+import CategoryRow from '../components/catalog/CategoryRow.vue'
+import ProductRow from '../components/catalog/ProductRow.vue'
+import StoreRow from '../components/catalog/StoreRow.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import NewCategoryDialog from '../components/NewCategoryDialog.vue'
 import NewProductDialog from '../components/NewProductDialog.vue'
 import NewStoreDialog from '../components/NewStoreDialog.vue'
 import ProductInfoDialog from '../components/ProductInfoDialog.vue'
+import { usePagedList } from '../composables/usePagedList.ts'
 import { confirmAllCategories, confirmCategory, deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi.ts'
-import { formatTotal } from '../utils/format.ts'
+import { createCategoryFuse, createProductFuse, createStoreFuse, search } from '../utils/search.ts'
 
 type TabId = 'categories' | 'stores' | 'products' | 'subscriptions' | 'income'
 
@@ -23,6 +28,8 @@ interface FlatCategory {
 	category: Category
 	depth: number
 }
+
+const PAGE_SIZE = 50
 
 const tabs: { id: TabId, label: string }[] = [
 	{ id: 'categories', label: 'Categories' },
@@ -38,6 +45,7 @@ const stores = ref<Store[]>([])
 const products = ref<Product[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const query = ref('')
 const showCategoryDialog = ref(false)
 const showStoreDialog = ref(false)
 const showProductDialog = ref(false)
@@ -87,7 +95,7 @@ const incomeProducts = computed(() => products.value.filter((product) => product
 
 const isProductTab = computed(() => activeTab.value === 'products' || activeTab.value === 'subscriptions' || activeTab.value === 'income')
 
-const activeProducts = computed<Product[]>(() => {
+const activeTabProducts = computed<Product[]>(() => {
 	switch (activeTab.value) {
 		case 'subscriptions':
 			return subscriptionProducts.value
@@ -151,6 +159,113 @@ const flattenedCategories = computed<FlatCategory[]>(() => {
 	return flattened
 })
 
+const categorySearchItems = computed<CategorySearchItem[]>(() => categories.value.map((category) => ({
+	...category,
+	parentName: parentName(category),
+})))
+
+const categoryFuse = shallowRef<Fuse<CategorySearchItem> | null>(null)
+const storeFuse = shallowRef<Fuse<Store> | null>(null)
+const productFuse = shallowRef<Fuse<Product> | null>(null)
+
+watch(categorySearchItems, (items) => {
+	categoryFuse.value = createCategoryFuse(items)
+}, { immediate: true })
+
+watch(stores, (value) => {
+	storeFuse.value = createStoreFuse(value)
+}, { immediate: true })
+
+watch(activeTabProducts, (value) => {
+	productFuse.value = createProductFuse(value)
+}, { immediate: true })
+
+const hasSearch = computed(() => query.value.trim() !== '')
+
+const filteredCategories = computed(() => search(categoryFuse.value, categorySearchItems.value, query.value))
+const filteredStores = computed(() => search(storeFuse.value, stores.value, query.value))
+const filteredProducts = computed(() => search(productFuse.value, activeTabProducts.value, query.value))
+
+const {
+	visible: visibleCategories,
+	hasMore: hasMoreCategories,
+	remaining: remainingCategories,
+	loadMore: loadMoreCategories,
+	reset: resetCategories,
+} = usePagedList(filteredCategories, PAGE_SIZE)
+
+const {
+	visible: visibleStores,
+	hasMore: hasMoreStores,
+	remaining: remainingStores,
+	loadMore: loadMoreStores,
+	reset: resetStores,
+} = usePagedList(filteredStores, PAGE_SIZE)
+
+const {
+	visible: visibleProducts,
+	hasMore: hasMoreProducts,
+	remaining: remainingProducts,
+	loadMore: loadMoreProducts,
+	reset: resetProducts,
+} = usePagedList(filteredProducts, PAGE_SIZE)
+
+const searchPlaceholder = computed(() => {
+	switch (activeTab.value) {
+		case 'categories':
+			return 'Search categories…'
+		case 'stores':
+			return 'Search stores…'
+		case 'subscriptions':
+			return 'Search subscriptions…'
+		case 'income':
+			return 'Search income…'
+		default:
+			return 'Search products…'
+	}
+})
+
+const activeTabHasItems = computed(() => {
+	switch (activeTab.value) {
+		case 'categories':
+			return categories.value.length > 0
+		case 'stores':
+			return stores.value.length > 0
+		default:
+			return activeTabProducts.value.length > 0
+	}
+})
+
+const activeFilteredCount = computed(() => {
+	switch (activeTab.value) {
+		case 'categories':
+			return filteredCategories.value.length
+		case 'stores':
+			return filteredStores.value.length
+		default:
+			return filteredProducts.value.length
+	}
+})
+
+const activeVisibleCount = computed(() => {
+	switch (activeTab.value) {
+		case 'categories':
+			return visibleCategories.value.length
+		case 'stores':
+			return visibleStores.value.length
+		default:
+			return visibleProducts.value.length
+	}
+})
+
+const searchSummary = computed(() => {
+	if (!hasSearch.value) {
+		return ''
+	}
+	const noun = activeTab.value === 'categories' ? 'categories' : activeTab.value === 'stores' ? 'stores' : 'products'
+	return `Showing ${activeVisibleCount.value} of ${activeFilteredCount.value} matching ${noun}`
+})
+
 const deleteTitle = computed(() => {
 	switch (pendingDelete.value?.type) {
 		case 'category':
@@ -168,6 +283,16 @@ const deleteMessage = computed(() => {
 		return ''
 	}
 	return `Delete "${target.entity.name}"? This cannot be undone.`
+})
+
+watch(activeTab, () => {
+	query.value = ''
+})
+
+watch([activeTab, query], () => {
+	resetCategories()
+	resetStores()
+	resetProducts()
 })
 
 onMounted(loadData)
@@ -195,27 +320,15 @@ function parentName(category: Category): string {
 	return categories.value.find((candidate) => candidate.id === category.parentId)?.name ?? ''
 }
 
-function categoryName(product: Product): string {
-	return categories.value.find((candidate) => candidate.id === product.categoryId)?.name ?? ''
-}
-
-function lastPriceText(product: Product): string | null {
-	return product.lastPrice === null ? null : formatTotal(product.lastPrice)
-}
-
 function categoryForProduct(product: Product): Category | null {
 	return categories.value.find((candidate) => candidate.id === product.categoryId) ?? null
 }
 
-function storeCategories(store: Store): Category[] {
-	return store.categoryIds
+function storeAccentColor(store: Store): string | null {
+	const category = store.categoryIds
 		.map((id) => categories.value.find((candidate) => candidate.id === id))
-		.filter((category): category is Category => category !== undefined)
-}
-
-function storeMarkStyle(store: Store): Record<string, string> {
-	const color = storeCategories(store)[0]?.color
-	return color ? { borderInlineStartColor: color } : {}
+		.find((candidate): candidate is Category => candidate !== undefined)
+	return category?.color ?? null
 }
 
 function onAdd() {
@@ -385,6 +498,12 @@ function closeInfoDialog() {
 			</button>
 		</div>
 
+		<div v-if="!loading && !error && activeTabHasItems" :class="$style.search">
+			<CatalogSearch
+				v-model="query"
+				:placeholder="searchPlaceholder" />
+		</div>
+
 		<div v-if="loading" :class="$style.center">
 			<NcLoadingIcon />
 		</div>
@@ -418,75 +537,55 @@ function closeInfoDialog() {
 				</template>
 			</NcEmptyContent>
 
+			<NcEmptyContent
+				v-else-if="hasSearch && filteredCategories.length === 0"
+				name="No categories found"
+				:description="`Nothing matches “${query}”.`">
+				<template #icon>
+					<NcIconSvgWrapper :path="mdiMagnify" :size="64" />
+				</template>
+				<template #action>
+					<NcButton type="button" @click="query = ''">
+						Clear search
+					</NcButton>
+				</template>
+			</NcEmptyContent>
+
 			<div v-else :class="$style.list">
-				<div v-if="pendingCategories.length > 0" :class="$style['pending-banner']">
+				<div v-if="!hasSearch && pendingCategories.length > 0" :class="$style['pending-banner']">
 					<span>{{ pendingCategories.length }} categories imported from client pending review</span>
 					<NcButton type="button" variant="primary" @click="onConfirmAll">
 						Approve all
 					</NcButton>
 				</div>
-				<div
-					v-for="node in flattenedCategories"
-					:key="node.category.id"
-					:class="$style['tree-item']"
-					:style="{ paddingLeft: `${node.depth * 24}px` }">
-					<NcListItem :name="node.category.name" oneLine>
-						<template #icon>
-							<span
-								:class="$style['category-bubble']"
-								:style="node.category.color ? { backgroundColor: node.category.color } : {}">
-								<span v-if="node.category.emoji">{{ node.category.emoji }}</span>
-								<NcIconSvgWrapper
-									v-else
-									:path="mdiTagMultiple"
-									:size="16" />
-							</span>
-						</template>
-						<template #subname>
-							<div :class="$style.subname">
-								<span v-if="parentName(node.category)">
-									{{ parentName(node.category) }}
-								</span>
-								<NcChip
-									v-if="node.category.status === 'pending_review'"
-									text="Pending Review"
-									variant="warning"
-									noClose />
-								<NcChip
-									v-if="node.category.income"
-									text="Income"
-									variant="success"
-									noClose />
-							</div>
-						</template>
-						<template #extra-actions>
-							<NcButton
-								v-if="node.category.status === 'pending_review'"
-								type="button"
-								:aria-label="`Approve ${node.category.name}`"
-								@click="onConfirmCategory(node.category)">
-								<template #icon>
-									<NcIconSvgWrapper :path="mdiCheck" :size="20" />
-								</template>
-							</NcButton>
-							<NcButton
-								type="button"
-								:aria-label="`Edit ${node.category.name}`"
-								@click="editingCategory = node.category">
-								<template #icon>
-									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
-								</template>
-							</NcButton>
-							<NcButton
-								type="button"
-								:aria-label="`Delete ${node.category.name}`"
-								@click="askDelete({ type: 'category', entity: node.category })">
-								<template #icon>
-									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
-								</template>
-							</NcButton>
-						</template>
-					</NcListItem>
+
+				<template v-if="!hasSearch">
+					<CategoryRow
+						v-for="node in flattenedCategories"
+						:key="node.category.id"
+						:category="node.category"
+						:parentName="parentName(node.category)"
+						:depth="node.depth"
+						@edit="editingCategory = $event"
+						@delete="askDelete({ type: 'category', entity: $event })"
+						@confirm="onConfirmCategory" />
+				</template>
+				<template v-else>
+					<CategoryRow
+						v-for="category in visibleCategories"
+						:key="category.id"
+						:category="category"
+						:parentName="category.parentName"
+						:search="query"
+						@edit="editingCategory = $event"
+						@delete="askDelete({ type: 'category', entity: $event })"
+						@confirm="onConfirmCategory" />
+				</template>
+
+				<div v-if="hasMoreCategories" :class="$style['load-more']">
+					<NcButton type="button" @click="loadMoreCategories">
+						Load more ({{ remainingCategories }} remaining)
+					</NcButton>
 				</div>
 			</div>
 		</template>
@@ -506,45 +605,41 @@ function closeInfoDialog() {
 				</template>
 			</NcEmptyContent>
 
+			<NcEmptyContent
+				v-else-if="hasSearch && filteredStores.length === 0"
+				name="No stores found"
+				:description="`Nothing matches “${query}”.`">
+				<template #icon>
+					<NcIconSvgWrapper :path="mdiMagnify" :size="64" />
+				</template>
+				<template #action>
+					<NcButton type="button" @click="query = ''">
+						Clear search
+					</NcButton>
+				</template>
+			</NcEmptyContent>
+
 			<div v-else :class="$style.list">
-				<div
-					v-for="store in stores"
+				<StoreRow
+					v-for="store in visibleStores"
 					:key="store.id"
-					:class="$style['store-row']"
-					:style="storeMarkStyle(store)">
-					<NcListItem :name="store.name">
-						<template #icon>
-							<NcIconSvgWrapper :path="mdiStore" :size="20" />
-						</template>
-						<template v-if="store.address" #subname>
-							<span :class="$style['store-address']">{{ store.address }}</span>
-						</template>
-						<template #extra-actions>
-							<NcButton
-								type="button"
-								:aria-label="`Edit ${store.name}`"
-								@click="editingStore = store">
-								<template #icon>
-									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
-								</template>
-							</NcButton>
-							<NcButton
-								type="button"
-								:aria-label="`Delete ${store.name}`"
-								@click="askDelete({ type: 'store', entity: store })">
-								<template #icon>
-									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
-								</template>
-							</NcButton>
-						</template>
-					</NcListItem>
+					:store="store"
+					:accentColor="storeAccentColor(store)"
+					:search="query"
+					@edit="editingStore = $event"
+					@delete="askDelete({ type: 'store', entity: $event })" />
+
+				<div v-if="hasMoreStores" :class="$style['load-more']">
+					<NcButton type="button" @click="loadMoreStores">
+						Load more ({{ remainingStores }} remaining)
+					</NcButton>
 				</div>
 			</div>
 		</template>
 
 		<template v-else-if="isProductTab">
 			<NcEmptyContent
-				v-if="activeProducts.length === 0"
+				v-if="activeTabProducts.length === 0"
 				:name="emptyState.title"
 				:description="emptyState.description">
 				<template #icon>
@@ -557,83 +652,42 @@ function closeInfoDialog() {
 				</template>
 			</NcEmptyContent>
 
+			<NcEmptyContent
+				v-else-if="hasSearch && filteredProducts.length === 0"
+				name="No products found"
+				:description="`Nothing matches “${query}”.`">
+				<template #icon>
+					<NcIconSvgWrapper :path="mdiMagnify" :size="64" />
+				</template>
+				<template #action>
+					<NcButton type="button" @click="query = ''">
+						Clear search
+					</NcButton>
+				</template>
+			</NcEmptyContent>
+
 			<div v-else :class="$style.list">
-				<div
-					v-for="product in activeProducts"
+				<ProductRow
+					v-for="product in visibleProducts"
 					:key="product.id"
-					:class="$style['product-row']">
-					<NcListItem
-						:name="product.name"
-						oneLine
-						@click="infoProduct = product">
-						<template #icon>
-							<span
-								v-if="categoryForProduct(product)"
-								:class="$style['category-bubble']"
-								:style="{ backgroundColor: categoryForProduct(product)?.color ?? undefined }">
-								<span v-if="categoryForProduct(product)?.emoji">{{ categoryForProduct(product)?.emoji }}</span>
-								<NcIconSvgWrapper
-									v-else
-									:path="mdiTagMultiple"
-									:size="16" />
-							</span>
-							<NcIconSvgWrapper
-								v-else
-								:path="mdiPackageVariant"
-								:size="20" />
-						</template>
-						<template #subname>
-							<div :class="$style.subname">
-								<NcChip
-									v-if="product.isSubscription"
-									text="Subscription"
-									variant="primary"
-									noClose />
-								<NcChip
-									v-if="product.isIncome"
-									text="Income"
-									variant="success"
-									noClose />
-								<span v-if="categoryName(product)">
-									{{ categoryName(product) }}
-								</span>
-								<NcChip
-									v-if="lastPriceText(product) !== null"
-									:text="lastPriceText(product) ?? ''"
-									noClose />
-								<NcChip
-									v-if="product.barcode"
-									:text="product.barcode"
-									noClose />
-								<NcIconSvgWrapper
-									v-if="product.isFavorite"
-									:path="mdiStar"
-									:size="20"
-									:class="$style.favorite" />
-							</div>
-						</template>
-						<template #extra-actions>
-							<NcButton
-								type="button"
-								:aria-label="`Edit ${product.name}`"
-								@click.stop="editingProduct = product">
-								<template #icon>
-									<NcIconSvgWrapper :path="mdiPencil" :size="20" />
-								</template>
-							</NcButton>
-							<NcButton
-								type="button"
-								:aria-label="`Delete ${product.name}`"
-								@click.stop="askDelete({ type: 'product', entity: product })">
-								<template #icon>
-									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
-								</template>
-							</NcButton>
-						</template>
-					</NcListItem>
+					:product="product"
+					:category="categoryForProduct(product)"
+					:search="query"
+					@open="infoProduct = $event"
+					@edit="editingProduct = $event"
+					@delete="askDelete({ type: 'product', entity: $event })" />
+
+				<div v-if="hasMoreProducts" :class="$style['load-more']">
+					<NcButton type="button" @click="loadMoreProducts">
+						Load more ({{ remainingProducts }} remaining)
+					</NcButton>
 				</div>
 			</div>
 		</template>
+
+		<p v-if="hasSearch && activeFilteredCount > 0" :class="$style['search-summary']" aria-live="polite">
+			{{ searchSummary }}
+		</p>
 
 		<NewCategoryDialog
 			:open="showCategoryDialog || editingCategory !== null"
@@ -707,6 +761,11 @@ function closeInfoDialog() {
 	margin-bottom: -1px;
 }
 
+.search {
+	margin-top: 16px;
+	max-width: 420px;
+}
+
 .center {
 	display: flex;
 	justify-content: center;
@@ -717,58 +776,19 @@ function closeInfoDialog() {
 	margin: 16px 0 0;
 }
 
-.tree-item {
-	width: 100%;
-}
-
-.product-row {
-	border-inline-start: 3px solid transparent;
-	padding-inline-start: 8px;
-}
-
-.store-row {
-	border-inline-start: 3px solid transparent;
-	padding-inline-start: 8px;
-}
-
-.store-address {
-	display: block;
-	min-width: 0;
-	max-width: 100%;
-	color: var(--color-text-maxcontrast);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.category-bubble {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 28px;
-	height: 28px;
-	border-radius: 50%;
-	font-size: 16px;
-	line-height: 1;
-	background-color: var(--color-background-darker);
-	color: var(--color-main-background);
-}
-
-.subname {
+.load-more {
 	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	gap: 8px;
-	margin-inline-start: auto;
-	width: 100%;
+	justify-content: center;
+	padding: 16px 0;
+}
+
+.search-summary {
+	color: var(--color-text-maxcontrast);
+	margin: 8px 0 0;
 }
 
 .add-button {
 	margin-top: 6px;
-}
-
-.favorite {
-	color: var(--color-warning);
 }
 
 .pending-banner {

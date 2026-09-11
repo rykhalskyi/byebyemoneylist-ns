@@ -24,4 +24,6 @@
 - confirmation dialog on deletion
 - click in item opens info dialog with product information and price history
 
+### Search
 
+- I want to have search in each currently selected tab 
