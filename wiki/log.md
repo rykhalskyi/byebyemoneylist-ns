@@ -33,3 +33,14 @@
 ## [2026-09-11] spec | Catalog per-tab fuzzy search + paged lists (T14)
 ## [2026-09-11] plan | Catalog per-tab fuzzy search + paged lists (T14)
 ## [2026-09-11] ticket | T14 — Catalog per-tab fuzzy search + paged lists
+## [2026-09-11] spec | Frontend localization (i18n)
+## [2026-09-11] plan | Frontend localization (i18n)
+## [2026-09-11] ticket | T15 — L10n infrastructure & build wiring
+## [2026-09-11] ticket | T16 — Localize app shell
+## [2026-09-11] ticket | T17 — Localize dialogs
+## [2026-09-11] ticket | T18 — Localize catalog components
+## [2026-09-11] ticket | T19 — Locale-aware formatting & plurals
+## [2026-09-11] ticket | T20 — German + Ukrainian translations & parity check
+## [2026-09-11] ticket | T21 — Localization docs & wiki sync
+## [2026-09-11] update | build-deploy — documented npm run l10n workflow
+## [2026-09-11] update | project-overview — added localization stack

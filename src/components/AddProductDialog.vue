@@ -11,6 +11,7 @@ import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { addListItem, createProduct, fetchProducts } from '../services/listsApi.ts'
+import { t } from '../utils/l10n.ts'
 
 const props = defineProps<{ open: boolean, listId: string }>()
 
@@ -101,7 +102,7 @@ async function loadCatalog() {
 		products.value = await fetchProducts()
 	} catch {
 		catalogFailed.value = true
-		error.value = 'Failed to load the product catalog.'
+		error.value = t('Failed to load the product catalog.')
 	} finally {
 		loading.value = false
 	}
@@ -133,7 +134,7 @@ async function createNewProduct() {
 		creatingNew.value = false
 		newProductName.value = ''
 	} catch {
-		error.value = 'Failed to create the product. Please try again.'
+		error.value = t('Failed to create the product. Please try again.')
 	} finally {
 		submitting.value = false
 	}
@@ -154,7 +155,7 @@ async function onSubmit() {
 		emit('added', item)
 		emit('update:open', false)
 	} catch {
-		error.value = 'Failed to add the product to the list. Please try again.'
+		error.value = t('Failed to add the product to the list. Please try again.')
 	} finally {
 		submitting.value = false
 	}
@@ -169,7 +170,7 @@ function openCreateNew() {
 
 <template>
 	<NcDialog
-		name="Add product"
+		:name="t('Add product')"
 		:open="props.open"
 		size="normal"
 		@update:open="emit('update:open', $event)">
@@ -182,20 +183,20 @@ function openCreateNew() {
 				<NcTextField
 					ref="searchField"
 					v-model="search"
-					label="Search products"
-					placeholder="Search by name, barcode or alias" />
+					:label="t('Search products')"
+					:placeholder="t('Search by name, barcode or alias')" />
 
 				<NcEmptyContent
 					v-if="catalogFailed"
 					:class="$style['empty-results']"
-					name="Could not load the product catalog"
-					description="Check your connection and try again.">
+					:name="t('Could not load the product catalog')"
+					:description="t('Check your connection and try again.')">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiPackageVariant" :size="64" />
 					</template>
 					<template #action>
 						<NcButton type="button" variant="primary" @click="loadCatalog">
-							Retry
+							{{ t('Retry') }}
 						</NcButton>
 					</template>
 				</NcEmptyContent>
@@ -203,8 +204,8 @@ function openCreateNew() {
 				<NcEmptyContent
 					v-else-if="products.length === 0"
 					:class="$style['empty-results']"
-					name="No products in the catalog yet"
-					description="Create the product below to start building up your catalog.">
+					:name="t('No products in the catalog yet')"
+					:description="t('Create the product below to start building up your catalog.')">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiPackageVariant" :size="64" />
 					</template>
@@ -227,7 +228,7 @@ function openCreateNew() {
 				</ul>
 
 				<p v-else :class="$style['no-results']">
-					No products match your search.
+					{{ t('No products match your search.') }}
 				</p>
 
 				<div :class="$style['new-product']">
@@ -240,24 +241,24 @@ function openCreateNew() {
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiPlus" :size="20" />
 						</template>
-						Create new product
+						{{ t('Create new product') }}
 					</NcButton>
 					<div v-else :class="$style['new-product-form']">
 						<NcTextField
 							ref="newProductField"
 							v-model="newProductName"
-							label="New product name"
-							placeholder="e.g. Milk"
+							:label="t('New product name')"
+							:placeholder="t('e.g. Milk')"
 							:disabled="submitting"
 							:error="newProductName.trim() === '' && newProductName.length > 0"
-							helperText="The product is added to your catalog." />
+							:helperText="t('The product is added to your catalog.')" />
 						<div :class="$style['new-product-actions']">
 							<NcButton
 								type="button"
 								variant="secondary"
 								:disabled="submitting"
 								@click="creatingNew = false">
-								Cancel
+								{{ t('Cancel') }}
 							</NcButton>
 							<NcButton
 								type="button"
@@ -267,7 +268,7 @@ function openCreateNew() {
 								<template #icon>
 									<NcLoadingIcon v-if="submitting" />
 								</template>
-								Create & select
+								{{ t('Create & select') }}
 							</NcButton>
 						</div>
 					</div>
@@ -289,7 +290,7 @@ function openCreateNew() {
 									variant="tertiary"
 									:disabled="submitting"
 									@click="resetSelection">
-									Change
+									{{ t('Change') }}
 								</NcButton>
 							</div>
 						</template>
@@ -301,19 +302,19 @@ function openCreateNew() {
 						v-model="price"
 						type="text"
 						inputmode="decimal"
-						label="Price (optional)"
-						placeholder="e.g. 1.99"
+						:label="t('Price (optional)')"
+						:placeholder="t('e.g. 1.99')"
 						:disabled="submitting"
 						:error="parsedPrice !== null && !priceValid" />
 					<NcTextField
 						v-model="quantity"
 						type="text"
 						inputmode="decimal"
-						label="Quantity"
-						placeholder="e.g. 1.5"
+						:label="t('Quantity')"
+						:placeholder="t('e.g. 1.5')"
 						:disabled="submitting"
 						:error="parsedQuantity !== null && !quantityValid"
-						helperText="Any number of units, e.g. 1.5 kg." />
+						:helperText="t('Any number of units, e.g. 1.5 kg.')" />
 				</div>
 			</template>
 
@@ -327,7 +328,7 @@ function openCreateNew() {
 				variant="secondary"
 				:disabled="submitting"
 				@click="onCancel">
-				Cancel
+				{{ t('Cancel') }}
 			</NcButton>
 			<NcButton
 				type="button"
@@ -337,7 +338,7 @@ function openCreateNew() {
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
-				Add to list
+				{{ t('Add to list') }}
 			</NcButton>
 		</template>
 	</NcDialog>

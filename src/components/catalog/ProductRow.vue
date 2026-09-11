@@ -10,6 +10,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import CategoryBubble from './CategoryBubble.vue'
 import { formatTotal } from '../../utils/format.ts'
+import { t } from '../../utils/l10n.ts'
 
 const props = withDefaults(defineProps<{
 	product: Product
@@ -49,12 +50,12 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 				<div :class="$style.subname">
 					<NcChip
 						v-if="props.product.isSubscription"
-						text="Subscription"
+						:text="t('Subscription')"
 						variant="primary"
 						noClose />
 					<NcChip
 						v-if="props.product.isIncome"
-						text="Income"
+						:text="t('Income')"
 						variant="success"
 						noClose />
 					<span v-if="props.category">{{ props.category.name }}</span>
@@ -76,7 +77,7 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 			<template #extra-actions>
 				<NcButton
 					type="button"
-					:aria-label="`Edit ${props.product.name}`"
+					:aria-label="t('Edit {name}', { name: props.product.name })"
 					@click.stop="emit('edit', props.product)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiPencil" :size="20" />
@@ -84,7 +85,7 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 				</NcButton>
 				<NcButton
 					type="button"
-					:aria-label="`Delete ${props.product.name}`"
+					:aria-label="t('Delete {name}', { name: props.product.name })"
 					@click.stop="emit('delete', props.product)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiDelete" :size="20" />

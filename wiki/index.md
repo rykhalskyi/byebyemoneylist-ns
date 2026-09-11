@@ -15,6 +15,7 @@
 - [specs/add-product-to-list](pages/specs/add-product-to-list.md) — T2 partial: Add products to a shopping list spec. Created 2026-08-28.
 - [specs/shopping-list-improvements](pages/specs/shopping-list-improvements.md) — Issue #8: Shopping List Improvements spec. Created 2026-08-29.
 - [specs/catalog-search](pages/specs/catalog-search.md) — T14: Catalog per-tab fuzzy search + paged lists spec. Created 2026-09-11.
+- [specs/localization](pages/specs/localization.md) — Frontend localization (i18n) for en/de/uk. Created 2026-09-11.
 
 ## Plans
 - [plans/shopping-lists-page](pages/plans/shopping-lists-page.md) — T1: Shopping Lists page implementation plan. Created 2026-08-26.
@@ -23,6 +24,7 @@
 - [plans/add-product-to-list](pages/plans/add-product-to-list.md) — T2 partial: Add products to a shopping list plan. Created 2026-08-28.
 - [plans/shopping-list-improvements](pages/plans/shopping-list-improvements.md) — Issue #8: Shopping List Improvements plan. Created 2026-08-29.
 - [plans/catalog-search](pages/plans/catalog-search.md) — T14: Catalog per-tab fuzzy search + paged lists plan. Created 2026-09-11.
+- [plans/localization](pages/plans/localization.md) — Frontend localization implementation plan (T15–T21). Created 2026-09-11.
 
 ## Tickets
 - [tickets/ticket-01-shopping-lists-page](pages/tickets/ticket-01-shopping-lists-page.md) — T1: Shopping Lists page (view lists + add a new list). Created 2026-08-26.
@@ -36,6 +38,13 @@
 - [tickets/ticket-12-product-last-price-info-dialog](pages/tickets/ticket-12-product-last-price-info-dialog.md) — T12: Product last price + info dialog with price history. Created 2026-09-10.
 - [tickets/ticket-13-product-pictures](pages/tickets/ticket-13-product-pictures.md) — T13: Product image upload, deletion and display. Created 2026-09-10.
 - [tickets/ticket-14-catalog-search-paging](pages/tickets/ticket-14-catalog-search-paging.md) — T14: Catalog per-tab fuzzy search + paged lists. Created 2026-09-11.
+- [tickets/ticket-15-localization-infra](pages/tickets/ticket-15-localization-infra.md) — T15: L10n infrastructure & build wiring. Created 2026-09-11.
+- [tickets/ticket-16-localization-app-shell](pages/tickets/ticket-16-localization-app-shell.md) — T16: Localize app shell. Created 2026-09-11.
+- [tickets/ticket-17-localization-dialogs](pages/tickets/ticket-17-localization-dialogs.md) — T17: Localize dialogs. Created 2026-09-11.
+- [tickets/ticket-18-localization-catalog-components](pages/tickets/ticket-18-localization-catalog-components.md) — T18: Localize catalog components. Created 2026-09-11.
+- [tickets/ticket-19-localization-formatting](pages/tickets/ticket-19-localization-formatting.md) — T19: Locale-aware formatting & plurals. Created 2026-09-11.
+- [tickets/ticket-20-localization-translations](pages/tickets/ticket-20-localization-translations.md) — T20: German + Ukrainian translations & parity check. Created 2026-09-11.
+- [tickets/ticket-21-localization-docs](pages/tickets/ticket-21-localization-docs.md) — T21: Localization docs & wiki sync. Created 2026-09-11.
 
 ## Research
 - [research/syncronisation.md] (pages/research/syncronisation.md) - Client side synchronisation research

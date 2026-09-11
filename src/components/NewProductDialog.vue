@@ -11,6 +11,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { createProduct, deleteProduct, deleteProductPicture, fetchCategories, fetchProductPicture, updateProduct, uploadProductPicture } from '../services/listsApi.ts'
+import { t } from '../utils/l10n.ts'
 
 const props = defineProps<{ open: boolean, entity?: Product, preset?: 'subscription' | 'income' }>()
 
@@ -78,7 +79,7 @@ watch(
 				category.value = categories.value.find((candidate) => candidate.id === entity.categoryId) ?? null
 			}
 		} catch {
-			error.value = 'Failed to load categories.'
+			error.value = t('Failed to load categories.')
 		} finally {
 			loading.value = false
 		}
@@ -174,7 +175,7 @@ async function onSubmit() {
 				if (isNew) {
 					await deleteProduct(product.id).catch(() => undefined)
 				}
-				error.value = 'Failed to upload the picture. Please try again.'
+				error.value = t('Failed to upload the picture. Please try again.')
 				return
 			}
 		} else if (removePicture.value && !isNew && hadPicture.value) {
@@ -182,7 +183,7 @@ async function onSubmit() {
 				await deleteProductPicture(product.id)
 				savedProduct = { ...product, hasPicture: false }
 			} catch {
-				error.value = 'Failed to delete the picture. Please try again.'
+				error.value = t('Failed to delete the picture. Please try again.')
 				return
 			}
 		}
@@ -190,7 +191,7 @@ async function onSubmit() {
 		emit(isNew ? 'created' : 'updated', savedProduct)
 		emit('update:open', false)
 	} catch {
-		error.value = isEditing.value ? 'Failed to update the product. Please try again.' : 'Failed to create the product. Please try again.'
+		error.value = isEditing.value ? t('Failed to update the product. Please try again.') : t('Failed to create the product. Please try again.')
 	} finally {
 		submitting.value = false
 	}
@@ -199,7 +200,7 @@ async function onSubmit() {
 
 <template>
 	<NcDialog
-		:name="isEditing ? 'Edit product' : 'New product'"
+		:name="isEditing ? t('Edit product') : t('New product')"
 		:open="props.open"
 		size="normal"
 		isForm
@@ -209,17 +210,17 @@ async function onSubmit() {
 			<NcTextField
 				ref="nameField"
 				v-model="name"
-				label="Name"
-				placeholder="e.g. Milk"
+				:label="t('Name')"
+				:placeholder="t('e.g. Milk')"
 				:disabled="submitting"
 				:error="name.trim() === '' && name.length > 0"
-				helperText="The product name is required." />
+				:helperText="t('The product name is required.')" />
 
 			<NcSelect
 				v-model="category"
 				label="name"
-				inputLabel="Category"
-				placeholder="No category"
+				:inputLabel="t('Category')"
+				:placeholder="t('No category')"
 				:options="availableCategories"
 				:loading="loading"
 				:disabled="submitting"
@@ -227,25 +228,25 @@ async function onSubmit() {
 
 			<NcTextField
 				v-model="barcode"
-				label="Barcode"
-				placeholder="e.g. 4001686310542"
+				:label="t('Barcode')"
+				:placeholder="t('e.g. 4001686310542')"
 				:disabled="submitting" />
 
 			<NcTextField
 				v-model="aliases"
-				label="Aliases (comma-separated)"
-				placeholder="e.g. M, Milch"
+				:label="t('Aliases (comma-separated)')"
+				:placeholder="t('e.g. M, Milch')"
 				:disabled="submitting"
-				helperText="Alternative names used on receipts." />
+				:helperText="t('Alternative names used on receipts.')" />
 
 			<div :class="$style.picture">
 				<img
 					v-if="picturePreview"
 					:src="picturePreview"
-					:alt="name || 'Product picture'"
+					:alt="name || t('Product picture')"
 					:class="$style['picture-preview']">
 				<div v-else :class="$style['picture-empty']">
-					No picture
+					{{ t('No picture') }}
 				</div>
 				<input
 					ref="pictureInput"
@@ -263,7 +264,7 @@ async function onSubmit() {
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiImagePlus" :size="20" />
 						</template>
-						{{ picturePreview ? 'Replace picture' : 'Upload picture' }}
+						{{ picturePreview ? t('Replace picture') : t('Upload picture') }}
 					</NcButton>
 					<NcButton
 						v-if="picturePreview"
@@ -274,24 +275,24 @@ async function onSubmit() {
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiTrashCan" :size="20" />
 						</template>
-						Remove
+						{{ t('Remove') }}
 					</NcButton>
 				</div>
 				<p :class="$style['picture-hint']">
-					JPEG, PNG, WebP or GIF, up to 4 MB.
+					{{ t('JPEG, PNG, WebP or GIF, up to 4 MB.') }}
 				</p>
 			</div>
 
 			<NcCheckboxRadioSwitch v-model="favorite" type="switch" :disabled="submitting">
-				Favorite
+				{{ t('Favorite') }}
 			</NcCheckboxRadioSwitch>
 
 			<NcCheckboxRadioSwitch v-model="subscription" type="switch" :disabled="submitting">
-				Subscription
+				{{ t('Subscription') }}
 			</NcCheckboxRadioSwitch>
 
 			<NcCheckboxRadioSwitch v-model="income" type="switch" :disabled="submitting">
-				Income
+				{{ t('Income') }}
 			</NcCheckboxRadioSwitch>
 
 			<p v-if="error" :class="$style.error">
@@ -304,13 +305,13 @@ async function onSubmit() {
 				variant="secondary"
 				:disabled="submitting"
 				@click="onCancel">
-				Cancel
+				{{ t('Cancel') }}
 			</NcButton>
 			<NcButton type="submit" variant="primary" :disabled="!canSubmit">
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
-				{{ isEditing ? 'Save' : 'Create' }}
+				{{ isEditing ? t('Save') : t('Create') }}
 			</NcButton>
 		</template>
 	</NcDialog>

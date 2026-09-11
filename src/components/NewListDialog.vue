@@ -8,6 +8,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { createList, fetchCategories, fetchStores } from '../services/listsApi.ts'
+import { t } from '../utils/l10n.ts'
 
 const props = defineProps<{ open: boolean }>()
 
@@ -71,7 +72,7 @@ async function onSubmit() {
 		emit('created', list)
 		emit('update:open', false)
 	} catch {
-		error.value = 'Failed to create the list. Please try again.'
+		error.value = t('Failed to create the list. Please try again.')
 	} finally {
 		submitting.value = false
 	}
@@ -80,7 +81,7 @@ async function onSubmit() {
 
 <template>
 	<NcDialog
-		name="New list"
+		:name="t('New list')"
 		:open="props.open"
 		size="normal"
 		isForm
@@ -90,16 +91,16 @@ async function onSubmit() {
 			<NcTextField
 				ref="nameField"
 				v-model="name"
-				label="Name"
-				placeholder="e.g. Weekly groceries"
+				:label="t('Name')"
+				:placeholder="t('e.g. Weekly groceries')"
 				:disabled="submitting"
 				:error="name.trim() === '' && name.length > 0"
-				helperText="The list name is required." />
+				:helperText="t('The list name is required.')" />
 			<NcSelect
 				v-model="store"
 				label="name"
-				inputLabel="Store"
-				placeholder="Select a store (optional)"
+				:inputLabel="t('Store')"
+				:placeholder="t('Select a store (optional)')"
 				:options="stores"
 				:loading="loading"
 				:disabled="submitting"
@@ -107,8 +108,8 @@ async function onSubmit() {
 			<NcSelect
 				v-model="category"
 				label="name"
-				inputLabel="Category"
-				placeholder="Select a category (optional)"
+				:inputLabel="t('Category')"
+				:placeholder="t('Select a category (optional)')"
 				:options="categories"
 				:loading="loading"
 				:disabled="submitting"
@@ -123,13 +124,13 @@ async function onSubmit() {
 				variant="secondary"
 				:disabled="submitting"
 				@click="onCancel">
-				Cancel
+				{{ t('Cancel') }}
 			</NcButton>
 			<NcButton type="submit" variant="primary" :disabled="!canSubmit">
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
-				Create
+				{{ t('Create') }}
 			</NcButton>
 		</template>
 	</NcDialog>

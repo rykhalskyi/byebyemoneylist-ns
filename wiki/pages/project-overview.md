@@ -15,7 +15,8 @@ related:
 
 - **Backend**: PHP 8.1, Nextcloud AppFramework (Nextcloud 31–35). No database schema yet.
 - **Frontend**: Vue 3 (Composition API, `<script setup>`), TypeScript, Vite build, `@nextcloud/vue` components, `@mdi/js` icons.
-- **Testing**: PHPUnit (`tests/`), ESLint + Stylelint for the frontend, psalm + php-cs-fixer for the backend.
+- **Localization**: `@nextcloud/l10n` via `t()`/`n()` in `src/utils/l10n.ts`; translations in `l10n/<lang>.json` compiled to `l10n/<lang>.js` by `npm run l10n`; languages `en` (source), `de`, `uk`; language is resolved server-side from the user's Nextcloud preference.
+- **Testing**: PHPUnit (`tests/`), Vitest (`tests/js/`), ESLint + Stylelint for the frontend, psalm + php-cs-fixer for the backend.
 - **CI**: GitHub Actions workflows (lint, psalm, node build, openapi spec).
 
 ## Folder structure
@@ -29,9 +30,12 @@ src/
   main.ts                   # Vue entry point
   App.vue                   # root component, view switching, navigation
   components/Menu.vue       # left navigation menu
+  utils/l10n.ts             # app-bound t()/n() + locale helpers
+l10n/                       # translations (<lang>.json source, <lang>.js generated)
 templates/index.php         # server-side page template
 css/, img/, js/             # built assets
 tests/                      # PHPUnit tests
+tests/js/                   # Vitest tests
 ```
 
 ## Architecture
@@ -50,3 +54,7 @@ tests/                      # PHPUnit tests
 - **Prices** — product price per store over time (price history).
 - **Dual price system** — estimated (item sum) vs actual (`finalTotal`); settings rule decides which is used in analytics.
 - **Sync** — per-list `*.bbl.json` shared via WebDAV, replaced by a real server API; conflict resolution via `lastModifiedAt` / `lastSyncTimestamp`.
+
+## Updates
+
+- [2026-09-11]: Added localization stack and `l10n/` layout; noted Vitest test suite.

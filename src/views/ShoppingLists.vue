@@ -13,6 +13,7 @@ import AddProductDialog from '../components/AddProductDialog.vue'
 import NewListDialog from '../components/NewListDialog.vue'
 import { deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
 import { formatDate, formatTotal } from '../utils/format.ts'
+import { getCanonicalLocale, t } from '../utils/l10n.ts'
 
 const lists = ref<ShoppingList[]>([])
 const stores = ref<Store[]>([])
@@ -44,7 +45,7 @@ async function loadData() {
 		categories.value = categoryData
 		products.value = productData
 	} catch {
-		error.value = 'Failed to load your shopping lists.'
+		error.value = t('Failed to load your shopping lists.')
 	} finally {
 		loading.value = false
 	}
@@ -78,7 +79,14 @@ function subname(list: ShoppingList): string {
 }
 
 function statusLabel(status: ListStatus): string {
-	return status.charAt(0).toUpperCase() + status.slice(1)
+	switch (status) {
+		case 'finished':
+			return t('Finished')
+		case 'archived':
+			return t('Archived')
+		default:
+			return t('New')
+	}
 }
 
 function statusVariant(status: ListStatus): 'secondary' | 'success' | 'tertiary' {
@@ -108,7 +116,7 @@ async function loadItems(listId: string) {
 	try {
 		itemsByList.value = { ...itemsByList.value, [listId]: await fetchListItems(listId) }
 	} catch {
-		itemsError.value = { ...itemsError.value, [listId]: 'Failed to load the items.' }
+		itemsError.value = { ...itemsError.value, [listId]: t('Failed to load the items.') }
 	} finally {
 		itemsLoading.value = { ...itemsLoading.value, [listId]: false }
 	}
@@ -168,7 +176,7 @@ function formatQuantity(quantity: number): string {
 	if (Number.isInteger(quantity)) {
 		return String(quantity)
 	}
-	return new Intl.NumberFormat(undefined, {
+	return new Intl.NumberFormat(getCanonicalLocale(), {
 		maximumFractionDigits: 2,
 	}).format(quantity)
 }
@@ -192,7 +200,7 @@ function itemSubname(item: ListItem): string {
 <template>
 	<div :class="$style.wrapper">
 		<div :class="$style.header">
-			<h2>Shopping Lists</h2>
+			<h2>{{ t('Shopping Lists') }}</h2>
 
 			<NcButton
 				:class="$style['add-button']"
@@ -202,7 +210,7 @@ function itemSubname(item: ListItem): string {
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiPlus" :size="20" />
 				</template>
-				Add list
+				{{ t('Add list') }}
 			</NcButton>
 		</div>
 
@@ -212,28 +220,28 @@ function itemSubname(item: ListItem): string {
 
 		<NcEmptyContent
 			v-else-if="error"
-			name="Could not load lists"
+			:name="t('Could not load lists')"
 			:description="error">
 			<template #icon>
 				<NcIconSvgWrapper :path="mdiAlertCircle" :size="64" />
 			</template>
 			<template #action>
 				<NcButton type="button" @click="loadData">
-					Try again
+					{{ t('Try again') }}
 				</NcButton>
 			</template>
 		</NcEmptyContent>
 
 		<NcEmptyContent
 			v-else-if="lists.length === 0"
-			name="No shopping lists yet"
-			description="Create your first list to start tracking your spending.">
+			:name="t('No shopping lists yet')"
+			:description="t('Create your first list to start tracking your spending.')">
 			<template #icon>
 				<NcIconSvgWrapper :path="mdiCartOff" :size="64" />
 			</template>
 			<template #action>
 				<NcButton type="button" variant="primary" @click="showDialog = true">
-					Add list
+					{{ t('Add list') }}
 				</NcButton>
 			</template>
 		</NcEmptyContent>
@@ -292,7 +300,7 @@ function itemSubname(item: ListItem): string {
 								<template #extra-actions>
 									<NcButton
 										type="button"
-										:aria-label="`Delete ${item.productName}`"
+										:aria-label="t('Delete {name}', { name: item.productName })"
 										@click="onDeleteItem(list, item)">
 										<template #icon>
 											<NcIconSvgWrapper :path="mdiDelete" :size="20" />
@@ -302,7 +310,7 @@ function itemSubname(item: ListItem): string {
 							</NcListItem>
 						</ul>
 						<p v-else :class="$style['no-items']">
-							No items yet.
+							{{ t('No items yet.') }}
 						</p>
 
 						<NcButton
@@ -313,7 +321,7 @@ function itemSubname(item: ListItem): string {
 							<template #icon>
 								<NcIconSvgWrapper :path="mdiPlus" :size="20" />
 							</template>
-							Add product
+							{{ t('Add product') }}
 						</NcButton>
 					</template>
 				</div>

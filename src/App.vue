@@ -6,13 +6,14 @@ import NcContent from '@nextcloud/vue/components/NcContent'
 import Menu from './components/Menu.vue'
 import Catalog from './views/Catalog.vue'
 import ShoppingLists from './views/ShoppingLists.vue'
+import { t } from './utils/l10n.ts'
 
 const items = [
-	{ id: 'dashboard', label: 'Dashboard', icon: mdiViewDashboard },
-	{ id: 'lists', label: 'Shopping Lists', icon: mdiCart },
-	{ id: 'analytics', label: 'Analytics', icon: mdiChartPie },
-	{ id: 'catalog', label: 'Catalog', icon: mdiPackageVariant },
-	{ id: 'settings', label: 'Settings', icon: mdiCog },
+	{ id: 'dashboard', label: t('Dashboard'), icon: mdiViewDashboard },
+	{ id: 'lists', label: t('Shopping Lists'), icon: mdiCart },
+	{ id: 'analytics', label: t('Analytics'), icon: mdiChartPie },
+	{ id: 'catalog', label: t('Catalog'), icon: mdiPackageVariant },
+	{ id: 'settings', label: t('Settings'), icon: mdiCog },
 ]
 
 const currentView = ref(items[0].id)

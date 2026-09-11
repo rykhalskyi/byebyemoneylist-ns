@@ -1,4 +1,6 @@
-import { t as translate, n as translatePlural } from '@nextcloud/l10n'
+import { getCanonicalLocale, t as translate, n as translatePlural } from '@nextcloud/l10n'
+
+export { getCanonicalLocale }
 
 export const APPLICATION_ID = 'byebyemoneylist'
 
