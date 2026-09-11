@@ -16,4 +16,12 @@ export default [
 			'vue/multi-word-component-names': ['error', { ignores: ['Menu', 'Catalog'] }],
 		},
 	},
+	{
+		files: ['scripts/**/*.mjs'],
+		rules: {
+			// CLI scripts use console output and do not need JSDoc blocks.
+			'jsdoc/require-jsdoc': 'off',
+			'no-console': 'off',
+		},
+	},
 ]
