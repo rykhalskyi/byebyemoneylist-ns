@@ -2,6 +2,7 @@
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import { t } from '../utils/l10n.ts'
 
 const props = withDefaults(defineProps<{
 	open: boolean
@@ -10,7 +11,7 @@ const props = withDefaults(defineProps<{
 	confirmLabel?: string
 	busy?: boolean
 }>(), {
-	confirmLabel: 'Delete',
+	confirmLabel: t('Delete'),
 	busy: false,
 })
 
@@ -45,7 +46,7 @@ function onConfirm() {
 				variant="secondary"
 				:disabled="props.busy"
 				@click="onCancel">
-				Cancel
+				{{ t('Cancel') }}
 			</NcButton>
 			<NcButton
 				type="button"

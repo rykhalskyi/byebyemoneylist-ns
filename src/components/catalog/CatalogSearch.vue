@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { t } from '../../utils/l10n.ts'
 
 const props = withDefaults(defineProps<{
 	modelValue: string
 	placeholder?: string
 	label?: string
 }>(), {
-	placeholder: 'Search',
-	label: 'Search',
+	placeholder: t('Search'),
+	label: t('Search'),
 })
 
 const emit = defineEmits<{
@@ -31,7 +32,7 @@ function onClear() {
 		type="search"
 		:showTrailingButton="props.modelValue.length > 0"
 		trailingButtonIcon="close"
-		trailingButtonLabel="Clear search"
+		:trailingButtonLabel="t('Clear search')"
 		@update:modelValue="onUpdate"
 		@trailingButtonClick="onClear" />
 </template>

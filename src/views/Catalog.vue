@@ -20,6 +20,7 @@ import NewStoreDialog from '../components/NewStoreDialog.vue'
 import ProductInfoDialog from '../components/ProductInfoDialog.vue'
 import { usePagedList } from '../composables/usePagedList.ts'
 import { confirmAllCategories, confirmCategory, deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi.ts'
+import { getCanonicalLocale, n, t } from '../utils/l10n.ts'
 import { createCategoryFuse, createProductFuse, createStoreFuse, search } from '../utils/search.ts'
 
 type TabId = 'categories' | 'stores' | 'products' | 'subscriptions' | 'income'
@@ -32,11 +33,11 @@ interface FlatCategory {
 const PAGE_SIZE = 50
 
 const tabs: { id: TabId, label: string }[] = [
-	{ id: 'categories', label: 'Categories' },
-	{ id: 'stores', label: 'Stores' },
-	{ id: 'products', label: 'Products' },
-	{ id: 'subscriptions', label: 'Subscriptions' },
-	{ id: 'income', label: 'Income' },
+	{ id: 'categories', label: t('Categories') },
+	{ id: 'stores', label: t('Stores') },
+	{ id: 'products', label: t('Products') },
+	{ id: 'subscriptions', label: t('Subscriptions') },
+	{ id: 'income', label: t('Income') },
 ]
 
 const activeTab = ref<TabId>('categories')
@@ -77,15 +78,15 @@ const deleting = ref(false)
 const addButtonLabel = computed(() => {
 	switch (activeTab.value) {
 		case 'categories':
-			return 'Add category'
+			return t('Add category')
 		case 'stores':
-			return 'Add store'
+			return t('Add store')
 		case 'subscriptions':
-			return 'Add subscription'
+			return t('Add subscription')
 		case 'income':
-			return 'Add income source'
+			return t('Add income source')
 		default:
-			return 'Add product'
+			return t('Add product')
 	}
 })
 
@@ -110,20 +111,20 @@ const emptyState = computed<{ title: string, description: string, icon: string }
 	switch (activeTab.value) {
 		case 'subscriptions':
 			return {
-				title: 'No subscriptions yet',
-				description: 'Mark products as subscriptions to track recurring costs.',
+				title: t('No subscriptions yet'),
+				description: t('Mark products as subscriptions to track recurring costs.'),
 				icon: mdiCalendarMonth,
 			}
 		case 'income':
 			return {
-				title: 'No income sources yet',
-				description: 'Mark products as income to track your earnings.',
+				title: t('No income sources yet'),
+				description: t('Mark products as income to track your earnings.'),
 				icon: mdiArrowUp,
 			}
 		default:
 			return {
-				title: 'No products yet',
-				description: 'Create your first product to build up your shopping catalog.',
+				title: t('No products yet'),
+				description: t('Create your first product to build up your shopping catalog.'),
 				icon: mdiPackageVariantClosed,
 			}
 	}
@@ -137,7 +138,7 @@ const flattenedCategories = computed<FlatCategory[]>(() => {
 		children.set(category.parentId, siblings)
 	}
 
-	const roots = (children.get(null) ?? []).slice().sort(byName)
+	const roots = (children.get(null) ?? []).slice().sort(compareByName)
 	const flattened: FlatCategory[] = []
 	const visited = new Set<string>()
 
@@ -147,7 +148,7 @@ const flattenedCategories = computed<FlatCategory[]>(() => {
 		}
 		visited.add(category.id)
 		flattened.push({ category, depth })
-		for (const child of (children.get(category.id) ?? []).slice().sort(byName)) {
+		for (const child of (children.get(category.id) ?? []).slice().sort(compareByName)) {
 			visit(child, depth + 1)
 		}
 	}
@@ -213,15 +214,15 @@ const {
 const searchPlaceholder = computed(() => {
 	switch (activeTab.value) {
 		case 'categories':
-			return 'Search categories…'
+			return t('Search categories…')
 		case 'stores':
-			return 'Search stores…'
+			return t('Search stores…')
 		case 'subscriptions':
-			return 'Search subscriptions…'
+			return t('Search subscriptions…')
 		case 'income':
-			return 'Search income…'
+			return t('Search income…')
 		default:
-			return 'Search products…'
+			return t('Search products…')
 	}
 })
 
@@ -262,18 +263,25 @@ const searchSummary = computed(() => {
 	if (!hasSearch.value) {
 		return ''
 	}
-	const noun = activeTab.value === 'categories' ? 'categories' : activeTab.value === 'stores' ? 'stores' : 'products'
-	return `Showing ${activeVisibleCount.value} of ${activeFilteredCount.value} matching ${noun}`
+	const vars = { visible: activeVisibleCount.value, total: activeFilteredCount.value }
+	switch (activeTab.value) {
+		case 'categories':
+			return t('Showing {visible} of {total} matching categories', vars)
+		case 'stores':
+			return t('Showing {visible} of {total} matching stores', vars)
+		default:
+			return t('Showing {visible} of {total} matching products', vars)
+	}
 })
 
 const deleteTitle = computed(() => {
 	switch (pendingDelete.value?.type) {
 		case 'category':
-			return 'Delete category'
+			return t('Delete category')
 		case 'store':
-			return 'Delete store'
+			return t('Delete store')
 		default:
-			return 'Delete product'
+			return t('Delete product')
 	}
 })
 
@@ -282,7 +290,7 @@ const deleteMessage = computed(() => {
 	if (target === null) {
 		return ''
 	}
-	return `Delete "${target.entity.name}"? This cannot be undone.`
+	return t('Delete "{name}"? This cannot be undone.', { name: target.entity.name })
 })
 
 watch(activeTab, () => {
@@ -306,14 +314,14 @@ async function loadData() {
 		stores.value = storeData
 		products.value = productData
 	} catch {
-		error.value = 'Failed to load your catalog.'
+		error.value = t('Failed to load your catalog.')
 	} finally {
 		loading.value = false
 	}
 }
 
-function byName(a: Category, b: Category): number {
-	return a.name.localeCompare(b.name)
+function compareByName(a: { name: string }, b: { name: string }): number {
+	return a.name.localeCompare(b.name, getCanonicalLocale())
 }
 
 function parentName(category: Category): string {
@@ -342,29 +350,29 @@ function onAdd() {
 }
 
 function onCategoryCreated(category: Category) {
-	categories.value = [...categories.value, category].sort(byName)
+	categories.value = [...categories.value, category].sort(compareByName)
 }
 
 function onStoreCreated(store: Store) {
-	stores.value = [...stores.value, store].sort((a, b) => a.name.localeCompare(b.name))
+	stores.value = [...stores.value, store].sort(compareByName)
 }
 
 function onProductCreated(product: Product) {
-	products.value = [...products.value, product].sort((a, b) => a.name.localeCompare(b.name))
+	products.value = [...products.value, product].sort(compareByName)
 }
 
 function onCategoryUpdated(category: Category) {
-	categories.value = categories.value.map((candidate) => (candidate.id === category.id ? category : candidate)).sort(byName)
+	categories.value = categories.value.map((candidate) => (candidate.id === category.id ? category : candidate)).sort(compareByName)
 	editingCategory.value = null
 }
 
 function onStoreUpdated(store: Store) {
-	stores.value = stores.value.map((candidate) => (candidate.id === store.id ? store : candidate)).sort((a, b) => a.name.localeCompare(b.name))
+	stores.value = stores.value.map((candidate) => (candidate.id === store.id ? store : candidate)).sort(compareByName)
 	editingStore.value = null
 }
 
 function onProductUpdated(product: Product) {
-	products.value = products.value.map((candidate) => (candidate.id === product.id ? product : candidate)).sort((a, b) => a.name.localeCompare(b.name))
+	products.value = products.value.map((candidate) => (candidate.id === product.id ? product : candidate)).sort(compareByName)
 	editingProduct.value = null
 }
 
@@ -471,7 +479,7 @@ function closeInfoDialog() {
 <template>
 	<div :class="$style.wrapper">
 		<div :class="$style.header">
-			<h2>Catalog</h2>
+			<h2>{{ t('Catalog') }}</h2>
 
 			<NcButton
 				:class="$style['add-button']"
@@ -510,14 +518,14 @@ function closeInfoDialog() {
 
 		<NcEmptyContent
 			v-else-if="error"
-			name="Could not load catalog"
+			:name="t('Could not load catalog')"
 			:description="error">
 			<template #icon>
 				<NcIconSvgWrapper :path="mdiAlertCircle" :size="64" />
 			</template>
 			<template #action>
 				<NcButton type="button" @click="loadData">
-					Try again
+					{{ t('Try again') }}
 				</NcButton>
 			</template>
 		</NcEmptyContent>
@@ -525,37 +533,37 @@ function closeInfoDialog() {
 		<template v-else-if="activeTab === 'categories'">
 			<NcEmptyContent
 				v-if="categories.length === 0"
-				name="No categories yet"
-				description="Create your first category to start organizing products.">
+				:name="t('No categories yet')"
+				:description="t('Create your first category to start organizing products.')">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiTagOff" :size="64" />
 				</template>
 				<template #action>
 					<NcButton type="button" variant="primary" @click="showCategoryDialog = true">
-						Add category
+						{{ t('Add category') }}
 					</NcButton>
 				</template>
 			</NcEmptyContent>
 
 			<NcEmptyContent
 				v-else-if="hasSearch && filteredCategories.length === 0"
-				name="No categories found"
-				:description="`Nothing matches “${query}”.`">
+				:name="t('No categories found')"
+				:description="t('Nothing matches “{query}”.', { query })">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiMagnify" :size="64" />
 				</template>
 				<template #action>
 					<NcButton type="button" @click="query = ''">
-						Clear search
+						{{ t('Clear search') }}
 					</NcButton>
 				</template>
 			</NcEmptyContent>
 
 			<div v-else :class="$style.list">
 				<div v-if="!hasSearch && pendingCategories.length > 0" :class="$style['pending-banner']">
-					<span>{{ pendingCategories.length }} categories imported from client pending review</span>
+					<span>{{ n('%n category imported from client pending review', '%n categories imported from client pending review', pendingCategories.length) }}</span>
 					<NcButton type="button" variant="primary" @click="onConfirmAll">
-						Approve all
+						{{ t('Approve all') }}
 					</NcButton>
 				</div>
 
@@ -584,7 +592,7 @@ function closeInfoDialog() {
 
 				<div v-if="hasMoreCategories" :class="$style['load-more']">
 					<NcButton type="button" @click="loadMoreCategories">
-						Load more ({{ remainingCategories }} remaining)
+						{{ n('Load more (%n remaining)', 'Load more (%n remaining)', remainingCategories) }}
 					</NcButton>
 				</div>
 			</div>
@@ -593,28 +601,28 @@ function closeInfoDialog() {
 		<template v-else-if="activeTab === 'stores'">
 			<NcEmptyContent
 				v-if="stores.length === 0"
-				name="No stores yet"
-				description="Create your first store to start tracking where you shop.">
+				:name="t('No stores yet')"
+				:description="t('Create your first store to start tracking where you shop.')">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiStoreOff" :size="64" />
 				</template>
 				<template #action>
 					<NcButton type="button" variant="primary" @click="showStoreDialog = true">
-						Add store
+						{{ t('Add store') }}
 					</NcButton>
 				</template>
 			</NcEmptyContent>
 
 			<NcEmptyContent
 				v-else-if="hasSearch && filteredStores.length === 0"
-				name="No stores found"
-				:description="`Nothing matches “${query}”.`">
+				:name="t('No stores found')"
+				:description="t('Nothing matches “{query}”.', { query })">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiMagnify" :size="64" />
 				</template>
 				<template #action>
 					<NcButton type="button" @click="query = ''">
-						Clear search
+						{{ t('Clear search') }}
 					</NcButton>
 				</template>
 			</NcEmptyContent>
@@ -631,7 +639,7 @@ function closeInfoDialog() {
 
 				<div v-if="hasMoreStores" :class="$style['load-more']">
 					<NcButton type="button" @click="loadMoreStores">
-						Load more ({{ remainingStores }} remaining)
+						{{ n('Load more (%n remaining)', 'Load more (%n remaining)', remainingStores) }}
 					</NcButton>
 				</div>
 			</div>
@@ -654,14 +662,14 @@ function closeInfoDialog() {
 
 			<NcEmptyContent
 				v-else-if="hasSearch && filteredProducts.length === 0"
-				name="No products found"
-				:description="`Nothing matches “${query}”.`">
+				:name="t('No products found')"
+				:description="t('Nothing matches “{query}”.', { query })">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiMagnify" :size="64" />
 				</template>
 				<template #action>
 					<NcButton type="button" @click="query = ''">
-						Clear search
+						{{ t('Clear search') }}
 					</NcButton>
 				</template>
 			</NcEmptyContent>
@@ -679,7 +687,7 @@ function closeInfoDialog() {
 
 				<div v-if="hasMoreProducts" :class="$style['load-more']">
 					<NcButton type="button" @click="loadMoreProducts">
-						Load more ({{ remainingProducts }} remaining)
+						{{ n('Load more (%n remaining)', 'Load more (%n remaining)', remainingProducts) }}
 					</NcButton>
 				</div>
 			</div>

@@ -27,3 +27,5 @@
 ### Search
 
 - I want to have search in each currently selected tab 
+- In Categorytab it searchs for category, in Stores - stores, each product tab searches in it's list so user can see and quickly find the item 
+- Product tab can contain hundrets of items. how to optimize display? paging? search must support paged output 

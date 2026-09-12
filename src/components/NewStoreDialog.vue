@@ -8,6 +8,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { createStore, fetchCategories, updateStore } from '../services/listsApi.ts'
+import { t } from '../utils/l10n.ts'
 
 const props = defineProps<{ open: boolean, entity?: Store }>()
 
@@ -52,7 +53,7 @@ watch(
 				selectedCategories.value = categories.value.filter((category) => ids.has(category.id))
 			}
 		} catch {
-			error.value = 'Failed to load categories.'
+			error.value = t('Failed to load categories.')
 		} finally {
 			loading.value = false
 		}
@@ -81,7 +82,7 @@ async function onSubmit() {
 		emit(props.entity === undefined ? 'created' : 'updated', store)
 		emit('update:open', false)
 	} catch {
-		error.value = isEditing.value ? 'Failed to update the store. Please try again.' : 'Failed to create the store. Please try again.'
+		error.value = isEditing.value ? t('Failed to update the store. Please try again.') : t('Failed to create the store. Please try again.')
 	} finally {
 		submitting.value = false
 	}
@@ -90,7 +91,7 @@ async function onSubmit() {
 
 <template>
 	<NcDialog
-		:name="isEditing ? 'Edit store' : 'New store'"
+		:name="isEditing ? t('Edit store') : t('New store')"
 		:open="props.open"
 		size="normal"
 		isForm
@@ -100,23 +101,23 @@ async function onSubmit() {
 			<NcTextField
 				ref="nameField"
 				v-model="name"
-				label="Name"
-				placeholder="e.g. Aldi"
+				:label="t('Name')"
+				:placeholder="t('e.g. Aldi')"
 				:disabled="submitting"
 				:error="name.trim() === '' && name.length > 0"
-				helperText="The store name is required." />
+				:helperText="t('The store name is required.')" />
 
 			<NcTextField
 				v-model="address"
-				label="Address"
-				placeholder="e.g. Hauptstraße 1, 10115 Berlin"
+				:label="t('Address')"
+				:placeholder="t('e.g. Hauptstraße 1, 10115 Berlin')"
 				:disabled="submitting" />
 
 			<NcSelect
 				v-model="selectedCategories"
 				label="name"
-				inputLabel="Categories"
-				placeholder="No categories"
+				:inputLabel="t('Categories')"
+				:placeholder="t('No categories')"
 				:options="categories"
 				:loading="loading"
 				:disabled="submitting"
@@ -134,13 +135,13 @@ async function onSubmit() {
 				variant="secondary"
 				:disabled="submitting"
 				@click="onCancel">
-				Cancel
+				{{ t('Cancel') }}
 			</NcButton>
 			<NcButton type="submit" variant="primary" :disabled="!canSubmit">
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
-				{{ isEditing ? 'Save' : 'Create' }}
+				{{ isEditing ? t('Save') : t('Create') }}
 			</NcButton>
 		</template>
 	</NcDialog>

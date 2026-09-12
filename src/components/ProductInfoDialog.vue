@@ -11,6 +11,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import ConfirmDialog from './ConfirmDialog.vue'
 import { deleteProductPicture, fetchProductPicture, fetchProductPrices, uploadProductPicture } from '../services/listsApi.ts'
 import { formatDate, formatTotal } from '../utils/format.ts'
+import { t } from '../utils/l10n.ts'
 
 const props = defineProps<{
 	open: boolean
@@ -66,7 +67,7 @@ watch(
 				try {
 					prices.value = await fetchProductPrices(product.id)
 				} catch {
-					error.value = 'Failed to load the price history.'
+					error.value = t('Failed to load the price history.')
 				} finally {
 					loading.value = false
 				}
@@ -75,7 +76,7 @@ watch(
 				try {
 					picture.value = await fetchProductPicture(product.id)
 				} catch {
-					pictureError.value = 'Failed to load the picture.'
+					pictureError.value = t('Failed to load the picture.')
 				} finally {
 					pictureLoading.value = false
 				}
@@ -117,7 +118,7 @@ async function onPictureSelected(event: Event) {
 		picture.value = await uploadProductPicture(props.product.id, file)
 		emit('updated', { ...props.product, hasPicture: true })
 	} catch {
-		pictureError.value = 'Failed to upload the picture.'
+		pictureError.value = t('Failed to upload the picture.')
 	} finally {
 		pictureBusy.value = false
 	}
@@ -134,7 +135,7 @@ async function onConfirmPictureDelete() {
 		picture.value = null
 		emit('updated', { ...props.product, hasPicture: false })
 	} catch {
-		pictureError.value = 'Failed to delete the picture.'
+		pictureError.value = t('Failed to delete the picture.')
 	} finally {
 		pictureBusy.value = false
 		confirmPictureDelete.value = false
@@ -144,7 +145,7 @@ async function onConfirmPictureDelete() {
 
 <template>
 	<NcDialog
-		:name="product?.name ?? 'Product'"
+		:name="product?.name ?? t('Product')"
 		:open="open"
 		size="normal"
 		@update:open="emit('update:open', $event)">
@@ -159,7 +160,7 @@ async function onConfirmPictureDelete() {
 					:alt="product.name"
 					:class="$style['picture-image']">
 				<div v-else :class="$style['picture-empty']">
-					No picture
+					{{ t('No picture') }}
 				</div>
 				<div :class="$style['picture-actions']">
 					<input
@@ -177,7 +178,7 @@ async function onConfirmPictureDelete() {
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiImagePlus" :size="20" />
 						</template>
-						{{ picture ? 'Replace' : 'Upload' }}
+						{{ picture ? t('Replace') : t('Upload') }}
 					</NcButton>
 					<NcButton
 						v-if="picture"
@@ -188,7 +189,7 @@ async function onConfirmPictureDelete() {
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiTrashCan" :size="20" />
 						</template>
-						Delete
+						{{ t('Delete') }}
 					</NcButton>
 				</div>
 				<p v-if="pictureError" :class="$style.error">
@@ -199,7 +200,7 @@ async function onConfirmPictureDelete() {
 			<dl :class="$style.details">
 				<div v-if="categoryName" :class="$style.row">
 					<dt :class="$style['row-label']">
-						Category
+						{{ t('Category') }}
 					</dt>
 					<dd :class="$style['row-value']">
 						{{ categoryName }}
@@ -207,7 +208,7 @@ async function onConfirmPictureDelete() {
 				</div>
 				<div v-if="product.barcode" :class="$style.row">
 					<dt :class="$style['row-label']">
-						Barcode
+						{{ t('Barcode') }}
 					</dt>
 					<dd :class="$style['row-value']">
 						{{ product.barcode }}
@@ -215,7 +216,7 @@ async function onConfirmPictureDelete() {
 				</div>
 				<div v-if="product.aliases.length > 0" :class="$style.row">
 					<dt :class="$style['row-label']">
-						Aliases
+						{{ t('Aliases') }}
 					</dt>
 					<dd :class="$style['row-value']">
 						{{ product.aliases.join(', ') }}
@@ -225,21 +226,21 @@ async function onConfirmPictureDelete() {
 					v-if="product.isFavorite || product.isSubscription || product.isIncome"
 					:class="$style.row">
 					<dt :class="$style['row-label']">
-						Flags
+						{{ t('Flags') }}
 					</dt>
 					<dd :class="[$style['row-value'], $style.flags]">
 						<NcChip
 							v-if="product.isFavorite"
-							text="Favorite"
+							:text="t('Favorite')"
 							noClose />
 						<NcChip
 							v-if="product.isSubscription"
-							text="Subscription"
+							:text="t('Subscription')"
 							variant="primary"
 							noClose />
 						<NcChip
 							v-if="product.isIncome"
-							text="Income"
+							:text="t('Income')"
 							variant="success"
 							noClose />
 					</dd>
@@ -247,7 +248,7 @@ async function onConfirmPictureDelete() {
 			</dl>
 
 			<h5 :class="$style['section-title']">
-				Price history
+				{{ t('Price history') }}
 			</h5>
 
 			<div v-if="loading" :class="$style.center">
@@ -259,7 +260,7 @@ async function onConfirmPictureDelete() {
 			</p>
 
 			<p v-else-if="prices.length === 0" :class="$style.empty">
-				No price history yet.
+				{{ t('No price history yet.') }}
 			</p>
 
 			<ul v-else :class="$style.prices">
@@ -271,15 +272,15 @@ async function onConfirmPictureDelete() {
 		</div>
 		<template #actions>
 			<NcButton type="button" variant="secondary" @click="close">
-				Close
+				{{ t('Close') }}
 			</NcButton>
 		</template>
 	</NcDialog>
 
 	<ConfirmDialog
 		:open="confirmPictureDelete"
-		title="Delete picture"
-		message="Delete this product's picture? This cannot be undone."
+		:title="t('Delete picture')"
+		:message="t('Delete this product\'s picture? This cannot be undone.')"
 		:busy="pictureBusy"
 		@update:open="confirmPictureDelete = $event"
 		@confirm="onConfirmPictureDelete" />

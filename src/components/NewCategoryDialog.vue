@@ -11,6 +11,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { CATEGORY_COLOR_PALETTE } from '../constants/categoryColors.ts'
 import { createCategory, fetchCategories, updateCategory } from '../services/listsApi.ts'
+import { t } from '../utils/l10n.ts'
 
 const props = defineProps<{ open: boolean, entity?: Category }>()
 
@@ -58,7 +59,7 @@ watch(
 				parent.value = categories.value.find((candidate) => candidate.id === entity.parentId) ?? null
 			}
 		} catch {
-			error.value = 'Failed to load categories.'
+			error.value = t('Failed to load categories.')
 		} finally {
 			loading.value = false
 		}
@@ -93,7 +94,7 @@ async function onSubmit() {
 		emit(props.entity === undefined ? 'created' : 'updated', category)
 		emit('update:open', false)
 	} catch {
-		error.value = isEditing.value ? 'Failed to update the category. Please try again.' : 'Failed to create the category. Please try again.'
+		error.value = isEditing.value ? t('Failed to update the category. Please try again.') : t('Failed to create the category. Please try again.')
 	} finally {
 		submitting.value = false
 	}
@@ -102,7 +103,7 @@ async function onSubmit() {
 
 <template>
 	<NcDialog
-		:name="isEditing ? 'Edit category' : 'New category'"
+		:name="isEditing ? t('Edit category') : t('New category')"
 		:open="props.open"
 		size="normal"
 		isForm
@@ -112,26 +113,26 @@ async function onSubmit() {
 			<NcTextField
 				ref="nameField"
 				v-model="name"
-				label="Name"
-				placeholder="e.g. Food"
+				:label="t('Name')"
+				:placeholder="t('e.g. Food')"
 				:disabled="submitting"
 				:error="name.trim() === '' && name.length > 0"
-				helperText="The category name is required." />
+				:helperText="t('The category name is required.')" />
 
 			<div :class="$style.field">
-				<span :class="$style.label">Emoji</span>
+				<span :class="$style.label">{{ t('Emoji') }}</span>
 				<NcEmojiPicker @select="onEmojiSelect">
 					<template #default="{ props: triggerProps }">
 						<NcButton v-bind="triggerProps" type="button" :class="$style['emoji-button']">
 							<span v-if="emoji" :class="$style['emoji-value']">{{ emoji }}</span>
-							<span v-else>Pick an emoji</span>
+							<span v-else>{{ t('Pick an emoji') }}</span>
 						</NcButton>
 					</template>
 				</NcEmojiPicker>
 			</div>
 
 			<div :class="$style.field">
-				<span :class="$style.label">Color</span>
+				<span :class="$style.label">{{ t('Color') }}</span>
 				<div :class="$style['color-row']">
 					<button
 						v-for="candidate in CATEGORY_COLOR_PALETTE"
@@ -144,7 +145,7 @@ async function onSubmit() {
 					<button
 						type="button"
 						:class="[$style['color-swatch'], $style.clear, { [$style.selected]: color === '' }]"
-						title="No color"
+						:title="t('No color')"
 						@click="color = ''">
 						<span>✕</span>
 					</button>
@@ -154,15 +155,15 @@ async function onSubmit() {
 			<NcSelect
 				v-model="parent"
 				label="name"
-				inputLabel="Parent category"
-				placeholder="No parent (top level)"
+				:inputLabel="t('Parent category')"
+				:placeholder="t('No parent (top level)')"
 				:options="categories"
 				:loading="loading"
 				:disabled="submitting"
 				clearable />
 
 			<NcCheckboxRadioSwitch v-model="income" type="switch" :disabled="submitting">
-				Income category
+				{{ t('Income category') }}
 			</NcCheckboxRadioSwitch>
 
 			<p v-if="error" :class="$style.error">
@@ -175,13 +176,13 @@ async function onSubmit() {
 				variant="secondary"
 				:disabled="submitting"
 				@click="onCancel">
-				Cancel
+				{{ t('Cancel') }}
 			</NcButton>
 			<NcButton type="submit" variant="primary" :disabled="!canSubmit">
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
-				{{ isEditing ? 'Save' : 'Create' }}
+				{{ isEditing ? t('Save') : t('Create') }}
 			</NcButton>
 		</template>
 	</NcDialog>

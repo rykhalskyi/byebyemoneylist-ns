@@ -8,6 +8,7 @@ import NcHighlight from '@nextcloud/vue/components/NcHighlight'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import CategoryBubble from './CategoryBubble.vue'
+import { t } from '../../utils/l10n.ts'
 
 const props = withDefaults(defineProps<{
 	category: Category
@@ -43,12 +44,12 @@ const emit = defineEmits<{
 					<NcHighlight v-if="props.parentName" :text="props.parentName" :search="props.search" />
 					<NcChip
 						v-if="props.category.status === 'pending_review'"
-						text="Pending Review"
+						:text="t('Pending Review')"
 						variant="warning"
 						noClose />
 					<NcChip
 						v-if="props.category.income"
-						text="Income"
+						:text="t('Income')"
 						variant="success"
 						noClose />
 				</div>
@@ -57,7 +58,7 @@ const emit = defineEmits<{
 				<NcButton
 					v-if="props.category.status === 'pending_review'"
 					type="button"
-					:aria-label="`Approve ${props.category.name}`"
+					:aria-label="t('Approve {name}', { name: props.category.name })"
 					@click="emit('confirm', props.category)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiCheck" :size="20" />
@@ -65,7 +66,7 @@ const emit = defineEmits<{
 				</NcButton>
 				<NcButton
 					type="button"
-					:aria-label="`Edit ${props.category.name}`"
+					:aria-label="t('Edit {name}', { name: props.category.name })"
 					@click="emit('edit', props.category)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiPencil" :size="20" />
@@ -73,7 +74,7 @@ const emit = defineEmits<{
 				</NcButton>
 				<NcButton
 					type="button"
-					:aria-label="`Delete ${props.category.name}`"
+					:aria-label="t('Delete {name}', { name: props.category.name })"
 					@click="emit('delete', props.category)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiDelete" :size="20" />

@@ -33,3 +33,20 @@
 ## [2026-09-11] spec | Catalog per-tab fuzzy search + paged lists (T14)
 ## [2026-09-11] plan | Catalog per-tab fuzzy search + paged lists (T14)
 ## [2026-09-11] ticket | T14 — Catalog per-tab fuzzy search + paged lists
+## [2026-09-11] spec | Frontend localization (i18n)
+## [2026-09-11] plan | Frontend localization (i18n)
+## [2026-09-11] ticket | T15 — L10n infrastructure & build wiring
+## [2026-09-11] ticket | T16 — Localize app shell
+## [2026-09-11] ticket | T17 — Localize dialogs
+## [2026-09-11] ticket | T18 — Localize catalog components
+## [2026-09-11] ticket | T19 — Locale-aware formatting & plurals
+## [2026-09-11] ticket | T20 — German + Ukrainian translations & parity check
+## [2026-09-11] ticket | T21 — Localization docs & wiki sync
+## [2026-09-11] update | build-deploy — documented npm run l10n workflow
+## [2026-09-11] update | project-overview — added localization stack
+## [2026-09-11] update | wiki workflow — slim AGENTS.md, added SCHEMA.md, decisions.md and scripts/wiki.mjs (index/log/decision/lint), single-page tickets
+## [2026-09-12] ticket | T22 — Group shopping lists by year and month
+## [2026-09-12] update | ticket-22-list-grouping — year/month headers span full page width
+## [2026-09-12] update | ticket-22-list-grouping — chevrons rotate in place
+## [2026-09-12] update | ticket-22-list-grouping — header order label/sum/chevron, chevron far right
+## [2026-09-12] update | ticket-22-list-grouping — full page width header (override core button specificity)

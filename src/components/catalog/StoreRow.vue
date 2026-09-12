@@ -6,6 +6,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcHighlight from '@nextcloud/vue/components/NcHighlight'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
+import { t } from '../../utils/l10n.ts'
 
 const props = withDefaults(defineProps<{
 	store: Store
@@ -41,7 +42,7 @@ const emit = defineEmits<{
 			<template #extra-actions>
 				<NcButton
 					type="button"
-					:aria-label="`Edit ${props.store.name}`"
+					:aria-label="t('Edit {name}', { name: props.store.name })"
 					@click="emit('edit', props.store)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiPencil" :size="20" />
@@ -49,7 +50,7 @@ const emit = defineEmits<{
 				</NcButton>
 				<NcButton
 					type="button"
-					:aria-label="`Delete ${props.store.name}`"
+					:aria-label="t('Delete {name}', { name: props.store.name })"
 					@click="emit('delete', props.store)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiDelete" :size="20" />
