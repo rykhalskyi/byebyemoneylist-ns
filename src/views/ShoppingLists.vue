@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { Category, ListItem, ListStatus, Product, ShoppingList, Store } from '../types.ts'
 
-import { mdiAlertCircle, mdiCart, mdiCartOff, mdiCartPlus, mdiChevronDown, mdiDelete, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiAutorenew, mdiCart, mdiCartOff, mdiCartPlus, mdiCashPlus, mdiChevronDown, mdiDelete, mdiDotsVertical, mdiPlus } from '@mdi/js'
 import { computed, onMounted, ref } from 'vue'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -25,6 +27,7 @@ const products = ref<Product[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showDialog = ref(false)
+const newListIsIncome = ref(false)
 const showPurchaseDialog = ref(false)
 const expandedId = ref<string | null>(null)
 const itemsByList = ref<Record<string, ListItem[]>>({})
@@ -37,6 +40,20 @@ const pendingDelete = ref<ShoppingList | null>(null)
 const deleting = ref(false)
 
 const groups = computed(() => groupListsByMonth(lists.value))
+
+const addProductType = computed<'subscriptions' | 'income' | undefined>(() => {
+	const list = lists.value.find((candidate) => candidate.id === addProductListId.value)
+	if (list === undefined) {
+		return undefined
+	}
+	if (list.isIncome) {
+		return 'income'
+	}
+	if (list.isSubscription) {
+		return 'subscriptions'
+	}
+	return undefined
+})
 
 const deleteMessage = computed(() => {
 	const list = pendingDelete.value
@@ -144,6 +161,31 @@ function subname(list: ShoppingList): string {
 	const parts = [storeName(list.storeId), categoryName(list.categoryId)].filter(Boolean)
 	const date = formatDate(list.createdAt)
 	return [parts.join(' · '), date].filter(Boolean).join(' · ')
+}
+
+function listIcon(list: ShoppingList): string {
+	if (list.isIncome) {
+		return mdiCashPlus
+	}
+	if (list.isSubscription) {
+		return mdiAutorenew
+	}
+	return mdiCart
+}
+
+function addItemLabel(list: ShoppingList): string {
+	if (list.isIncome) {
+		return t('Add income source')
+	}
+	if (list.isSubscription) {
+		return t('Add subscription')
+	}
+	return t('Add product')
+}
+
+function openListDialog(isIncome: boolean) {
+	newListIsIncome.value = isIncome
+	showDialog.value = true
 }
 
 function statusLabel(status: ListStatus): string {
@@ -320,8 +362,19 @@ function itemSubname(item: ListItem): string {
 				<NcButton
 					:class="$style['add-button']"
 					type="button"
+					variant="secondary"
+					@click="openListDialog(true)">
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiCashPlus" :size="20" />
+					</template>
+					{{ t('Add income') }}
+				</NcButton>
+
+				<NcButton
+					:class="$style['add-button']"
+					type="button"
 					variant="primary"
-					@click="showDialog = true">
+					@click="openListDialog(false)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiPlus" :size="20" />
 					</template>
@@ -356,7 +409,7 @@ function itemSubname(item: ListItem): string {
 				<NcIconSvgWrapper :path="mdiCartOff" :size="64" />
 			</template>
 			<template #action>
-				<NcButton type="button" variant="primary" @click="showDialog = true">
+				<NcButton type="button" variant="primary" @click="openListDialog(false)">
 					{{ t('Add list') }}
 				</NcButton>
 			</template>
@@ -405,7 +458,7 @@ function itemSubname(item: ListItem): string {
 									oneLine
 									@click="toggleExpand(list)">
 									<template #icon>
-										<NcIconSvgWrapper :path="mdiCart" :size="20" />
+										<NcIconSvgWrapper :path="listIcon(list)" :size="20" />
 									</template>
 									<template #subname>
 										<div :class="$style.subname">
@@ -423,14 +476,19 @@ function itemSubname(item: ListItem): string {
 										</div>
 									</template>
 									<template #extra-actions>
-										<NcButton
-											type="button"
-											:aria-label="t('Delete {name}', { name: list.name })"
-											@click.stop="askDelete(list)">
+										<NcActions
+											:forceMenu="true"
+											:ariaLabel="t('Actions for {name}', { name: list.name })">
 											<template #icon>
-												<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+												<NcIconSvgWrapper :path="mdiDotsVertical" :size="20" />
 											</template>
-										</NcButton>
+											<NcActionButton @click.stop="askDelete(list)">
+												<template #icon>
+													<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+												</template>
+												{{ t('Delete') }}
+											</NcActionButton>
+										</NcActions>
 									</template>
 								</NcListItem>
 
@@ -480,7 +538,7 @@ function itemSubname(item: ListItem): string {
 												<template #icon>
 													<NcIconSvgWrapper :path="mdiPlus" :size="20" />
 												</template>
-												{{ t('Add product') }}
+												{{ addItemLabel(list) }}
 											</NcButton>
 											<NcButton
 												type="button"
@@ -501,7 +559,11 @@ function itemSubname(item: ListItem): string {
 			</section>
 		</div>
 
-		<NewListDialog :open="showDialog" @update:open="showDialog = $event" @created="onCreated" />
+		<NewListDialog
+			:open="showDialog"
+			:isIncome="newListIsIncome"
+			@update:open="showDialog = $event"
+			@created="onCreated" />
 		<PurchaseDialog
 			:open="showPurchaseDialog"
 			:lists="lists"
@@ -512,6 +574,7 @@ function itemSubname(item: ListItem): string {
 		<AddProductDialog
 			:open="addProductListId !== null"
 			:listId="addProductListId ?? ''"
+			:type="addProductType"
 			@update:open="addProductListId = null"
 			@added="onItemAdded" />
 		<ConfirmDialog

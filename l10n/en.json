@@ -1,6 +1,8 @@
 {
   "translations": {
+    "Actions for {name}": "Actions for {name}",
     "Add category": "Add category",
+    "Add income": "Add income",
     "Add income source": "Add income source",
     "Add list": "Add list",
     "Add product": "Add product",
@@ -57,6 +59,7 @@
     "e.g. Hauptstraße 1, 10115 Berlin": "e.g. Hauptstraße 1, 10115 Berlin",
     "e.g. M, Milch": "e.g. M, Milch",
     "e.g. Milk": "e.g. Milk",
+    "e.g. Salary": "e.g. Salary",
     "e.g. Weekly groceries": "e.g. Weekly groceries",
     "Edit {name}": "Edit {name}",
     "Edit category": "Edit category",
@@ -98,6 +101,7 @@
     "Name": "Name",
     "New": "New",
     "New category": "New category",
+    "New income list": "New income list",
     "New list": "New list",
     "New product": "New product",
     "New product name": "New product name",
@@ -133,6 +137,7 @@
     "Products": "Products",
     "Quantity": "Quantity",
     "Receipt scanning is coming soon.": "Receipt scanning is coming soon.",
+    "Recurring": "Recurring",
     "Remove": "Remove",
     "Replace": "Replace",
     "Replace picture": "Replace picture",

@@ -9,6 +9,9 @@ export interface ShoppingList {
 	finalTotal: number | null
 	totalPrice: number | null
 	createdAt: string | null
+	isIncome: boolean
+	isSubscription: boolean
+	isRecurring: boolean
 }
 
 export interface Store {
@@ -36,6 +39,9 @@ export interface ListPayload {
 	finalTotal?: number | null
 	purchaseDate?: string | null
 	isFinished?: boolean
+	isIncome?: boolean
+	isSubscription?: boolean
+	isRecurring?: boolean
 }
 
 export interface CategoryPayload {

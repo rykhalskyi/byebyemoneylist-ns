@@ -1,6 +1,8 @@
 {
   "translations": {
+    "Actions for {name}": "Дії для {name}",
     "Add category": "Додати категорію",
+    "Add income": "Додати дохід",
     "Add income source": "Додати джерело доходу",
     "Add list": "Додати список",
     "Add product": "Додати продукт",
@@ -57,6 +59,7 @@
     "e.g. Hauptstraße 1, 10115 Berlin": "напр. Hauptstraße 1, 10115 Berlin",
     "e.g. M, Milch": "напр. M, Milch",
     "e.g. Milk": "напр. Молоко",
+    "e.g. Salary": "напр. Зарплата",
     "e.g. Weekly groceries": "напр. Тижневі продукти",
     "Edit {name}": "Редагувати {name}",
     "Edit category": "Редагувати категорію",
@@ -98,6 +101,7 @@
     "Name": "Назва",
     "New": "Новий",
     "New category": "Нова категорія",
+    "New income list": "Новий список доходів",
     "New list": "Новий список",
     "New product": "Новий продукт",
     "New product name": "Назва нового продукту",
@@ -133,6 +137,7 @@
     "Products": "Продукти",
     "Quantity": "Кількість",
     "Receipt scanning is coming soon.": "Сканування чеків незабаром з’явиться.",
+    "Recurring": "Повторюваний",
     "Remove": "Видалити",
     "Replace": "Замінити",
     "Replace picture": "Замінити зображення",

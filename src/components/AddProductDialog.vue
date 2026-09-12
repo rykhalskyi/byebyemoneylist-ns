@@ -13,7 +13,7 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { addListItem, createProduct, fetchProducts } from '../services/listsApi.ts'
 import { t } from '../utils/l10n.ts'
 
-const props = defineProps<{ open: boolean, listId: string }>()
+const props = defineProps<{ open: boolean, listId: string, type?: 'subscriptions' | 'income' }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
@@ -99,7 +99,7 @@ async function loadCatalog() {
 	loading.value = true
 	catalogFailed.value = false
 	try {
-		products.value = await fetchProducts()
+		products.value = await fetchProducts(props.type)
 	} catch {
 		catalogFailed.value = true
 		error.value = t('Failed to load the product catalog.')
@@ -128,7 +128,11 @@ async function createNewProduct() {
 	submitting.value = true
 	error.value = null
 	try {
-		const product = await createProduct({ name: newProductName.value.trim() })
+		const product = await createProduct({
+			name: newProductName.value.trim(),
+			isIncome: props.type === 'income',
+			isSubscription: props.type === 'subscriptions',
+		})
 		products.value = [...products.value, product]
 		selectedProduct.value = product
 		creatingNew.value = false

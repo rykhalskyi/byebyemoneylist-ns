@@ -34,7 +34,7 @@ If user creates new list, this list is created empty without items but with pric
 
 ### New List dialog
 
-- add isReccuring togle. It sets this booleand for the list.
+- add isReccuring and is Subscription toggles. It sets this booleand for the list.
 
 ### Sorting, filtering and search
 - I want to have possibility to search through the all list. some search input must be implemented

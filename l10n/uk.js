@@ -1,7 +1,9 @@
 OC.L10N.register(
 	"byebyemoneylist",
 	{
+		"Actions for {name}" : "Дії для {name}",
 		"Add category" : "Додати категорію",
+		"Add income" : "Додати дохід",
 		"Add income source" : "Додати джерело доходу",
 		"Add list" : "Додати список",
 		"Add product" : "Додати продукт",
@@ -90,6 +92,7 @@ OC.L10N.register(
 		"Name" : "Назва",
 		"New" : "Новий",
 		"New category" : "Нова категорія",
+		"New income list" : "Новий список доходів",
 		"New list" : "Новий список",
 		"New product" : "Новий продукт",
 		"New product name" : "Назва нового продукту",
@@ -125,6 +128,7 @@ OC.L10N.register(
 		"Products" : "Продукти",
 		"Quantity" : "Кількість",
 		"Receipt scanning is coming soon." : "Сканування чеків незабаром з’явиться.",
+		"Recurring" : "Повторюваний",
 		"Remove" : "Видалити",
 		"Replace" : "Замінити",
 		"Replace picture" : "Замінити зображення",
@@ -174,6 +178,7 @@ OC.L10N.register(
 		"e.g. Hauptstraße 1, 10115 Berlin" : "напр. Hauptstraße 1, 10115 Berlin",
 		"e.g. M, Milch" : "напр. M, Milch",
 		"e.g. Milk" : "напр. Молоко",
+		"e.g. Salary" : "напр. Зарплата",
 		"e.g. Weekly groceries" : "напр. Тижневі продукти"
 	},
 	"nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);");

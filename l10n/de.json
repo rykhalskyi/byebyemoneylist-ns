@@ -1,6 +1,8 @@
 {
   "translations": {
+    "Actions for {name}": "Aktionen für {name}",
     "Add category": "Kategorie hinzufügen",
+    "Add income": "Einkommen hinzufügen",
     "Add income source": "Einkommensquelle hinzufügen",
     "Add list": "Liste hinzufügen",
     "Add product": "Produkt hinzufügen",
@@ -57,6 +59,7 @@
     "e.g. Hauptstraße 1, 10115 Berlin": "z. B. Hauptstraße 1, 10115 Berlin",
     "e.g. M, Milch": "z. B. M, Milch",
     "e.g. Milk": "z. B. Milch",
+    "e.g. Salary": "z. B. Gehalt",
     "e.g. Weekly groceries": "z. B. Wocheneinkauf",
     "Edit {name}": "{name} bearbeiten",
     "Edit category": "Kategorie bearbeiten",
@@ -98,6 +101,7 @@
     "Name": "Name",
     "New": "Neu",
     "New category": "Neue Kategorie",
+    "New income list": "Neue Einkommensliste",
     "New list": "Neue Liste",
     "New product": "Neues Produkt",
     "New product name": "Name des neuen Produkts",
@@ -133,6 +137,7 @@
     "Products": "Produkte",
     "Quantity": "Menge",
     "Receipt scanning is coming soon.": "Das Scannen von Belegen ist bald verfügbar.",
+    "Recurring": "Wiederkehrend",
     "Remove": "Entfernen",
     "Replace": "Ersetzen",
     "Replace picture": "Bild ersetzen",

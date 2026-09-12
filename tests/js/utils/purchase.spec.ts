@@ -27,6 +27,9 @@ function list(id: string, name: string, overrides: Partial<ShoppingList> = {}): 
 		finalTotal: null,
 		totalPrice: null,
 		createdAt: null,
+		isIncome: false,
+		isSubscription: false,
+		isRecurring: false,
 		...overrides,
 	}
 }

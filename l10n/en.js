@@ -1,7 +1,9 @@
 OC.L10N.register(
 	"byebyemoneylist",
 	{
+		"Actions for {name}" : "Actions for {name}",
 		"Add category" : "Add category",
+		"Add income" : "Add income",
 		"Add income source" : "Add income source",
 		"Add list" : "Add list",
 		"Add product" : "Add product",
@@ -90,6 +92,7 @@ OC.L10N.register(
 		"Name" : "Name",
 		"New" : "New",
 		"New category" : "New category",
+		"New income list" : "New income list",
 		"New list" : "New list",
 		"New product" : "New product",
 		"New product name" : "New product name",
@@ -125,6 +128,7 @@ OC.L10N.register(
 		"Products" : "Products",
 		"Quantity" : "Quantity",
 		"Receipt scanning is coming soon." : "Receipt scanning is coming soon.",
+		"Recurring" : "Recurring",
 		"Remove" : "Remove",
 		"Replace" : "Replace",
 		"Replace picture" : "Replace picture",
@@ -174,6 +178,7 @@ OC.L10N.register(
 		"e.g. Hauptstraße 1, 10115 Berlin" : "e.g. Hauptstraße 1, 10115 Berlin",
 		"e.g. M, Milch" : "e.g. M, Milch",
 		"e.g. Milk" : "e.g. Milk",
+		"e.g. Salary" : "e.g. Salary",
 		"e.g. Weekly groceries" : "e.g. Weekly groceries"
 	},
 	"nplurals=2; plural=(n != 1);");
