@@ -2,7 +2,7 @@
 import type { Category, ListItem, ListStatus, Product, ShoppingList, Store } from '../types.ts'
 
 import { mdiAlertCircle, mdiCart, mdiCartOff, mdiChevronDown, mdiDelete, mdiPlus } from '@mdi/js'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -12,8 +12,9 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import AddProductDialog from '../components/AddProductDialog.vue'
 import NewListDialog from '../components/NewListDialog.vue'
 import { deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
-import { formatDate, formatTotal } from '../utils/format.ts'
+import { formatDate, formatMonth, formatTotal } from '../utils/format.ts'
 import { getCanonicalLocale, t } from '../utils/l10n.ts'
+import { groupListsByMonth } from '../utils/listGroups.ts'
 
 const lists = ref<ShoppingList[]>([])
 const stores = ref<Store[]>([])
@@ -27,6 +28,10 @@ const itemsByList = ref<Record<string, ListItem[]>>({})
 const itemsLoading = ref<Record<string, boolean>>({})
 const itemsError = ref<Record<string, string>>({})
 const addProductListId = ref<string | null>(null)
+const expandedYears = ref<Record<string, boolean>>({})
+const expandedMonths = ref<Record<string, boolean>>({})
+
+const groups = computed(() => groupListsByMonth(lists.value))
 
 onMounted(loadData)
 
@@ -44,6 +49,7 @@ async function loadData() {
 		stores.value = storeData
 		categories.value = categoryData
 		products.value = productData
+		expandCurrentPeriod()
 	} catch {
 		error.value = t('Failed to load your shopping lists.')
 	} finally {
@@ -53,6 +59,41 @@ async function loadData() {
 
 function onCreated(list: ShoppingList) {
 	lists.value = [list, ...lists.value]
+	expandListGroup(list.createdAt)
+}
+
+function expandListGroup(iso: string | null) {
+	if (iso === null) {
+		return
+	}
+	const date = new Date(iso)
+	if (Number.isNaN(date.getTime())) {
+		return
+	}
+	const yearKey = String(date.getFullYear())
+	const monthKey = `${yearKey}-${date.getMonth() + 1}`
+	expandedYears.value = { ...expandedYears.value, [yearKey]: true }
+	expandedMonths.value = { ...expandedMonths.value, [monthKey]: true }
+}
+
+function expandCurrentPeriod() {
+	expandListGroup(new Date().toISOString())
+}
+
+function toggleYear(key: string) {
+	expandedYears.value = { ...expandedYears.value, [key]: !expandedYears.value[key] }
+}
+
+function toggleMonth(key: string) {
+	expandedMonths.value = { ...expandedMonths.value, [key]: !expandedMonths.value[key] }
+}
+
+function yearLabel(year: number | null): string {
+	return year === null ? t('No date') : String(year)
+}
+
+function monthLabel(month: number | null): string {
+	return month === null ? t('No date') : formatMonth(month)
 }
 
 function storeName(storeId: string | null): string {
@@ -247,85 +288,122 @@ function itemSubname(item: ListItem): string {
 		</NcEmptyContent>
 
 		<div v-else :class="$style.list">
-			<div
-				v-for="list in lists"
-				:key="list.id"
-				:class="$style.item"
-				:style="listMarkStyle(list)">
-				<NcListItem
-					:name="list.name"
-					oneLine
-					@click="toggleExpand(list)">
-					<template #icon>
-						<NcIconSvgWrapper :path="mdiCart" :size="20" />
-					</template>
-					<template #subname>
-						<div :class="$style.subname">
-							<span>{{ subname(list) }}</span>
-							<NcChip
-								v-if="priceText(list) !== null"
-								:text="priceText(list) ?? ''"
-								noClose />
-							<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" noClose />
+			<section v-for="year in groups" :key="year.key" :class="$style.year">
+				<button
+					type="button"
+					:class="$style['group-header']"
+					:aria-expanded="expandedYears[year.key] ?? false"
+					@click="toggleYear(year.key)">
+					<span :class="$style['group-label']">{{ yearLabel(year.year) }}</span>
+					<span v-if="year.total !== null" :class="$style['group-total']">{{ formatTotal(year.total) }}</span>
+					<NcIconSvgWrapper
+						inline
+						:path="mdiChevronDown"
+						:size="20"
+						:class="[$style.chevron, { [$style['chevron-open']]: expandedYears[year.key] }]" />
+				</button>
+
+				<div v-if="expandedYears[year.key]">
+					<div v-for="month in year.months" :key="month.key">
+						<button
+							type="button"
+							:class="[$style['group-header'], $style['month-header']]"
+							:aria-expanded="expandedMonths[month.key] ?? false"
+							@click="toggleMonth(month.key)">
+							<span :class="$style['group-label']">{{ monthLabel(month.month) }}</span>
+							<span v-if="month.total !== null" :class="$style['group-total']">{{ formatTotal(month.total) }}</span>
 							<NcIconSvgWrapper
+								inline
 								:path="mdiChevronDown"
 								:size="20"
-								:class="[$style.chevron, { [$style['chevron-open']]: expandedId === list.id }]" />
+								:class="[$style.chevron, { [$style['chevron-open']]: expandedMonths[month.key] }]" />
+						</button>
+
+						<div v-if="expandedMonths[month.key]" :class="$style['month-lists']">
+							<div
+								v-for="list in month.lists"
+								:key="list.id"
+								:class="$style.item"
+								:style="listMarkStyle(list)">
+								<NcListItem
+									:name="list.name"
+									oneLine
+									@click="toggleExpand(list)">
+									<template #icon>
+										<NcIconSvgWrapper :path="mdiCart" :size="20" />
+									</template>
+									<template #subname>
+										<div :class="$style.subname">
+											<span>{{ subname(list) }}</span>
+											<NcChip
+												v-if="priceText(list) !== null"
+												:text="priceText(list) ?? ''"
+												noClose />
+											<NcChip :text="statusLabel(list.status)" :variant="statusVariant(list.status)" noClose />
+											<NcIconSvgWrapper
+												inline
+												:path="mdiChevronDown"
+												:size="20"
+												:class="[$style.chevron, { [$style['chevron-open']]: expandedId === list.id }]" />
+										</div>
+									</template>
+								</NcListItem>
+
+								<div v-if="expandedId === list.id" :class="$style.items">
+									<div v-if="itemsLoading[list.id]" :class="$style.center">
+										<NcLoadingIcon />
+									</div>
+
+									<p v-else-if="itemsError[list.id]" :class="$style['items-error']">
+										{{ itemsError[list.id] }}
+									</p>
+
+									<template v-else>
+										<ul v-if="listItems(list.id).length > 0" :class="$style['item-list']">
+											<NcListItem
+												v-for="item in listItems(list.id)"
+												:key="item.id"
+												:name="item.productName"
+												:details="itemDetails(item)"
+												compact
+												oneLine
+												:style="productCategoryColor(item) ? { borderInlineStart: `2px solid ${productCategoryColor(item)}` } : {}">
+												<template #subname>
+													<span v-if="itemSubname(item)">{{ itemSubname(item) }}</span>
+												</template>
+												<template #extra-actions>
+													<NcButton
+														type="button"
+														:aria-label="t('Delete {name}', { name: item.productName })"
+														@click="onDeleteItem(list, item)">
+														<template #icon>
+															<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+														</template>
+													</NcButton>
+												</template>
+											</NcListItem>
+										</ul>
+										<p v-else :class="$style['no-items']">
+											{{ t('No items yet.') }}
+										</p>
+
+										<NcButton
+											:class="$style['add-item-button']"
+											type="button"
+											variant="primary"
+											@click="addProductListId = list.id">
+											<template #icon>
+												<NcIconSvgWrapper :path="mdiPlus" :size="20" />
+											</template>
+											{{ t('Add product') }}
+										</NcButton>
+									</template>
+								</div>
+							</div>
 						</div>
-					</template>
-				</NcListItem>
-
-				<div v-if="expandedId === list.id" :class="$style.items">
-					<div v-if="itemsLoading[list.id]" :class="$style.center">
-						<NcLoadingIcon />
 					</div>
-
-					<p v-else-if="itemsError[list.id]" :class="$style['items-error']">
-						{{ itemsError[list.id] }}
-					</p>
-
-					<template v-else>
-						<ul v-if="listItems(list.id).length > 0" :class="$style['item-list']">
-							<NcListItem
-								v-for="item in listItems(list.id)"
-								:key="item.id"
-								:name="item.productName"
-								:details="itemDetails(item)"
-								compact
-								oneLine
-								:style="productCategoryColor(item) ? { borderInlineStart: `2px solid ${productCategoryColor(item)}` } : {}">
-								<template #subname>
-									<span v-if="itemSubname(item)">{{ itemSubname(item) }}</span>
-								</template>
-								<template #extra-actions>
-									<NcButton
-										type="button"
-										:aria-label="t('Delete {name}', { name: item.productName })"
-										@click="onDeleteItem(list, item)">
-										<template #icon>
-											<NcIconSvgWrapper :path="mdiDelete" :size="20" />
-										</template>
-									</NcButton>
-								</template>
-							</NcListItem>
-						</ul>
-						<p v-else :class="$style['no-items']">
-							{{ t('No items yet.') }}
-						</p>
-
-						<NcButton
-							:class="$style['add-item-button']"
-							type="button"
-							variant="primary"
-							@click="addProductListId = list.id">
-							<template #icon>
-								<NcIconSvgWrapper :path="mdiPlus" :size="20" />
-							</template>
-							{{ t('Add product') }}
-						</NcButton>
-					</template>
 				</div>
-			</div>
+			</section>
 		</div>
 
 		<NewListDialog :open="showDialog" @update:open="showDialog = $event" @created="onCreated" />
@@ -360,6 +438,63 @@ function itemSubname(item: ListItem): string {
 .list {
 	margin: 16px 0 0;
 	padding: 0;
+}
+
+.year {
+	margin-top: 12px;
+}
+
+.group-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	box-sizing: border-box;
+	width: 100% !important;
+	margin: 0 !important;
+	padding: 8px !important;
+	border: none;
+	border-radius: var(--border-radius);
+	background: transparent;
+	color: var(--color-main-text);
+	font-size: 1.05em;
+	font-weight: bold;
+	text-align: start;
+	cursor: pointer;
+}
+
+.group-header:hover {
+	background: var(--color-background-hover);
+}
+
+.group-header:focus {
+	outline: none;
+}
+
+.group-header:focus-visible {
+	outline: 2px solid var(--color-primary-element);
+	outline-offset: 2px;
+}
+
+.group-label {
+	flex: 1;
+	min-width: 0;
+}
+
+.group-total {
+	color: var(--color-text-maxcontrast);
+	font-variant-numeric: tabular-nums;
+}
+
+.month-header {
+	color: var(--color-text-maxcontrast);
+	font-size: 0.95em;
+	font-weight: 600;
+}
+
+.month-lists {
+	border-inline-start: 2px solid var(--color-border);
+	margin-inline-start: 16px;
+	padding-inline-start: 8px;
 }
 
 .subname {
@@ -406,6 +541,8 @@ function itemSubname(item: ListItem): string {
 }
 
 .chevron {
+	flex: 0 0 auto;
+	transform-origin: center;
 	transition: transform 0.2s ease;
 }
 

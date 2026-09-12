@@ -25,6 +25,17 @@ If user creates new list, this list is created empty without items but with pric
 
 **Reference** /home/admin/Source/byebyemoneylist/app/src/main/java/com/otakeeesen/byebyemoneylist/ui/components/product/PurchaseDialog.kt
 
+### New Income List
+
+- Add new "Add Income" button next to "Add List" and "Purchase"
+- the "Add Income" adds new Income List.
+- change icon for isSubscription and is Income lists.
+- change "Add Product" button header for is Income and is Subscription lists to "Add subscription" and "Add Income Source  "
+
+### New List dialog
+
+- add isReccuring togle. It sets this booleand for the list.
+
 ### Sorting, filtering and search
 - I want to have possibility to search through the all list. some search input must be implemented
 - Search in Shopping list names, stores

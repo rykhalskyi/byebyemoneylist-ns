@@ -92,6 +92,7 @@ OC.L10N.register(
 		"No categories yet" : "No categories yet",
 		"No category" : "No category",
 		"No color" : "No color",
+		"No date" : "No date",
 		"No income sources yet" : "No income sources yet",
 		"No items yet." : "No items yet.",
 		"No parent (top level)" : "No parent (top level)",

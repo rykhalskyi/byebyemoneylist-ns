@@ -92,6 +92,7 @@ OC.L10N.register(
 		"No categories yet" : "Ще немає категорій",
 		"No category" : "Без категорії",
 		"No color" : "Без кольору",
+		"No date" : "Без дати",
 		"No income sources yet" : "Ще немає джерел доходу",
 		"No items yet." : "Ще немає позицій.",
 		"No parent (top level)" : "Без батьківської (верхній рівень)",

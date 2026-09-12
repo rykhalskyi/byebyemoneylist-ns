@@ -1,3 +1,12 @@
+---
+created: 2026-08-29
+type: research
+status: done
+summary: Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.
+---
+
+# Synchronisation between Android client and Nextcloud app
+
 ### The problem: Category, Store, Products and Shopping Lists synchronization between android client and nextcloud app.
 
 I want to have a possibility of synchronization of my data between android client and my NextCloud app (NCA).

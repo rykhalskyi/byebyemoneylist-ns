@@ -44,3 +44,9 @@
 ## [2026-09-11] ticket | T21 — Localization docs & wiki sync
 ## [2026-09-11] update | build-deploy — documented npm run l10n workflow
 ## [2026-09-11] update | project-overview — added localization stack
+## [2026-09-11] update | wiki workflow — slim AGENTS.md, added SCHEMA.md, decisions.md and scripts/wiki.mjs (index/log/decision/lint), single-page tickets
+## [2026-09-12] ticket | T22 — Group shopping lists by year and month
+## [2026-09-12] update | ticket-22-list-grouping — year/month headers span full page width
+## [2026-09-12] update | ticket-22-list-grouping — chevrons rotate in place
+## [2026-09-12] update | ticket-22-list-grouping — header order label/sum/chevron, chevron far right
+## [2026-09-12] update | ticket-22-list-grouping — full page width header (override core button specificity)

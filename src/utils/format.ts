@@ -11,6 +11,10 @@ export function formatDate(iso: string | null): string {
 	return date.toLocaleDateString(getCanonicalLocale(), { dateStyle: 'medium' })
 }
 
+export function formatMonth(month: number): string {
+	return new Date(2000, month - 1, 1).toLocaleDateString(getCanonicalLocale(), { month: 'long' })
+}
+
 export function formatTotal(total: number | null): string {
 	if (total === null) {
 		return ''
