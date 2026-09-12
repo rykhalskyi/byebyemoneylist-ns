@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Category, ListItem, ListStatus, Product, ShoppingList, Store } from '../types.ts'
 
-import { mdiAlertCircle, mdiCart, mdiCartOff, mdiChevronDown, mdiDelete, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiCart, mdiCartOff, mdiCartPlus, mdiChevronDown, mdiDelete, mdiPlus } from '@mdi/js'
 import { computed, onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
@@ -10,8 +10,10 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import AddProductDialog from '../components/AddProductDialog.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import NewListDialog from '../components/NewListDialog.vue'
-import { deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
+import PurchaseDialog from '../components/PurchaseDialog.vue'
+import { deleteList, deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
 import { formatDate, formatMonth, formatTotal } from '../utils/format.ts'
 import { getCanonicalLocale, t } from '../utils/l10n.ts'
 import { groupListsByMonth } from '../utils/listGroups.ts'
@@ -23,6 +25,7 @@ const products = ref<Product[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const showDialog = ref(false)
+const showPurchaseDialog = ref(false)
 const expandedId = ref<string | null>(null)
 const itemsByList = ref<Record<string, ListItem[]>>({})
 const itemsLoading = ref<Record<string, boolean>>({})
@@ -30,8 +33,18 @@ const itemsError = ref<Record<string, string>>({})
 const addProductListId = ref<string | null>(null)
 const expandedYears = ref<Record<string, boolean>>({})
 const expandedMonths = ref<Record<string, boolean>>({})
+const pendingDelete = ref<ShoppingList | null>(null)
+const deleting = ref(false)
 
 const groups = computed(() => groupListsByMonth(lists.value))
+
+const deleteMessage = computed(() => {
+	const list = pendingDelete.value
+	if (list === null) {
+		return ''
+	}
+	return t('Delete "{name}"? This cannot be undone.', { name: list.name })
+})
 
 onMounted(loadData)
 
@@ -59,6 +72,20 @@ async function loadData() {
 
 function onCreated(list: ShoppingList) {
 	lists.value = [list, ...lists.value]
+	expandListGroup(list.createdAt)
+}
+
+function onPurchaseSaved(list: ShoppingList) {
+	if (lists.value.some((candidate) => candidate.id === list.id)) {
+		lists.value = lists.value.map((candidate) => (candidate.id === list.id ? list : candidate))
+	} else {
+		lists.value = [list, ...lists.value]
+	}
+	if (itemsByList.value[list.id] !== undefined) {
+		const items = { ...itemsByList.value }
+		delete items[list.id]
+		itemsByList.value = items
+	}
 	expandListGroup(list.createdAt)
 }
 
@@ -213,6 +240,41 @@ async function onDeleteItem(list: ShoppingList, item: ListItem) {
 	}
 }
 
+function askDelete(list: ShoppingList) {
+	pendingDelete.value = list
+}
+
+function closeConfirmDialog(open: boolean) {
+	if (!open && !deleting.value) {
+		pendingDelete.value = null
+	}
+}
+
+async function onConfirmDelete() {
+	const list = pendingDelete.value
+	if (list === null) {
+		return
+	}
+	deleting.value = true
+	try {
+		await deleteList(list.id)
+		lists.value = lists.value.filter((candidate) => candidate.id !== list.id)
+		if (expandedId.value === list.id) {
+			expandedId.value = null
+		}
+		if (itemsByList.value[list.id] !== undefined) {
+			const items = { ...itemsByList.value }
+			delete items[list.id]
+			itemsByList.value = items
+		}
+	} catch {
+		await loadData()
+	} finally {
+		deleting.value = false
+		pendingDelete.value = null
+	}
+}
+
 function formatQuantity(quantity: number): string {
 	if (Number.isInteger(quantity)) {
 		return String(quantity)
@@ -243,16 +305,29 @@ function itemSubname(item: ListItem): string {
 		<div :class="$style.header">
 			<h2>{{ t('Shopping Lists') }}</h2>
 
-			<NcButton
-				:class="$style['add-button']"
-				type="button"
-				variant="primary"
-				@click="showDialog = true">
-				<template #icon>
-					<NcIconSvgWrapper :path="mdiPlus" :size="20" />
-				</template>
-				{{ t('Add list') }}
-			</NcButton>
+			<div :class="$style.actions">
+				<NcButton
+					:class="$style['add-button']"
+					type="button"
+					variant="secondary"
+					@click="showPurchaseDialog = true">
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiCartPlus" :size="20" />
+					</template>
+					{{ t('Add purchase') }}
+				</NcButton>
+
+				<NcButton
+					:class="$style['add-button']"
+					type="button"
+					variant="primary"
+					@click="showDialog = true">
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiPlus" :size="20" />
+					</template>
+					{{ t('Add list') }}
+				</NcButton>
+			</div>
 		</div>
 
 		<div v-if="loading" :class="$style.center">
@@ -347,6 +422,16 @@ function itemSubname(item: ListItem): string {
 												:class="[$style.chevron, { [$style['chevron-open']]: expandedId === list.id }]" />
 										</div>
 									</template>
+									<template #extra-actions>
+										<NcButton
+											type="button"
+											:aria-label="t('Delete {name}', { name: list.name })"
+											@click.stop="askDelete(list)">
+											<template #icon>
+												<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+											</template>
+										</NcButton>
+									</template>
 								</NcListItem>
 
 								<div v-if="expandedId === list.id" :class="$style.items">
@@ -387,16 +472,26 @@ function itemSubname(item: ListItem): string {
 											{{ t('No items yet.') }}
 										</p>
 
-										<NcButton
-											:class="$style['add-item-button']"
-											type="button"
-											variant="primary"
-											@click="addProductListId = list.id">
-											<template #icon>
-												<NcIconSvgWrapper :path="mdiPlus" :size="20" />
-											</template>
-											{{ t('Add product') }}
-										</NcButton>
+										<div :class="$style['list-actions']">
+											<NcButton
+												type="button"
+												variant="primary"
+												@click="addProductListId = list.id">
+												<template #icon>
+													<NcIconSvgWrapper :path="mdiPlus" :size="20" />
+												</template>
+												{{ t('Add product') }}
+											</NcButton>
+											<NcButton
+												type="button"
+												variant="error"
+												@click="askDelete(list)">
+												<template #icon>
+													<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+												</template>
+												{{ t('Delete list') }}
+											</NcButton>
+										</div>
 									</template>
 								</div>
 							</div>
@@ -407,11 +502,25 @@ function itemSubname(item: ListItem): string {
 		</div>
 
 		<NewListDialog :open="showDialog" @update:open="showDialog = $event" @created="onCreated" />
+		<PurchaseDialog
+			:open="showPurchaseDialog"
+			:lists="lists"
+			:stores="stores"
+			:categories="categories"
+			@update:open="showPurchaseDialog = $event"
+			@saved="onPurchaseSaved" />
 		<AddProductDialog
 			:open="addProductListId !== null"
 			:listId="addProductListId ?? ''"
 			@update:open="addProductListId = null"
 			@added="onItemAdded" />
+		<ConfirmDialog
+			:open="pendingDelete !== null"
+			:title="t('Delete list')"
+			:message="deleteMessage"
+			:busy="deleting"
+			@update:open="closeConfirmDialog"
+			@confirm="onConfirmDelete" />
 	</div>
 </template>
 
@@ -427,6 +536,12 @@ function itemSubname(item: ListItem): string {
 	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 16px;
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .center {
@@ -536,7 +651,10 @@ function itemSubname(item: ListItem): string {
 	padding: 8px 0;
 }
 
-.add-item-button {
+.list-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
 	margin-top: 8px;
 }
 

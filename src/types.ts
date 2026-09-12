@@ -32,6 +32,10 @@ export interface ListPayload {
 	name: string
 	storeId?: string | null
 	categoryId?: string | null
+	categoryIds?: string[]
+	finalTotal?: number | null
+	purchaseDate?: string | null
+	isFinished?: boolean
 }
 
 export interface CategoryPayload {

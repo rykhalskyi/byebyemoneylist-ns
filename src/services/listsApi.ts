@@ -22,6 +22,18 @@ export async function createList(payload: ListPayload): Promise<ShoppingList> {
 	return data.ocs.data.list
 }
 
+export async function updateList(id: string, payload: ListPayload): Promise<ShoppingList> {
+	const { data } = await axios.put<OcsData<{ list: ShoppingList }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}`),
+		payload,
+	)
+	return data.ocs.data.list
+}
+
+export async function deleteList(id: string): Promise<void> {
+	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}`))
+}
+
 export async function fetchStores(): Promise<Store[]> {
 	const { data } = await axios.get<OcsData<{ stores: Store[] }>>(generateOcsUrl('/apps/byebyemoneylist/api/stores'))
 	return data.ocs.data.stores

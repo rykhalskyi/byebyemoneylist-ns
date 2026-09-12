@@ -50,3 +50,6 @@
 ## [2026-09-12] update | ticket-22-list-grouping — chevrons rotate in place
 ## [2026-09-12] update | ticket-22-list-grouping — header order label/sum/chevron, chevron far right
 ## [2026-09-12] update | ticket-22-list-grouping — full page width header (override core button specificity)
+## [2026-09-12] ticket | T23 — Add purchase (manual) finishes a new list with a final total
+## [2026-09-12] update | epic nextcloud-web-app — T3 marked partial; ticket-23 linked
+## [2026-09-12] update | ticket-23-add-purchase — list name defaults to StoreName + date when left empty
