@@ -12,6 +12,9 @@ const BASE: ShoppingList = {
 	finalTotal: null,
 	totalPrice: null,
 	createdAt: null,
+	isIncome: false,
+	isSubscription: false,
+	isRecurring: false,
 }
 
 function list(id: string, createdAt: string | null, overrides: Partial<ShoppingList> = {}): ShoppingList {

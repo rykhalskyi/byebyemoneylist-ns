@@ -48,6 +48,7 @@
 - [tickets/ticket-20-localization-translations](pages/tickets/ticket-20-localization-translations.md) — T20: German + Ukrainian translations & parity check
 - [tickets/ticket-21-localization-docs](pages/tickets/ticket-21-localization-docs.md) — T21: Localization docs & wiki sync
 - [tickets/ticket-22-list-grouping](pages/tickets/ticket-22-list-grouping.md) — Group shopping lists by year and month with expandable headers and finished-final-total sums
+- [tickets/ticket-23-add-purchase](pages/tickets/ticket-23-add-purchase.md) — T3 partial — Add purchase (manual) finishes a new list with a final total
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.
