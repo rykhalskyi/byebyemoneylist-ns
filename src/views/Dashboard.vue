@@ -2,7 +2,7 @@
 import type { Category } from '../types.ts'
 
 import { mdiPlus } from '@mdi/js'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import AddWidgetDialog from '../components/dashboard/AddWidgetDialog.vue'
@@ -23,6 +23,8 @@ const { widgets, addWidget, removeWidget, reorderWidgets } = useDashboardWidgets
 
 const categories = ref<Category[]>([])
 const showAddWidget = ref(false)
+
+const expenseCategories = computed(() => categories.value.filter((category) => !category.income))
 
 onMounted(async () => {
 	try {
@@ -76,7 +78,7 @@ function categoryName(categoryId: string | null | undefined): string {
 
 		<AddWidgetDialog
 			:open="showAddWidget"
-			:categories="categories"
+			:categories="expenseCategories"
 			@update:open="showAddWidget = $event"
 			@add="addWidget($event.type, $event.categoryId)" />
 	</div>
