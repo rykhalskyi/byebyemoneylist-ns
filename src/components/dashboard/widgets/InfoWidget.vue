@@ -13,8 +13,8 @@ const logo = imagePath('byebyemoneylist', 'bbml-logo.png')
 			:src="logo"
 			:alt="t('Bye Bye Money List')"
 			:class="$style.logo"
-			width="48"
-			height="48">
+			width="64"
+			height="64">
 		<p :class="$style.version">
 			{{ t('Version {version}', { version: appVersion }) }}
 		</p>
@@ -29,8 +29,8 @@ const logo = imagePath('byebyemoneylist', 'bbml-logo.png')
 }
 
 .logo {
-	width: 48px;
-	height: 48px;
+	width: 64px;
+	height: 64px;
 }
 
 .version {
