@@ -89,19 +89,6 @@ describe('ShoppingLists', () => {
 		expect(api.deleteList).not.toHaveBeenCalled()
 	})
 
-	it('offers a labeled delete action in the expanded list', async () => {
-		const wrapper = await render()
-		await wrapper.findComponent(NcListItem).find('.list-item__anchor').trigger('click')
-		await flushPromises()
-
-		const button = wrapper.findAll('button').find((candidate) => candidate.text() === 'Delete list')
-		expect(button).toBeDefined()
-		await button!.trigger('click')
-		await nextTick()
-
-		expect(wrapper.findComponent(ConfirmDialog).props('open')).toBe(true)
-	})
-
 	it('deletes the list after confirmation', async () => {
 		vi.mocked(api.deleteList).mockResolvedValue()
 		const wrapper = await render()

@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve, sep } from 'node:path'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
@@ -16,8 +17,8 @@ function toPosix(path) {
 function stripQuotes(value) {
 	const trimmed = value.trim()
 	if (
-		(trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-		(trimmed.startsWith("'") && trimmed.endsWith("'"))
+		(trimmed.startsWith('"') && trimmed.endsWith('"'))
+		|| (trimmed.startsWith("'") && trimmed.endsWith("'"))
 	) {
 		return trimmed.slice(1, -1)
 	}
@@ -198,8 +199,8 @@ function addDecision(args) {
 		next = numbers.length ? Math.max(...numbers) + 1 : 1
 	}
 	const id = `D-${String(next).padStart(2, '0')}`
-	const header =
-		'# Decisions\n\nAppend-only decision record. The "why" lives here; the full change history lives in git.\n\n'
+	const header
+		= '# Decisions\n\nAppend-only decision record. The "why" lives here; the full change history lives in git.\n\n'
 	appendLine(file, `- [${today()}] ${id} — ${text}`, header)
 	console.log(`decisions.md updated (${id})`)
 }
