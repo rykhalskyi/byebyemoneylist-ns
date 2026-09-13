@@ -63,3 +63,6 @@
 ## [2026-09-13] update | epic nextcloud-web-app — T9 split into T9.1–T9.5, linked spec/plan
 ## [2026-09-13] ticket | T9.1 — Dashboard shell (client-side layout) implemented
 ## [2026-09-13] ticket | T9.2 — Dashboard spending API implemented
+## [2026-09-13] ticket | T9.3 — Dashboard data widgets implemented
+## [2026-09-13] ticket | T9.4 — Dashboard action widgets implemented
+## [2026-09-13] ticket | T9.5 — Dashboard info widget + app version implemented

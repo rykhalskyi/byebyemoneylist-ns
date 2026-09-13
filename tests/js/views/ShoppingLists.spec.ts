@@ -9,6 +9,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import ConfirmDialog from '../../../src/components/ConfirmDialog.vue'
 import NewListDialog from '../../../src/components/NewListDialog.vue'
+import PurchaseDialog from '../../../src/components/PurchaseDialog.vue'
 import ShoppingLists from '../../../src/views/ShoppingLists.vue'
 import * as api from '../../../src/services/listsApi.ts'
 
@@ -154,5 +155,17 @@ describe('ShoppingLists', () => {
 		await income.findComponent(NcListItem).find('.list-item__anchor').trigger('click')
 		await flushPromises()
 		expect(income.findAll('button').some((candidate) => candidate.text() === 'Add income source')).toBe(true)
+	})
+
+	it('opens the purchase dialog in the mode requested by a widget', async () => {
+		const wrapper = await render()
+		expect(wrapper.findComponent(PurchaseDialog).props('open')).toBe(false)
+
+		await wrapper.setProps({ purchaseMode: 'scan' })
+		await nextTick()
+
+		const dialog = wrapper.findComponent(PurchaseDialog)
+		expect(dialog.props('open')).toBe(true)
+		expect(dialog.props('initialMode')).toBe('scan')
 	})
 })

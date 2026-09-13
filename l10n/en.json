@@ -72,6 +72,7 @@
     "Failed to load the picture.": "Failed to load the picture.",
     "Failed to load the price history.": "Failed to load the price history.",
     "Failed to load the product catalog.": "Failed to load the product catalog.",
+    "Failed to load the total.": "Failed to load the total.",
     "Failed to load your catalog.": "Failed to load your catalog.",
     "Failed to load your shopping lists.": "Failed to load your shopping lists.",
     "Failed to update the category. Please try again.": "Failed to update the category. Please try again.",
@@ -178,6 +179,7 @@
     "Try again": "Try again",
     "Upload": "Upload",
     "Upload picture": "Upload picture",
+    "Version {version}": "Version {version}",
     "Widget type": "Widget type",
     "_%n category imported from client pending review_::_%n categories imported from client pending review_": [
       "%n category imported from client pending review",

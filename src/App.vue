@@ -18,11 +18,17 @@ const items = [
 ]
 
 const currentView = ref(items[0].id)
+const purchaseIntent = ref<'manual' | 'scan' | null>(null)
 
 const currentLabel = computed(() => items.find((item) => item.id === currentView.value)?.label ?? currentView.value)
 
 function onSelect(id: string) {
 	currentView.value = id
+}
+
+function openPurchase(mode: 'manual' | 'scan') {
+	purchaseIntent.value = mode
+	currentView.value = 'lists'
 }
 </script>
 
@@ -30,8 +36,11 @@ function onSelect(id: string) {
 	<NcContent appName="byebyemoneylist">
 		<Menu :items="items" @select="onSelect" />
 		<NcAppContent :class="$style.content">
-			<Dashboard v-if="currentView === 'dashboard'" />
-			<ShoppingLists v-else-if="currentView === 'lists'" />
+			<Dashboard v-if="currentView === 'dashboard'" @purchase="openPurchase" />
+			<ShoppingLists
+				v-else-if="currentView === 'lists'"
+				:purchaseMode="purchaseIntent"
+				@purchaseOpened="purchaseIntent = null" />
 			<Catalog v-else-if="currentView === 'catalog'" />
 			<h2 v-else>
 				{{ currentLabel }}

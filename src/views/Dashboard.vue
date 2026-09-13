@@ -7,9 +7,17 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import AddWidgetDialog from '../components/dashboard/AddWidgetDialog.vue'
 import WidgetGrid from '../components/dashboard/WidgetGrid.vue'
+import AddPurchaseWidget from '../components/dashboard/widgets/AddPurchaseWidget.vue'
+import CategorySpendingWidget from '../components/dashboard/widgets/CategorySpendingWidget.vue'
+import InfoWidget from '../components/dashboard/widgets/InfoWidget.vue'
+import ScanPurchaseWidget from '../components/dashboard/widgets/ScanPurchaseWidget.vue'
+import SpentThisMonthWidget from '../components/dashboard/widgets/SpentThisMonthWidget.vue'
+import SpentTodayWidget from '../components/dashboard/widgets/SpentTodayWidget.vue'
 import { useDashboardWidgets } from '../composables/useDashboardWidgets.ts'
 import { fetchCategories } from '../services/listsApi.ts'
 import { t } from '../utils/l10n.ts'
+
+const emit = defineEmits<{ purchase: [mode: 'manual' | 'scan'] }>()
 
 const { widgets, addWidget, removeWidget, reorderWidgets } = useDashboardWidgets()
 
@@ -50,11 +58,19 @@ function categoryName(categoryId: string | null | undefined): string {
 			@remove="removeWidget"
 			@reorder="reorderWidgets">
 			<template #widget="{ widget }">
-				<p :class="$style.placeholder">
-					{{ widget.type === 'categorySpending' && categoryName(widget.categoryId) !== ''
-						? categoryName(widget.categoryId)
-						: t('Coming soon') }}
-				</p>
+				<SpentTodayWidget v-if="widget.type === 'spentToday'" />
+				<SpentThisMonthWidget v-else-if="widget.type === 'thisMonth'" />
+				<CategorySpendingWidget
+					v-else-if="widget.type === 'categorySpending'"
+					:categoryId="widget.categoryId ?? null"
+					:categoryName="categoryName(widget.categoryId)" />
+				<AddPurchaseWidget
+					v-else-if="widget.type === 'addPurchase'"
+					@purchase="emit('purchase', $event)" />
+				<ScanPurchaseWidget
+					v-else-if="widget.type === 'scanPurchase'"
+					@purchase="emit('purchase', $event)" />
+				<InfoWidget v-else-if="widget.type === 'info'" />
 			</template>
 		</WidgetGrid>
 
@@ -79,10 +95,5 @@ function categoryName(categoryId: string | null | undefined): string {
 	justify-content: space-between;
 	gap: 16px;
 	margin-bottom: 16px;
-}
-
-.placeholder {
-	color: var(--color-text-maxcontrast);
-	margin: 0;
 }
 </style>

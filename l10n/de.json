@@ -72,6 +72,7 @@
     "Failed to load the picture.": "Bild konnte nicht geladen werden.",
     "Failed to load the price history.": "Preisverlauf konnte nicht geladen werden.",
     "Failed to load the product catalog.": "Produktkatalog konnte nicht geladen werden.",
+    "Failed to load the total.": "Summe konnte nicht geladen werden.",
     "Failed to load your catalog.": "Dein Katalog konnte nicht geladen werden.",
     "Failed to load your shopping lists.": "Deine Einkaufslisten konnten nicht geladen werden.",
     "Failed to update the category. Please try again.": "Kategorie konnte nicht aktualisiert werden. Bitte versuche es erneut.",
@@ -178,6 +179,7 @@
     "Try again": "Erneut versuchen",
     "Upload": "Hochladen",
     "Upload picture": "Bild hochladen",
+    "Version {version}": "Version {version}",
     "Widget type": "Widget-Typ",
     "_%n category imported from client pending review_::_%n categories imported from client pending review_": [
       "%n Kategorie vom Client zur Überprüfung importiert",

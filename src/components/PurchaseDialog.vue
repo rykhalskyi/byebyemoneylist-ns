@@ -20,6 +20,7 @@ const props = defineProps<{
 	lists: ShoppingList[]
 	stores: Store[]
 	categories: Category[]
+	initialMode?: 'manual' | 'scan'
 }>()
 
 const emit = defineEmits<{
@@ -51,7 +52,7 @@ watch(
 		if (!open) {
 			return
 		}
-		mode.value = 'manual'
+		mode.value = props.initialMode ?? 'manual'
 		listValue.value = null
 		storeValue.value = null
 		category.value = null

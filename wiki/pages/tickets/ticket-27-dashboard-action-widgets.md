@@ -1,7 +1,7 @@
 ---
 created: 2026-09-13
 type: ticket
-status: in-progress
+status: implemented
 summary: T9.4 — Action widgets that open the Add/Scan purchase dialog on Shopping Lists
 ---
 
@@ -33,4 +33,16 @@ Requires a one-shot cross-view intent (selected view + dialog mode) owned by
 
 ## Outcome
 
-Pending implementation.
+Implemented (2026-09-13).
+
+- `AddPurchaseWidget.vue` / `ScanPurchaseWidget.vue` emit `purchase` with `manual`
+  / `scan`.
+- `App.vue` holds a one-shot `purchaseIntent`, switches to the `lists` view and
+  passes `purchaseMode`; `ShoppingLists` opens `PurchaseDialog` with the requested
+  `initialMode` and emits `purchaseOpened` so the intent is cleared.
+- The Shopping Lists header button uses the same `openPurchaseDialog('manual')`
+  path.
+- Files: `src/components/dashboard/widgets/{AddPurchaseWidget,ScanPurchaseWidget}.vue`,
+  `src/views/Dashboard.vue`, `src/App.vue`, `src/views/ShoppingLists.vue`,
+  `src/components/PurchaseDialog.vue`, `tests/js/views/ShoppingLists.spec.ts`.
+- Verified: `npm run lint`, `npm run test` (79), `npm run build`.

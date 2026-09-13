@@ -1,7 +1,7 @@
 ---
 created: 2026-09-13
 type: ticket
-status: in-progress
+status: implemented
 summary: T9.3 — Spending widgets (today, this month, category this month)
 ---
 
@@ -34,4 +34,18 @@ zero/empty state. Depends on T9.1 and T9.2.
 
 ## Outcome
 
-Pending implementation.
+Implemented (2026-09-13).
+
+- `src/utils/dashboardRange.ts` computes local-time `todayRange` / `monthRange`
+  (DST-safe via local date arithmetic); the ISO instants are sent to the API.
+- `SpendingValue.vue` is the shared presentational loader (loading / error+retry /
+  formatted amount) used by all three widgets.
+- `SpentTodayWidget.vue`, `SpentThisMonthWidget.vue`, `CategorySpendingWidget.vue`
+  (the latter also shows the category name) are wired into `Dashboard.vue`.
+- Files: `src/utils/dashboardRange.ts`,
+  `src/components/dashboard/widgets/{SpendingValue,SpentTodayWidget,SpentThisMonthWidget,CategorySpendingWidget}.vue`,
+  `src/views/Dashboard.vue`, `l10n/{en,de,uk}.{json,js}`,
+  `tests/js/utils/dashboardRange.spec.ts`,
+  `tests/js/components/dashboard/SpendingValue.spec.ts`.
+- Verified: `npm run lint`, `npm run stylelint`, `npm run test` (79),
+  `npm run build`, `npm run l10n`.

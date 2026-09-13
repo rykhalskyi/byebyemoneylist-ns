@@ -1,7 +1,7 @@
 ---
 created: 2026-09-13
 type: ticket
-status: in-progress
+status: implemented
 summary: T9.5 — Info widget (app logo + version injected via the page template)
 ---
 
@@ -30,4 +30,19 @@ endpoint ([D-09](../../decisions.md)). Depends on T9.1.
 
 ## Outcome
 
-Pending implementation.
+Implemented (2026-09-13).
+
+- `PageController` injects `IAppManager` and passes
+  `['version' => getAppVersion(Application::APP_ID)]` to the template;
+  `templates/index.php` emits it as `data-version` on `#byebyemoneylist`.
+- `src/main.ts` reads the data attribute and `provide`s `appVersion`;
+  `InfoWidget.vue` renders `img/bbml-logo.png` (via `imagePath`) and
+  `Version {version}`.
+- Logo asset is `img/bbml-logo.png` (single PNG for both themes).
+- Files: `lib/Controller/PageController.php`, `templates/index.php`,
+  `src/main.ts`, `src/components/dashboard/widgets/InfoWidget.vue`,
+  `l10n/{en,de,uk}.{json,js}`,
+  `tests/js/components/dashboard/InfoWidget.spec.ts`.
+- Verified: `composer lint`, `composer cs:check`, `composer psalm`,
+  `composer test:unit` (136 tests), `npm run lint`, `npm run test` (79),
+  `npm run build`, `npm run l10n`.

@@ -72,6 +72,7 @@
     "Failed to load the picture.": "Не вдалося завантажити зображення.",
     "Failed to load the price history.": "Не вдалося завантажити історію цін.",
     "Failed to load the product catalog.": "Не вдалося завантажити каталог продуктів.",
+    "Failed to load the total.": "Не вдалося завантажити суму.",
     "Failed to load your catalog.": "Не вдалося завантажити ваш каталог.",
     "Failed to load your shopping lists.": "Не вдалося завантажити ваші списки покупок.",
     "Failed to update the category. Please try again.": "Не вдалося оновити категорію. Спробуйте ще раз.",
@@ -178,6 +179,7 @@
     "Try again": "Спробувати знову",
     "Upload": "Завантажити",
     "Upload picture": "Завантажити зображення",
+    "Version {version}": "Версія {version}",
     "Widget type": "Тип віджета",
     "_%n category imported from client pending review_::_%n categories imported from client pending review_": [
       "%n категорію імпортовано з клієнта й очікує перевірки",
