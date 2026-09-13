@@ -1,8 +1,8 @@
 import type { Category, Product, ShoppingList, Store } from '../../../src/types.ts'
 
 import { mdiAutorenew, mdiCart, mdiCashPlus, mdiDotsVertical } from '@mdi/js'
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -63,6 +63,8 @@ async function clickDeleteMenuItem(wrapper: Awaited<ReturnType<typeof render>>) 
 	await flushPromises()
 	await nextTick()
 }
+
+enableAutoUnmount(afterEach)
 
 describe('ShoppingLists', () => {
 	beforeEach(() => {
