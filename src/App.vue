@@ -5,6 +5,7 @@ import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcContent from '@nextcloud/vue/components/NcContent'
 import Menu from './components/Menu.vue'
 import Catalog from './views/Catalog.vue'
+import Dashboard from './views/Dashboard.vue'
 import ShoppingLists from './views/ShoppingLists.vue'
 import { t } from './utils/l10n.ts'
 
@@ -17,11 +18,17 @@ const items = [
 ]
 
 const currentView = ref(items[0].id)
+const purchaseIntent = ref<'manual' | 'scan' | null>(null)
 
 const currentLabel = computed(() => items.find((item) => item.id === currentView.value)?.label ?? currentView.value)
 
 function onSelect(id: string) {
 	currentView.value = id
+}
+
+function openPurchase(mode: 'manual' | 'scan') {
+	purchaseIntent.value = mode
+	currentView.value = 'lists'
 }
 </script>
 
@@ -29,7 +36,11 @@ function onSelect(id: string) {
 	<NcContent appName="byebyemoneylist">
 		<Menu :items="items" @select="onSelect" />
 		<NcAppContent :class="$style.content">
-			<ShoppingLists v-if="currentView === 'lists'" />
+			<Dashboard v-if="currentView === 'dashboard'" @purchase="openPurchase" />
+			<ShoppingLists
+				v-else-if="currentView === 'lists'"
+				:purchaseMode="purchaseIntent"
+				@purchaseOpened="purchaseIntent = null" />
 			<Catalog v-else-if="currentView === 'catalog'" />
 			<h2 v-else>
 				{{ currentLabel }}

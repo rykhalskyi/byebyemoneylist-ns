@@ -14,6 +14,7 @@
 - [specs/add-product-to-list](pages/specs/add-product-to-list.md) — T2 partial: Add products to a shopping list spec
 - [specs/catalog-page](pages/specs/catalog-page.md) — T2: Catalog page spec (Categories + Stores tabs)
 - [specs/catalog-search](pages/specs/catalog-search.md) — T14: Catalog per-tab fuzzy search + paged lists spec
+- [specs/dashboard](pages/specs/dashboard.md) — T9 Dashboard — user-managed widgets (spending totals + action + info)
 - [specs/localization](pages/specs/localization.md) — Frontend localization (i18n) for en/de/uk
 - [specs/products-tab](pages/specs/products-tab.md) — T6: Products tab spec (display + create)
 - [specs/shopping-list-improvements](pages/specs/shopping-list-improvements.md) — Issue #8: Shopping List Improvements spec
@@ -23,6 +24,7 @@
 - [plans/add-product-to-list](pages/plans/add-product-to-list.md) — T2 partial: Add products to a shopping list plan
 - [plans/catalog-page](pages/plans/catalog-page.md) — T2: Catalog page implementation plan
 - [plans/catalog-search](pages/plans/catalog-search.md) — T14: Catalog per-tab fuzzy search + paged lists plan
+- [plans/dashboard](pages/plans/dashboard.md) — T9 Dashboard implementation plan (layout, spending API, widgets, version)
 - [plans/localization](pages/plans/localization.md) — Frontend localization implementation plan (T15–T21)
 - [plans/products-tab](pages/plans/products-tab.md) — T6: Products tab implementation plan
 - [plans/shopping-list-improvements](pages/plans/shopping-list-improvements.md) — Issue #8: Shopping List Improvements plan
@@ -49,6 +51,11 @@
 - [tickets/ticket-21-localization-docs](pages/tickets/ticket-21-localization-docs.md) — T21: Localization docs & wiki sync
 - [tickets/ticket-22-list-grouping](pages/tickets/ticket-22-list-grouping.md) — Group shopping lists by year and month with expandable headers and finished-final-total sums
 - [tickets/ticket-23-add-purchase](pages/tickets/ticket-23-add-purchase.md) — T3 partial — Add purchase (manual) finishes a new list with a final total
+- [tickets/ticket-24-dashboard-shell](pages/tickets/ticket-24-dashboard-shell.md) — T9.1 — Dashboard shell, widget grid, add/remove/reorder with localStorage layout
+- [tickets/ticket-25-dashboard-spending-api](pages/tickets/ticket-25-dashboard-spending-api.md) — T9.2 — Server spending endpoint (range sum + by-category breakdown)
+- [tickets/ticket-26-dashboard-data-widgets](pages/tickets/ticket-26-dashboard-data-widgets.md) — T9.3 — Spending widgets (today, this month, category this month)
+- [tickets/ticket-27-dashboard-action-widgets](pages/tickets/ticket-27-dashboard-action-widgets.md) — T9.4 — Action widgets that open the Add/Scan purchase dialog on Shopping Lists
+- [tickets/ticket-28-dashboard-info-widget](pages/tickets/ticket-28-dashboard-info-widget.md) — T9.5 — Info widget (app logo + version injected via the page template)
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.

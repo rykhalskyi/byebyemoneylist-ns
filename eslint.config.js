@@ -13,7 +13,7 @@ export default [
 		files: ['**/*.vue'],
 		rules: {
 			// Single-word view/component names used by this app.
-			'vue/multi-word-component-names': ['error', { ignores: ['Menu', 'Catalog'] }],
+			'vue/multi-word-component-names': ['error', { ignores: ['Menu', 'Catalog', 'Dashboard'] }],
 		},
 	},
 	{

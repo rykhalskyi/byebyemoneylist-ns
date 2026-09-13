@@ -53,3 +53,16 @@
 ## [2026-09-12] ticket | T23 — Add purchase (manual) finishes a new list with a final total
 ## [2026-09-12] update | epic nextcloud-web-app — T3 marked partial; ticket-23 linked
 ## [2026-09-12] update | ticket-23-add-purchase — list name defaults to StoreName + date when left empty
+## [2026-09-13] spec | Dashboard (T9)
+## [2026-09-13] plan | Dashboard (T9)
+## [2026-09-13] ticket | T9.1 — Dashboard shell (client-side layout)
+## [2026-09-13] ticket | T9.2 — Dashboard spending API
+## [2026-09-13] ticket | T9.3 — Dashboard data widgets
+## [2026-09-13] ticket | T9.4 — Dashboard action widgets
+## [2026-09-13] ticket | T9.5 — Dashboard info widget + version
+## [2026-09-13] update | epic nextcloud-web-app — T9 split into T9.1–T9.5, linked spec/plan
+## [2026-09-13] ticket | T9.1 — Dashboard shell (client-side layout) implemented
+## [2026-09-13] ticket | T9.2 — Dashboard spending API implemented
+## [2026-09-13] ticket | T9.3 — Dashboard data widgets implemented
+## [2026-09-13] ticket | T9.4 — Dashboard action widgets implemented
+## [2026-09-13] ticket | T9.5 — Dashboard info widget + app version implemented

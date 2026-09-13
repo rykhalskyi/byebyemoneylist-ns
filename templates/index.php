@@ -10,4 +10,4 @@ Util::addStyle(OCA\ByeByeMoneyList\AppInfo\Application::APP_ID, OCA\ByeByeMoneyL
 
 ?>
 
-<div id="byebyemoneylist"></div>
+<div id="byebyemoneylist" data-version="<?php p($_['version']); ?>"></div>

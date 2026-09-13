@@ -2,7 +2,7 @@
 import type { Category, ListItem, ListStatus, Product, ShoppingList, Store } from '../types.ts'
 
 import { mdiAlertCircle, mdiAutorenew, mdiCart, mdiCartOff, mdiCartPlus, mdiCashPlus, mdiChevronDown, mdiDelete, mdiDotsVertical, mdiPlus } from '@mdi/js'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -20,6 +20,12 @@ import { formatDate, formatMonth, formatTotal } from '../utils/format.ts'
 import { getCanonicalLocale, t } from '../utils/l10n.ts'
 import { groupListsByMonth } from '../utils/listGroups.ts'
 
+const props = withDefaults(defineProps<{ purchaseMode?: 'manual' | 'scan' | null }>(), {
+	purchaseMode: null,
+})
+
+const emit = defineEmits<{ purchaseOpened: [] }>()
+
 const lists = ref<ShoppingList[]>([])
 const stores = ref<Store[]>([])
 const categories = ref<Category[]>([])
@@ -29,6 +35,7 @@ const error = ref<string | null>(null)
 const showDialog = ref(false)
 const newListIsIncome = ref(false)
 const showPurchaseDialog = ref(false)
+const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
 const expandedId = ref<string | null>(null)
 const itemsByList = ref<Record<string, ListItem[]>>({})
 const itemsLoading = ref<Record<string, boolean>>({})
@@ -187,6 +194,22 @@ function openListDialog(isIncome: boolean) {
 	newListIsIncome.value = isIncome
 	showDialog.value = true
 }
+
+function openPurchaseDialog(mode: 'manual' | 'scan') {
+	purchaseDialogMode.value = mode
+	showPurchaseDialog.value = true
+}
+
+watch(
+	() => props.purchaseMode,
+	(mode) => {
+		if (mode !== null) {
+			openPurchaseDialog(mode)
+			emit('purchaseOpened')
+		}
+	},
+	{ immediate: true },
+)
 
 function statusLabel(status: ListStatus): string {
 	switch (status) {
@@ -352,7 +375,7 @@ function itemSubname(item: ListItem): string {
 					:class="$style['add-button']"
 					type="button"
 					variant="secondary"
-					@click="showPurchaseDialog = true">
+					@click="openPurchaseDialog('manual')">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiCartPlus" :size="20" />
 					</template>
@@ -560,6 +583,7 @@ function itemSubname(item: ListItem): string {
 			:lists="lists"
 			:stores="stores"
 			:categories="categories"
+			:initialMode="purchaseDialogMode"
 			@update:open="showPurchaseDialog = $event"
 			@saved="onPurchaseSaved" />
 		<AddProductDialog
