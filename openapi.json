@@ -2535,6 +2535,316 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/byebyemoneylist/api/dashboard/spending": {
+            "get": {
+                "operationId": "dashboard-spending",
+                "summary": "Spending totals for the current user within an explicit time range",
+                "description": "Sums finished expense lists (income and subscriptions excluded) created in [from, to) and returns the total plus a per-category breakdown. The client computes the range in its local timezone and sends ISO-8601 instants.",
+                "tags": [
+                    "dashboard"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Range start (ISO-8601, inclusive)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Range end (ISO-8601, exclusive)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "categoryId",
+                        "in": "query",
+                        "description": "Optional category filter",
+                        "schema": {
+                            "type": "string",
+                            "nullable": true,
+                            "default": null
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Spending totals returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "total",
+                                                                "byCategory"
+                                                            ],
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "number",
+                                                                    "format": "double"
+                                                                },
+                                                                "byCategory": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "categoryId",
+                                                                            "total"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "categoryId": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "total": {
+                                                                                "type": "number",
+                                                                                "format": "double"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "total",
+                                                                        "byCategory"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "total": {
+                                                                            "type": "number",
+                                                                            "format": "double"
+                                                                        },
+                                                                        "byCategory": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "categoryId",
+                                                                                    "total"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "categoryId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "total": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "from/to are missing, invalid or not a valid range",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "total",
+                                                                "byCategory"
+                                                            ],
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "number",
+                                                                    "format": "double"
+                                                                },
+                                                                "byCategory": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "categoryId",
+                                                                            "total"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "categoryId": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "total": {
+                                                                                "type": "number",
+                                                                                "format": "double"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/byebyemoneylist/api/lists": {
             "get": {
                 "operationId": "list-index",

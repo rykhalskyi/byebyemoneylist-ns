@@ -36,7 +36,7 @@ Build the **server side** of Bye-Bye Money List — a Nextcloud application prov
 
 ## Ticket breakdown
 
-Implementation order is tracked by numbered tickets (e.g. [ticket-01-shopping-lists-page](../tickets/ticket-01-shopping-lists-page.md), [ticket-02-catalog-page](../tickets/ticket-02-catalog-page.md)); a ticket may cover parts of several T-rows below.
+Implementation order is tracked by numbered tickets (e.g. [ticket-01-shopping-lists-page](../tickets/ticket-01-shopping-lists-page.md), [ticket-02-catalog-page](../tickets/ticket-02-catalog-page.md)); a ticket may cover parts of several T-rows below. T9 is specified in [specs/dashboard](../specs/dashboard.md) with the [implementation plan](../plans/dashboard.md).
 
 | ID | Ticket | Source section | Status |
 |----|--------|----------------|--------|
@@ -48,7 +48,7 @@ Implementation order is tracked by numbered tickets (e.g. [ticket-01-shopping-li
 | T6 | Catalog — Products tab (CRUD, barcode, aliases, favorites, status, merge, price history) | §5.3, §5.6, §5.7 | partial — display + create done in [ticket-06](../tickets/ticket-06-products-tab.md); edit/delete done in [ticket-08](../tickets/ticket-08-shopping-list-improvements.md); delete confirmation done in [ticket-10](../tickets/ticket-10-delete-confirmation.md); last price + info dialog w/ price history done in [ticket-12](../tickets/ticket-12-product-last-price-info-dialog.md); pictures done in [ticket-13](../tickets/ticket-13-product-pictures.md); per-tab fuzzy search + paged lists done in [ticket-14](../tickets/ticket-14-catalog-search-paging.md); merge open |
 | T7 | Subscriptions & Income — dedicated tabs/views, list flags | §2.10, §2.11, §5.4, §5.5 | open |
 | T8 | Recurring lists — WEEK/MONTH/YEAR period, forward empty/with items, auto-archive + create | §2.9 | open |
-| T9 | Dashboard — user-managed widgets (spent today, this month, category spending, quick purchase, scan) | §3 | open |
+| T9 | Dashboard — user-managed widgets (spent today, this month, category spending, add/scan purchase, info) | §3 | in progress — split into [T9.1 shell](../tickets/ticket-24-dashboard-shell.md), [T9.2 spending API](../tickets/ticket-25-dashboard-spending-api.md), [T9.3 data widgets](../tickets/ticket-26-dashboard-data-widgets.md), [T9.4 action widgets](../tickets/ticket-27-dashboard-action-widgets.md), [T9.5 info widget](../tickets/ticket-28-dashboard-info-widget.md) |
 | T10 | Analytics — period picker, overview charts, product stats, budget hints, PDF report, AI assistant semantics | §4 | open |
 | T11 | Settings — currency, actual-price rule, dashboard toggle, LLM/AI profiles, CSV export, share identity, version/privacy | §6 | open |
 | T12 | Multi-user, sharing & ownership — user/group sharing, permissions, owner-only ops, group budget view | §1 | open |

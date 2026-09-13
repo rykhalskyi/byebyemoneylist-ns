@@ -119,3 +119,13 @@ export interface ListItemUpdatePayload {
 	price?: number | null
 	quantity?: number
 }
+
+export interface CategorySpending {
+	categoryId: string | null
+	total: number
+}
+
+export interface DashboardSpending {
+	total: number
+	byCategory: CategorySpending[]
+}
