@@ -540,15 +540,6 @@ function itemSubname(item: ListItem): string {
 												</template>
 												{{ addItemLabel(list) }}
 											</NcButton>
-											<NcButton
-												type="button"
-												variant="error"
-												@click="askDelete(list)">
-												<template #icon>
-													<NcIconSvgWrapper :path="mdiDelete" :size="20" />
-												</template>
-												{{ t('Delete list') }}
-											</NcButton>
 										</div>
 									</template>
 								</div>
