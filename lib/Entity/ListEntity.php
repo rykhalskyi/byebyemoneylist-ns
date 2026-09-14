@@ -43,6 +43,8 @@ use OCP\DB\Types;
  * @method void setRecurringPeriod(string $recurringPeriod)
  * @method ?bool getIsForwardEmpty()
  * @method void setIsForwardEmpty(bool $isForwardEmpty)
+ * @method ?string getReceiptPath()
+ * @method void setReceiptPath(?string $receiptPath)
  * @psalm-suppress PropertyNotSetInConstructor, PossiblyUnusedProperty
  */
 class ListEntity extends Entity {
@@ -62,6 +64,7 @@ class ListEntity extends Entity {
 	protected ?bool $isRecurring = false;
 	protected ?string $recurringPeriod = 'MONTH';
 	protected ?bool $isForwardEmpty = true;
+	protected ?string $receiptPath = null;
 
 	public function __construct() {
 		$this->addType('id', Types::STRING);
@@ -76,5 +79,6 @@ class ListEntity extends Entity {
 		$this->addType('isRecurring', Types::BOOLEAN);
 		$this->addType('recurringPeriod', Types::STRING);
 		$this->addType('isForwardEmpty', Types::BOOLEAN);
+		$this->addType('receiptPath', Types::STRING);
 	}
 }

@@ -12,6 +12,12 @@ export interface ShoppingList {
 	isIncome: boolean
 	isSubscription: boolean
 	isRecurring: boolean
+	hasReceipt: boolean
+}
+
+export interface ReceiptPicture {
+	dataUrl: string
+	mime: string
 }
 
 export interface Store {
@@ -128,4 +134,31 @@ export interface CategorySpending {
 export interface DashboardSpending {
 	total: number
 	byCategory: CategorySpending[]
+}
+
+export type LlmProvider = 'deepseek' | 'siliconflow' | 'gemini' | 'openai' | 'anthropic' | 'grok'
+
+export interface LlmProfile {
+	id: string
+	name: string
+	provider: LlmProvider
+	apiKeyMasked: string
+	model: string | null
+	connectTimeoutSeconds: number
+	readTimeoutSeconds: number
+	maxTokens: number
+	isActive: boolean
+	createdAt: string
+	updatedAt?: string | null
+}
+
+export interface LlmProfilePayload {
+	name: string
+	provider: LlmProvider
+	apiKey?: string
+	model?: string | null
+	connectTimeoutSeconds?: number
+	readTimeoutSeconds?: number
+	maxTokens?: number
+	isActive?: boolean
 }

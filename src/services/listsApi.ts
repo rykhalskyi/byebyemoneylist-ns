@@ -1,4 +1,4 @@
-import type { Category, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductPayload, ProductPicture, ProductPrice, ShoppingList, Store, StorePayload } from '../types.ts'
+import type { Category, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductPayload, ProductPicture, ProductPrice, ReceiptPicture, ShoppingList, Store, StorePayload } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateOcsUrl } from '@nextcloud/router'
@@ -32,6 +32,25 @@ export async function updateList(id: string, payload: ListPayload): Promise<Shop
 
 export async function deleteList(id: string): Promise<void> {
 	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}`))
+}
+
+export async function uploadListReceipt(id: string, file: File): Promise<ReceiptPicture> {
+	const formData = new FormData()
+	formData.append('receipt', file)
+	const { data } = await axios.post<OcsData<{ receipt: ReceiptPicture }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}/receipt`),
+		formData,
+	)
+	return data.ocs.data.receipt
+}
+
+export async function fetchListReceipt(id: string): Promise<ReceiptPicture | null> {
+	const { data } = await axios.get<OcsData<{ receipt: ReceiptPicture | null }>>(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}/receipt`))
+	return data.ocs.data.receipt
+}
+
+export async function deleteListReceipt(id: string): Promise<void> {
+	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}/receipt`))
 }
 
 export async function fetchStores(): Promise<Store[]> {

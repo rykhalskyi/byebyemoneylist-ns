@@ -30,6 +30,7 @@ function list(id: string, name: string, overrides: Partial<ShoppingList> = {}): 
 		isIncome: false,
 		isSubscription: false,
 		isRecurring: false,
+		hasReceipt: false,
 		...overrides,
 	}
 }

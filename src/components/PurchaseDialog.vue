@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { Category, ShoppingList, Store } from '../types.ts'
 
-import { mdiReceiptText } from '@mdi/js'
-import { computed, ref, watch } from 'vue'
+import { mdiImagePlus, mdiReceiptText } from '@mdi/js'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -11,7 +11,7 @@ import NcRadioGroup from '@nextcloud/vue/components/NcRadioGroup'
 import NcRadioGroupButton from '@nextcloud/vue/components/NcRadioGroupButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { createList, createStore, fetchListItems, updateList } from '../services/listsApi.ts'
+import { createList, createStore, deleteList, fetchListItems, updateList, uploadListReceipt } from '../services/listsApi.ts'
 import { t } from '../utils/l10n.ts'
 import { defaultListName, findNewListByName, itemsTotal, parsePrice } from '../utils/purchase.ts'
 
@@ -40,6 +40,14 @@ const storeError = ref(false)
 const priceError = ref(false)
 const categoryError = ref(false)
 
+const RECEIPT_MAX_BYTES = 4 * 1024 * 1024
+const RECEIPT_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+
+const receiptInput = ref<HTMLInputElement | null>(null)
+const receiptFile = ref<File | null>(null)
+const receiptPreview = ref<string | null>(null)
+const receiptError = ref<string | null>(null)
+
 const newLists = computed(() => props.lists.filter((list) => list.status === 'new'))
 const expenseCategories = computed(() => props.categories.filter((category) => !category.income))
 const selectedList = computed(() => (listValue.value !== null && typeof listValue.value === 'object' ? listValue.value : null))
@@ -63,6 +71,9 @@ watch(
 		storeError.value = false
 		priceError.value = false
 		categoryError.value = false
+		clearReceiptPreview()
+		receiptFile.value = null
+		receiptError.value = null
 	},
 )
 
@@ -110,10 +121,55 @@ function onCancel() {
 	emit('update:open', false)
 }
 
+function chooseReceipt() {
+	receiptInput.value?.click()
+}
+
+function clearReceiptPreview() {
+	if (receiptPreview.value !== null) {
+		URL.revokeObjectURL(receiptPreview.value)
+		receiptPreview.value = null
+	}
+}
+
+function onReceiptSelected(event: Event) {
+	const input = event.target as HTMLInputElement
+	const file = input.files?.[0]
+	input.value = ''
+	if (file === undefined) {
+		return
+	}
+	if (!RECEIPT_MIME_TYPES.includes(file.type)) {
+		receiptError.value = t('Unsupported image type. Use JPEG, PNG, WebP or GIF.')
+		return
+	}
+	if (file.size > RECEIPT_MAX_BYTES) {
+		receiptError.value = t('The receipt exceeds the 4 MB limit.')
+		return
+	}
+	clearReceiptPreview()
+	receiptFile.value = file
+	receiptPreview.value = URL.createObjectURL(file)
+	receiptError.value = null
+}
+
+function removeReceipt() {
+	clearReceiptPreview()
+	receiptFile.value = null
+	receiptError.value = null
+}
+
+onBeforeUnmount(clearReceiptPreview)
+
 async function onSubmit() {
 	if (submitting.value) {
 		return
 	}
+	if (mode.value === 'scan') {
+		await submitScan()
+		return
+	}
+
 	const name = listName.value.trim()
 	const trimmedStore = storeName.value.trim()
 	const parsedPrice = parsePrice(price.value)
@@ -150,6 +206,41 @@ async function onSubmit() {
 		submitting.value = false
 	}
 }
+
+async function submitScan() {
+	const name = listName.value.trim()
+	if (selectedList.value === null && name === '') {
+		error.value = t('The list name is required.')
+		return
+	}
+
+	submitting.value = true
+	error.value = null
+	try {
+		const existing = findNewListByName(props.lists, name)
+		const isNew = selectedList.value === null && existing === null
+		const target = selectedList.value ?? existing ?? await createList({ name })
+		let savedList = target
+		if (receiptFile.value !== null) {
+			try {
+				await uploadListReceipt(target.id, receiptFile.value)
+				savedList = { ...target, hasReceipt: true }
+			} catch {
+				if (isNew) {
+					await deleteList(target.id).catch(() => undefined)
+				}
+				error.value = t('Failed to upload the receipt. Please try again.')
+				return
+			}
+		}
+		emit('saved', savedList)
+		emit('update:open', false)
+	} catch {
+		error.value = t('Failed to create the list. Please try again.')
+	} finally {
+		submitting.value = false
+	}
+}
 </script>
 
 <template>
@@ -173,7 +264,9 @@ async function onSubmit() {
 					:clearable="false"
 					:filterable="true" />
 				<p :class="$style.hint">
-					{{ t('Leave empty to name it after the store and date.') }}
+					{{ mode === 'manual'
+						? t('Leave empty to name it after the store and date.')
+						: t('Select a list or type a name to attach the receipt to.') }}
 				</p>
 			</div>
 
@@ -229,11 +322,60 @@ async function onSubmit() {
 				</div>
 			</template>
 
-			<div v-else :class="$style.placeholder">
-				<NcIconSvgWrapper :path="mdiReceiptText" :size="48" />
-				<p :class="$style['placeholder-text']">
-					{{ t('Receipt scanning is coming soon.') }}
-				</p>
+			<div v-else :class="$style.scan">
+				<div :class="$style.placeholder">
+					<NcIconSvgWrapper :path="mdiReceiptText" :size="48" />
+					<p :class="$style['placeholder-text']">
+						{{ t('Receipt scanning is coming soon. Attach a receipt to save it with the list.') }}
+					</p>
+				</div>
+
+				<div :class="$style.field">
+					<span :class="$style['field-label']">{{ t('Receipt (optional)') }}</span>
+					<input
+						ref="receiptInput"
+						type="file"
+						accept="image/jpeg,image/png,image/webp,image/gif"
+						:class="$style['receipt-input']"
+						:disabled="submitting"
+						@change="onReceiptSelected">
+					<div v-if="receiptPreview !== null" :class="$style['receipt-preview']">
+						<img :src="receiptPreview" alt="" :class="$style['receipt-image']">
+						<div :class="$style['receipt-actions']">
+							<NcButton
+								type="button"
+								variant="secondary"
+								:disabled="submitting"
+								@click="chooseReceipt">
+								{{ t('Replace') }}
+							</NcButton>
+							<NcButton
+								type="button"
+								variant="secondary"
+								:disabled="submitting"
+								@click="removeReceipt">
+								{{ t('Remove') }}
+							</NcButton>
+						</div>
+					</div>
+					<NcButton
+						v-else
+						type="button"
+						variant="secondary"
+						:disabled="submitting"
+						@click="chooseReceipt">
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiImagePlus" :size="20" />
+						</template>
+						{{ t('Attach receipt') }}
+					</NcButton>
+					<p :class="$style.hint">
+						{{ t('JPEG, PNG, WebP or GIF, up to 4 MB.') }}
+					</p>
+					<p v-if="receiptError" :class="$style['field-error']">
+						{{ receiptError }}
+					</p>
+				</div>
 			</div>
 
 			<p v-if="error" :class="$style.error">
@@ -276,6 +418,33 @@ async function onSubmit() {
 	margin: 0;
 }
 
+.field-label {
+	color: var(--color-text-maxcontrast);
+}
+
+.receipt-input {
+	display: none;
+}
+
+.receipt-preview {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.receipt-image {
+	max-width: 100%;
+	max-height: 240px;
+	border-radius: var(--border-radius);
+	object-fit: contain;
+	align-self: flex-start;
+}
+
+.receipt-actions {
+	display: flex;
+	gap: 8px;
+}
+
 .hint {
 	color: var(--color-text-maxcontrast);
 	margin: 0;
@@ -288,6 +457,12 @@ async function onSubmit() {
 	gap: 8px;
 	padding: 24px 0;
 	color: var(--color-text-maxcontrast);
+}
+
+.scan {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
 }
 
 .placeholder-text {

@@ -36,6 +36,7 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 		isIncome: false,
 		isSubscription: false,
 		isRecurring: false,
+		hasReceipt: false,
 		...overrides,
 	}
 }

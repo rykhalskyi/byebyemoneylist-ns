@@ -8,6 +8,7 @@ use OCA\ByeByeMoneyList\Controller\ListController;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
+use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
 use OCP\AppFramework\Http;
 use OCP\IDBConnection;
 use OCP\IRequest;
@@ -20,6 +21,7 @@ final class ListControllerTest extends TestCase {
 	private ListController $controller;
 	private ListMapper $mapper;
 	private ListItemMapper $itemMapper;
+	private ReceiptPictureService $receiptPictureService;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 
@@ -27,6 +29,7 @@ final class ListControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$this->mapper = $this->createMock(ListMapper::class);
 		$this->itemMapper = $this->createMock(ListItemMapper::class);
+		$this->receiptPictureService = $this->createMock(ReceiptPictureService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
@@ -35,6 +38,7 @@ final class ListControllerTest extends TestCase {
 			$request,
 			$this->mapper,
 			$this->itemMapper,
+			$this->receiptPictureService,
 			$this->db,
 			$this->userSession,
 			$logger,
