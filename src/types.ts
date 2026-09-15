@@ -20,6 +20,51 @@ export interface ReceiptPicture {
 	mime: string
 }
 
+export interface ScannedReceiptItem {
+	name: string
+	quantity: number
+	price: number
+	discount: number | null
+	isCoupon: boolean
+	productId: string | null
+	categoryId: string | null
+	categoryName: string | null
+}
+
+export interface ScannedReceipt {
+	storeName: string | null
+	storeAddress: string | null
+	storeId: string | null
+	totalSum: number | null
+	items: ScannedReceiptItem[]
+	profile: {
+		id: string
+		name: string
+		provider: string
+	}
+}
+
+export interface ReceiptCommitItem {
+	productId?: string | null
+	name: string
+	quantity: number
+	price: number
+	discount?: number | null
+	isCoupon?: boolean
+	categoryId?: string | null
+	categoryName?: string | null
+}
+
+export interface ReceiptCommitPayload {
+	name: string
+	storeName?: string | null
+	storeAddress?: string | null
+	finalTotal?: number | null
+	purchaseDate?: string | null
+	saveReceipt: boolean
+	items: ReceiptCommitItem[]
+}
+
 export interface Store {
 	id: string
 	name: string

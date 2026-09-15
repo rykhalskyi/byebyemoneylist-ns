@@ -66,3 +66,8 @@
 ## [2026-09-13] ticket | T9.3 — Dashboard data widgets implemented
 ## [2026-09-13] ticket | T9.4 — Dashboard action widgets implemented
 ## [2026-09-13] ticket | T9.5 — Dashboard info widget + app version implemented
+## [2026-09-14] ticket | Plan T29 scan receipt in Purchase dialog (LLM OCR, review, commit)
+## [2026-09-14] ticket | T29 scan receipt — implemented backend phases 1-2 (scan + commit endpoints/services)
+## [2026-09-15] ticket | T29 scan receipt — implemented frontend scan tab (image normalization, scan/commit API, one-form result, Save receipt)
+## [2026-09-15] ticket | T29 scan receipt — Phase 4: shopping-list receipt viewer (view/delete), backend ReceiptImageController tests
+## [2026-09-15] update | T29 scan receipt — gate Scan tab on an active LLM profile (disabled + hint, manual fallback)

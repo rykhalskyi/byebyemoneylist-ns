@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Category, ListItem, ListStatus, Product, ShoppingList, Store } from '../types.ts'
 
-import { mdiAlertCircle, mdiAutorenew, mdiCart, mdiCartOff, mdiCartPlus, mdiCashPlus, mdiChevronDown, mdiDelete, mdiDotsVertical, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiAutorenew, mdiCart, mdiCartOff, mdiCartPlus, mdiCashPlus, mdiChevronDown, mdiDelete, mdiDotsVertical, mdiPlus, mdiReceiptText } from '@mdi/js'
 import { computed, onMounted, ref, watch } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActions from '@nextcloud/vue/components/NcActions'
@@ -15,6 +15,7 @@ import AddProductDialog from '../components/AddProductDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import NewListDialog from '../components/NewListDialog.vue'
 import PurchaseDialog from '../components/PurchaseDialog.vue'
+import ReceiptViewDialog from '../components/ReceiptViewDialog.vue'
 import { deleteList, deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
 import { formatDate, formatMonth, formatTotal } from '../utils/format.ts'
 import { getCanonicalLocale, t } from '../utils/l10n.ts'
@@ -45,6 +46,7 @@ const expandedYears = ref<Record<string, boolean>>({})
 const expandedMonths = ref<Record<string, boolean>>({})
 const pendingDelete = ref<ShoppingList | null>(null)
 const deleting = ref(false)
+const receiptList = ref<ShoppingList | null>(null)
 
 const groups = computed(() => groupListsByMonth(lists.value))
 
@@ -309,6 +311,20 @@ function askDelete(list: ShoppingList) {
 	pendingDelete.value = list
 }
 
+function openReceipt(list: ShoppingList) {
+	receiptList.value = list
+}
+
+function onReceiptDeleted(listId: string) {
+	lists.value = lists.value.map((candidate) => (candidate.id === listId ? { ...candidate, hasReceipt: false } : candidate))
+}
+
+function closeReceipt(open: boolean) {
+	if (!open) {
+		receiptList.value = null
+	}
+}
+
 function closeConfirmDialog(open: boolean) {
 	if (!open && !deleting.value) {
 		pendingDelete.value = null
@@ -505,6 +521,12 @@ function itemSubname(item: ListItem): string {
 											<template #icon>
 												<NcIconSvgWrapper :path="mdiDotsVertical" :size="20" />
 											</template>
+											<NcActionButton v-if="list.hasReceipt" @click.stop="openReceipt(list)">
+												<template #icon>
+													<NcIconSvgWrapper :path="mdiReceiptText" :size="20" />
+												</template>
+												{{ t('View receipt') }}
+											</NcActionButton>
 											<NcActionButton @click.stop="askDelete(list)">
 												<template #icon>
 													<NcIconSvgWrapper :path="mdiDelete" :size="20" />
@@ -586,6 +608,12 @@ function itemSubname(item: ListItem): string {
 			:initialMode="purchaseDialogMode"
 			@update:open="showPurchaseDialog = $event"
 			@saved="onPurchaseSaved" />
+		<ReceiptViewDialog
+			:open="receiptList !== null"
+			:listId="receiptList?.id ?? ''"
+			:listName="receiptList?.name"
+			@update:open="closeReceipt"
+			@deleted="onReceiptDeleted" />
 		<AddProductDialog
 			:open="addProductListId !== null"
 			:listId="addProductListId ?? ''"

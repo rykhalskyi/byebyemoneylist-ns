@@ -12661,6 +12661,683 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/byebyemoneylist/api/receipts/commit": {
+            "post": {
+                "operationId": "receipt_commit-commit",
+                "summary": "Save a reviewed receipt as a finished list",
+                "tags": [
+                    "receipt_commit"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "payload": {
+                                        "type": "string",
+                                        "default": null,
+                                        "description": "JSON payload with the reviewed receipt (name, store, items, total)"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "List saved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "list"
+                                                            ],
+                                                            "properties": {
+                                                                "list": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "storeId",
+                                                                        "categoryId",
+                                                                        "categoryIds",
+                                                                        "status",
+                                                                        "finalTotal",
+                                                                        "totalPrice",
+                                                                        "createdAt",
+                                                                        "createDate",
+                                                                        "updatedAt",
+                                                                        "purchaseDate",
+                                                                        "position",
+                                                                        "isFinished",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty",
+                                                                        "hasReceipt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "finalTotal": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "purchaseDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "position": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isFinished": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasReceipt": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "list"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "list": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "storeId",
+                                                                                "categoryId",
+                                                                                "categoryIds",
+                                                                                "status",
+                                                                                "finalTotal",
+                                                                                "totalPrice",
+                                                                                "createdAt",
+                                                                                "createDate",
+                                                                                "updatedAt",
+                                                                                "purchaseDate",
+                                                                                "position",
+                                                                                "isFinished",
+                                                                                "isSubscription",
+                                                                                "isIncome",
+                                                                                "isRecurring",
+                                                                                "recurringPeriod",
+                                                                                "isForwardEmpty",
+                                                                                "hasReceipt"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "storeId": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryId": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryIds": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    }
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "finalTotal": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "totalPrice": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "createdAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "createDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "updatedAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "purchaseDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "position": {
+                                                                                    "type": "integer",
+                                                                                    "format": "int64"
+                                                                                },
+                                                                                "isFinished": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isSubscription": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isIncome": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isRecurring": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "recurringPeriod": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isForwardEmpty": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "hasReceipt": {
+                                                                                    "type": "boolean"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing name, invalid total, no items, or invalid image",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "list"
+                                                            ],
+                                                            "properties": {
+                                                                "list": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "storeId",
+                                                                        "categoryId",
+                                                                        "categoryIds",
+                                                                        "status",
+                                                                        "finalTotal",
+                                                                        "totalPrice",
+                                                                        "createdAt",
+                                                                        "createDate",
+                                                                        "updatedAt",
+                                                                        "purchaseDate",
+                                                                        "position",
+                                                                        "isFinished",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty",
+                                                                        "hasReceipt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "finalTotal": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "purchaseDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "position": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isFinished": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasReceipt": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "list"
+                                                            ],
+                                                            "properties": {
+                                                                "list": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "storeId",
+                                                                        "categoryId",
+                                                                        "categoryIds",
+                                                                        "status",
+                                                                        "finalTotal",
+                                                                        "totalPrice",
+                                                                        "createdAt",
+                                                                        "createDate",
+                                                                        "updatedAt",
+                                                                        "purchaseDate",
+                                                                        "position",
+                                                                        "isFinished",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty",
+                                                                        "hasReceipt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "finalTotal": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "purchaseDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "position": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isFinished": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasReceipt": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/byebyemoneylist/api/lists/{id}/receipt": {
             "post": {
                 "operationId": "receipt_image-upload",
@@ -13593,6 +14270,802 @@
                                                                         },
                                                                         "mime": {
                                                                             "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/byebyemoneylist/api/receipts/scan": {
+            "post": {
+                "operationId": "receipt_scan-scan",
+                "summary": "Scan an uploaded receipt image with the active LLM profile",
+                "tags": [
+                    "receipt_scan"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Receipt scanned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "scan"
+                                                            ],
+                                                            "properties": {
+                                                                "scan": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "storeName",
+                                                                        "storeAddress",
+                                                                        "storeId",
+                                                                        "totalSum",
+                                                                        "items",
+                                                                        "profile"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "storeName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "storeAddress": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalSum": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "items": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "name",
+                                                                                    "quantity",
+                                                                                    "price",
+                                                                                    "discount",
+                                                                                    "isCoupon",
+                                                                                    "productId",
+                                                                                    "categoryId",
+                                                                                    "categoryName"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "name": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "quantity": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "price": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "discount": {
+                                                                                        "type": "number",
+                                                                                        "format": "double",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "isCoupon": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "productId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryName": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "profile": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "provider"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "provider": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "scan"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "scan": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "storeName",
+                                                                                "storeAddress",
+                                                                                "storeId",
+                                                                                "totalSum",
+                                                                                "items",
+                                                                                "profile"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "storeName": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "storeAddress": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "storeId": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "totalSum": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "items": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "object",
+                                                                                        "required": [
+                                                                                            "name",
+                                                                                            "quantity",
+                                                                                            "price",
+                                                                                            "discount",
+                                                                                            "isCoupon",
+                                                                                            "productId",
+                                                                                            "categoryId",
+                                                                                            "categoryName"
+                                                                                        ],
+                                                                                        "properties": {
+                                                                                            "name": {
+                                                                                                "type": "string"
+                                                                                            },
+                                                                                            "quantity": {
+                                                                                                "type": "number",
+                                                                                                "format": "double"
+                                                                                            },
+                                                                                            "price": {
+                                                                                                "type": "number",
+                                                                                                "format": "double"
+                                                                                            },
+                                                                                            "discount": {
+                                                                                                "type": "number",
+                                                                                                "format": "double",
+                                                                                                "nullable": true
+                                                                                            },
+                                                                                            "isCoupon": {
+                                                                                                "type": "boolean"
+                                                                                            },
+                                                                                            "productId": {
+                                                                                                "type": "string",
+                                                                                                "nullable": true
+                                                                                            },
+                                                                                            "categoryId": {
+                                                                                                "type": "string",
+                                                                                                "nullable": true
+                                                                                            },
+                                                                                            "categoryName": {
+                                                                                                "type": "string",
+                                                                                                "nullable": true
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "profile": {
+                                                                                    "type": "object",
+                                                                                    "required": [
+                                                                                        "id",
+                                                                                        "name",
+                                                                                        "provider"
+                                                                                    ],
+                                                                                    "properties": {
+                                                                                        "id": {
+                                                                                            "type": "string"
+                                                                                        },
+                                                                                        "name": {
+                                                                                            "type": "string"
+                                                                                        },
+                                                                                        "provider": {
+                                                                                            "type": "string"
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing file, too large, or unsupported image type",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "scan"
+                                                            ],
+                                                            "properties": {
+                                                                "scan": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "storeName",
+                                                                        "storeAddress",
+                                                                        "storeId",
+                                                                        "totalSum",
+                                                                        "items",
+                                                                        "profile"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "storeName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "storeAddress": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalSum": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "items": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "name",
+                                                                                    "quantity",
+                                                                                    "price",
+                                                                                    "discount",
+                                                                                    "isCoupon",
+                                                                                    "productId",
+                                                                                    "categoryId",
+                                                                                    "categoryName"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "name": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "quantity": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "price": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "discount": {
+                                                                                        "type": "number",
+                                                                                        "format": "double",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "isCoupon": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "productId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryName": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "profile": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "provider"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "provider": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "No active LLM profile configured",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "scan"
+                                                            ],
+                                                            "properties": {
+                                                                "scan": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "storeName",
+                                                                        "storeAddress",
+                                                                        "storeId",
+                                                                        "totalSum",
+                                                                        "items",
+                                                                        "profile"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "storeName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "storeAddress": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalSum": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "items": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "name",
+                                                                                    "quantity",
+                                                                                    "price",
+                                                                                    "discount",
+                                                                                    "isCoupon",
+                                                                                    "productId",
+                                                                                    "categoryId",
+                                                                                    "categoryName"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "name": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "quantity": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "price": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "discount": {
+                                                                                        "type": "number",
+                                                                                        "format": "double",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "isCoupon": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "productId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryName": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "profile": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "provider"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "provider": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "LLM provider or parse failure",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "scan"
+                                                            ],
+                                                            "properties": {
+                                                                "scan": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "storeName",
+                                                                        "storeAddress",
+                                                                        "storeId",
+                                                                        "totalSum",
+                                                                        "items",
+                                                                        "profile"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "storeName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "storeAddress": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalSum": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "items": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "name",
+                                                                                    "quantity",
+                                                                                    "price",
+                                                                                    "discount",
+                                                                                    "isCoupon",
+                                                                                    "productId",
+                                                                                    "categoryId",
+                                                                                    "categoryName"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "name": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "quantity": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "price": {
+                                                                                        "type": "number",
+                                                                                        "format": "double"
+                                                                                    },
+                                                                                    "discount": {
+                                                                                        "type": "number",
+                                                                                        "format": "double",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "isCoupon": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "productId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryId": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "categoryName": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        "profile": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "provider"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "provider": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -14970,8 +16443,16 @@
             "description": "Product price records: a price a user recorded for a product (optionally at a store). The Android app syncs its price records one-way (device → server); each record mirrors the app's \"one current price per (product, store)\" model, so re-syncing a record updates its stored value/date instead of inserting a duplicate."
         },
         {
+            "name": "receipt_commit",
+            "description": "Commits a reviewed receipt scan: creates the finished list with its items and optionally stores the receipt image."
+        },
+        {
             "name": "receipt_image",
             "description": "Receipt pictures: store one image per shopping list in the app's private appdata and serve it as a base64 data URL."
+        },
+        {
+            "name": "receipt_scan",
+            "description": "Receipt scanning: upload a receipt photo and get back the parsed, product- and category-matched result from the active LLM profile."
         }
     ]
 }

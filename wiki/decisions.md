@@ -11,3 +11,6 @@ Append-only decision record. The "why" lives here; the full change history lives
 - [2026-09-13] D-07 — Compute all dashboard spending totals server-side via one range endpoint — because the client must not download all lists and paged history is planned
 - [2026-09-13] D-08 — Dashboard spending sums finished lists by created_at, excluding isIncome and isSubscription — because that reflects actual expenses and keeps income/subscription views separate
 - [2026-09-13] D-09 — Inject the app version through PageController + templates/index.php data attribute instead of a new endpoint — because info.xml stays the single source of truth with no extra API
+- [2026-09-14] D-10 — Run receipt OCR server-side against the active LLM profile — because API keys are stored encrypted server-side and must never reach the browser
+- [2026-09-14] D-11 — Strip receipt EXIF client-side via canvas downscale to 1024px/JPEG q0.6 — because it removes metadata and shrinks the upload, mirroring the Android scanner
+- [2026-09-14] D-12 — Scan endpoint is read-only; a separate transactional commit endpoint writes store/list/product/item/price — because a partial save would corrupt the catalog
