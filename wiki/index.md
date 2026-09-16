@@ -56,6 +56,8 @@
 - [tickets/ticket-26-dashboard-data-widgets](pages/tickets/ticket-26-dashboard-data-widgets.md) — T9.3 — Spending widgets (today, this month, category this month)
 - [tickets/ticket-27-dashboard-action-widgets](pages/tickets/ticket-27-dashboard-action-widgets.md) — T9.4 — Action widgets that open the Add/Scan purchase dialog on Shopping Lists
 - [tickets/ticket-28-dashboard-info-widget](pages/tickets/ticket-28-dashboard-info-widget.md) — T9.5 — Info widget (app logo + version injected via the page template)
+- [tickets/ticket-29-scan-receipt](pages/tickets/ticket-29-scan-receipt.md) — T3/T11 — Scan receipt in the Purchase dialog: LLM OCR, review, and save
+- [tickets/ticket-30-product-merge](pages/tickets/ticket-30-product-merge.md) — T30 — Merge duplicate products (choose fields, concatenate aliases)
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.

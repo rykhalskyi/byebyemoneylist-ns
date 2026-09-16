@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Category, Product } from '../../types.ts'
 
-import { mdiDelete, mdiPackageVariant, mdiPencil, mdiStar } from '@mdi/js'
+import { mdiCallMerge, mdiDelete, mdiDotsVertical, mdiPackageVariant, mdiPencil, mdiStar } from '@mdi/js'
 import { computed } from 'vue'
-import NcButton from '@nextcloud/vue/components/NcButton'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcChip from '@nextcloud/vue/components/NcChip'
 import NcHighlight from '@nextcloud/vue/components/NcHighlight'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -24,6 +25,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
 	open: [product: Product]
 	edit: [product: Product]
+	merge: [product: Product]
 	delete: [product: Product]
 }>()
 
@@ -75,22 +77,34 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 				</div>
 			</template>
 			<template #extra-actions>
-				<NcButton
-					type="button"
-					:aria-label="t('Edit {name}', { name: props.product.name })"
-					@click.stop="emit('edit', props.product)">
+				<NcActions
+					:forceMenu="true"
+					:ariaLabel="t('Actions for {name}', { name: props.product.name })"
+					@click.stop>
 					<template #icon>
-						<NcIconSvgWrapper :path="mdiPencil" :size="20" />
+						<NcIconSvgWrapper :path="mdiDotsVertical" :size="20" />
 					</template>
-				</NcButton>
-				<NcButton
-					type="button"
-					:aria-label="t('Delete {name}', { name: props.product.name })"
-					@click.stop="emit('delete', props.product)">
-					<template #icon>
-						<NcIconSvgWrapper :path="mdiDelete" :size="20" />
-					</template>
-				</NcButton>
+					<NcActionButton @click.stop="emit('edit', props.product)">
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiPencil" :size="20" />
+						</template>
+						{{ t('Edit') }}
+					</NcActionButton>
+					<NcActionButton @click.stop="emit('merge', props.product)">
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiCallMerge" :size="20" />
+						</template>
+						{{ t('Merge') }}
+					</NcActionButton>
+					<NcActionButton
+						class="bbml-product-action-delete"
+						@click.stop="emit('delete', props.product)">
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+						</template>
+						{{ t('Delete') }}
+					</NcActionButton>
+				</NcActions>
 			</template>
 		</NcListItem>
 	</div>
@@ -113,5 +127,12 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 
 .favorite {
 	color: var(--color-warning);
+}
+</style>
+
+<style>
+.bbml-product-action-delete .action-button,
+.bbml-product-action-delete .action-button * {
+	color: var(--color-error);
 }
 </style>

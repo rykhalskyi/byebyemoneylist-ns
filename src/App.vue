@@ -6,6 +6,7 @@ import NcContent from '@nextcloud/vue/components/NcContent'
 import Menu from './components/Menu.vue'
 import Catalog from './views/Catalog.vue'
 import Dashboard from './views/Dashboard.vue'
+import Settings from './views/Settings.vue'
 import ShoppingLists from './views/ShoppingLists.vue'
 import { t } from './utils/l10n.ts'
 
@@ -42,6 +43,7 @@ function openPurchase(mode: 'manual' | 'scan') {
 				:purchaseMode="purchaseIntent"
 				@purchaseOpened="purchaseIntent = null" />
 			<Catalog v-else-if="currentView === 'catalog'" />
+			<Settings v-else-if="currentView === 'settings'" />
 			<h2 v-else>
 				{{ currentLabel }}
 			</h2>

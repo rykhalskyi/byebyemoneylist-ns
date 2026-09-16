@@ -48,6 +48,44 @@ class StoreMapper extends QBMapper {
 	}
 
 	/**
+	 * Return up to $limit stores ranked by how many of the user's lists use them,
+	 * falling back to alphabetical order for ties.
+	 *
+	 * @return StoreEntity[]
+	 */
+	public function findTopByOwner(string $userId, int $limit = 5): array {
+		$stores = $this->findAllByOwner($userId);
+		if ($stores === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('store_id')
+			->selectAlias($qb->func()->count('*'), 'store_count')
+			->from('bbml_lists')
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->isNotNull('store_id'))
+			->groupBy('store_id');
+
+		$counts = [];
+		$result = $qb->executeQuery();
+		/** @var list<array{store_id: string, store_count: int|string}> $rows */
+		$rows = $result->fetchAll();
+		$result->closeCursor();
+
+		foreach ($rows as $row) {
+			$counts[$row['store_id']] = (int)$row['store_count'];
+		}
+
+		usort($stores, static function (StoreEntity $a, StoreEntity $b) use ($counts): int {
+			$diff = ($counts[$b->getId()] ?? 0) <=> ($counts[$a->getId()] ?? 0);
+			return $diff !== 0 ? $diff : ((string)$a->getName() <=> (string)$b->getName());
+		});
+
+		return array_slice($stores, 0, $limit);
+	}
+
+	/**
 	 * Store-category junction ids grouped by store id, ordered by junction row id.
 	 *
 	 * @param array<array-key, string> $storeIds

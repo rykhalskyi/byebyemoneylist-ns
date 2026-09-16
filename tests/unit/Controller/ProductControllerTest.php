@@ -15,6 +15,7 @@ use OCA\ByeByeMoneyList\Entity\CategoryEntity;
 use OCA\ByeByeMoneyList\Entity\ProductAliasEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
+use OCA\ByeByeMoneyList\Service\ProductMergeService;
 use OCA\ByeByeMoneyList\Service\ProductPictureService;
 use OCP\AppFramework\Http;
 use OCP\DB\QueryBuilder\IExpressionBuilder;
@@ -34,6 +35,7 @@ final class ProductControllerTest extends TestCase {
 	private ListItemMapper $itemMapper;
 	private ProductPriceMapper $priceMapper;
 	private ProductPictureService $pictureService;
+	private ProductMergeService $mergeService;
 	private IUserSession $userSession;
 	private IDBConnection $db;
 
@@ -45,6 +47,7 @@ final class ProductControllerTest extends TestCase {
 		$this->itemMapper = $this->createMock(ListItemMapper::class);
 		$this->priceMapper = $this->createMock(ProductPriceMapper::class);
 		$this->pictureService = $this->createMock(ProductPictureService::class);
+		$this->mergeService = $this->createMock(ProductMergeService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
@@ -57,6 +60,7 @@ final class ProductControllerTest extends TestCase {
 			$this->itemMapper,
 			$this->priceMapper,
 			$this->pictureService,
+			$this->mergeService,
 			$this->db,
 			$this->userSession,
 			$logger,
@@ -636,5 +640,196 @@ final class ProductControllerTest extends TestCase {
 		$response = $this->controller->destroy('99999999-0000-4444-8555-777777777777');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
+
+	public function testMergeReturnsMergedProduct(): void {
+		$this->mockUser('alice');
+
+		$primaryId = '11111111-2222-4333-8444-555555555555';
+		$secondaryId = '66666666-7777-4888-8999-000000000000';
+		$primary = $this->product($primaryId, 'Milk');
+		$secondary = $this->product($secondaryId, 'Milch');
+
+		$this->mapper->expects($this->exactly(2))
+			->method('findByIdAndOwner')
+			->willReturnMap([
+				[$primaryId, 'alice', $primary],
+				[$secondaryId, 'alice', $secondary],
+			]);
+
+		$this->mergeService->expects($this->once())
+			->method('merge')
+			->with('alice', $primary, $secondary, 'Milk', null, null, false, false, false, 'primary')
+			->willReturn($primary);
+
+		$alias = new ProductAliasEntity();
+		$alias->setOwner('alice');
+		$alias->setProductId($primaryId);
+		$alias->setAliasName('Milch');
+
+		$this->aliasMapper->expects($this->once())
+			->method('findByProductIds')
+			->with([$primaryId], 'alice')
+			->willReturn([$alias]);
+
+		$this->priceMapper->expects($this->once())
+			->method('findLatestByProductIds')
+			->with([$primaryId], 'alice')
+			->willReturn([]);
+
+		$response = $this->controller->merge($primaryId, $secondaryId, 'Milk');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$data = $response->getData()['product'];
+		$this->assertSame('Milk', $data['name']);
+		$this->assertSame(['Milch'], $data['aliases']);
+	}
+
+	public function testMergeValidatesCategory(): void {
+		$this->mockUser('alice');
+
+		$primaryId = '11111111-2222-4333-8444-555555555555';
+		$secondaryId = '66666666-7777-4888-8999-000000000000';
+		$primary = $this->product($primaryId, 'Milk');
+		$secondary = $this->product($secondaryId, 'Milch');
+
+		$this->mapper->expects($this->exactly(2))
+			->method('findByIdAndOwner')
+			->willReturnMap([
+				[$primaryId, 'alice', $primary],
+				[$secondaryId, 'alice', $secondary],
+			]);
+
+		$category = new CategoryEntity();
+		$category->setId('22222222-3333-4444-8555-666666666666');
+		$category->setOwner('alice');
+		$category->setName('Dairy');
+		$category->setIncome(false);
+
+		$this->categoryMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('22222222-3333-4444-8555-666666666666', 'alice')
+			->willReturn($category);
+
+		$this->mergeService->expects($this->once())
+			->method('merge')
+			->with('alice', $primary, $secondary, 'Milk', '22222222-3333-4444-8555-666666666666', null, true, false, false, 'none')
+			->willReturn($primary);
+
+		$this->aliasMapper->method('findByProductIds')->willReturn([]);
+		$this->priceMapper->method('findLatestByProductIds')->willReturn([]);
+
+		$response = $this->controller->merge($primaryId, $secondaryId, 'Milk', '22222222-3333-4444-8555-666666666666', null, true, false, false, 'none');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}
+
+	public function testMergeReturnsUnprocessableWhenIdsMatch(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->never())->method('findByIdAndOwner');
+		$this->mergeService->expects($this->never())->method('merge');
+
+		$response = $this->controller->merge('11111111-2222-4333-8444-555555555555', '11111111-2222-4333-8444-555555555555', 'Milk');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testMergeReturnsNotFoundWhenPrimaryMissing(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->willReturn(null);
+		$this->mergeService->expects($this->never())->method('merge');
+
+		$response = $this->controller->merge('11111111-2222-4333-8444-555555555555', '66666666-7777-4888-8999-000000000000', 'Milk');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
+
+	public function testMergeReturnsNotFoundWhenSecondaryMissing(): void {
+		$this->mockUser('alice');
+
+		$primaryId = '11111111-2222-4333-8444-555555555555';
+		$primary = $this->product($primaryId, 'Milk');
+
+		$this->mapper->expects($this->exactly(2))
+			->method('findByIdAndOwner')
+			->willReturnMap([
+				[$primaryId, 'alice', $primary],
+				['66666666-7777-4888-8999-000000000000', 'alice', null],
+			]);
+		$this->mergeService->expects($this->never())->method('merge');
+
+		$response = $this->controller->merge($primaryId, '66666666-7777-4888-8999-000000000000', 'Milk');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
+
+	public function testMergeReturnsUnprocessableWhenNameEmpty(): void {
+		$this->mockUser('alice');
+
+		$primaryId = '11111111-2222-4333-8444-555555555555';
+		$secondaryId = '66666666-7777-4888-8999-000000000000';
+		$primary = $this->product($primaryId, 'Milk');
+		$secondary = $this->product($secondaryId, 'Milch');
+
+		$this->mapper->expects($this->exactly(2))
+			->method('findByIdAndOwner')
+			->willReturnMap([
+				[$primaryId, 'alice', $primary],
+				[$secondaryId, 'alice', $secondary],
+			]);
+		$this->mergeService->expects($this->never())->method('merge');
+
+		$response = $this->controller->merge($primaryId, $secondaryId, '   ');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testMergeReturnsUnprocessableWhenPictureChoiceInvalid(): void {
+		$this->mockUser('alice');
+
+		$primaryId = '11111111-2222-4333-8444-555555555555';
+		$secondaryId = '66666666-7777-4888-8999-000000000000';
+		$primary = $this->product($primaryId, 'Milk');
+		$secondary = $this->product($secondaryId, 'Milch');
+
+		$this->mapper->expects($this->exactly(2))
+			->method('findByIdAndOwner')
+			->willReturnMap([
+				[$primaryId, 'alice', $primary],
+				[$secondaryId, 'alice', $secondary],
+			]);
+		$this->mergeService->expects($this->never())->method('merge');
+
+		$response = $this->controller->merge($primaryId, $secondaryId, 'Milk', null, null, false, false, false, 'bogus');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testMergeReturnsServerErrorWhenServiceFails(): void {
+		$this->mockUser('alice');
+
+		$primaryId = '11111111-2222-4333-8444-555555555555';
+		$secondaryId = '66666666-7777-4888-8999-000000000000';
+		$primary = $this->product($primaryId, 'Milk');
+		$secondary = $this->product($secondaryId, 'Milch');
+
+		$this->mapper->expects($this->exactly(2))
+			->method('findByIdAndOwner')
+			->willReturnMap([
+				[$primaryId, 'alice', $primary],
+				[$secondaryId, 'alice', $secondary],
+			]);
+
+		$this->mergeService->expects($this->once())
+			->method('merge')
+			->willThrowException(new \RuntimeException('boom'));
+
+		$response = $this->controller->merge($primaryId, $secondaryId, 'Milk');
+
+		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 	}
 }

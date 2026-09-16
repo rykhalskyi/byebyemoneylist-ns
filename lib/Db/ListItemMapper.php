@@ -47,6 +47,18 @@ class ListItemMapper extends QBMapper {
 	}
 
 	/**
+	 * Point every list item of the given product to another product (product merge).
+	 */
+	public function reassignProduct(string $fromProductId, string $toProductId, string $userId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->tableName)
+			->set('product_id', $qb->createNamedParameter($toProductId, IQueryBuilder::PARAM_STR))
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->eq('product_id', $qb->createNamedParameter($fromProductId, IQueryBuilder::PARAM_STR)));
+		$qb->executeStatement();
+	}
+
+	/**
 	 * Delete all items of a list (used on list deletion and item full-replace).
 	 */
 	public function deleteByListId(string $listId): void {

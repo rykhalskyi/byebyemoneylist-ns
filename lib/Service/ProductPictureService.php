@@ -54,6 +54,36 @@ class ProductPictureService {
 	}
 
 	/**
+	 * Copy an existing picture to another product id (used when merging products).
+	 *
+	 * @return string|null the appdata-relative path of the copied file, or null when
+	 *                     the source is missing
+	 */
+	public function copy(string $userId, ?string $sourcePath, string $targetProductId): ?string {
+		if ($sourcePath === null || $sourcePath === '') {
+			return null;
+		}
+		$file = $this->getFile($userId, $sourcePath);
+		if ($file === null) {
+			return null;
+		}
+
+		$extension = pathinfo(basename($sourcePath), PATHINFO_EXTENSION);
+		if ($extension === '') {
+			$extension = 'jpg';
+		}
+
+		$folder = $this->getOrCreateUserFolder($userId);
+		$filename = $targetProductId . '.' . $extension;
+		if ($folder->fileExists($filename)) {
+			$folder->getFile($filename)->delete();
+		}
+		$folder->newFile($filename, $file->getContent());
+
+		return self::FOLDER . '/' . $userId . '/' . $filename;
+	}
+
+	/**
 	 * Delete the picture file if it exists.
 	 */
 	public function delete(string $userId, ?string $picturePath): void {

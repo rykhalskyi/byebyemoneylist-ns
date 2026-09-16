@@ -12,6 +12,58 @@ export interface ShoppingList {
 	isIncome: boolean
 	isSubscription: boolean
 	isRecurring: boolean
+	hasReceipt: boolean
+}
+
+export interface ReceiptPicture {
+	dataUrl: string
+	mime: string
+}
+
+export interface ScannedReceiptItem {
+	name: string
+	quantity: number
+	price: number
+	discount: number | null
+	isCoupon: boolean
+	productId: string | null
+	categoryId: string | null
+	categoryName: string | null
+}
+
+export interface ScannedReceipt {
+	storeName: string | null
+	storeAddress: string | null
+	storeId: string | null
+	totalSum: number | null
+	items: ScannedReceiptItem[]
+	profile: {
+		id: string
+		name: string
+		provider: string
+	}
+}
+
+export interface ReceiptCommitItem {
+	productId?: string | null
+	name: string
+	quantity: number
+	price: number
+	discount?: number | null
+	isCoupon?: boolean
+	categoryId?: string | null
+	categoryName?: string | null
+}
+
+export interface ReceiptCommitPayload {
+	name: string
+	storeName?: string | null
+	storeAddress?: string | null
+	categoryIds?: string[]
+	finalTotal?: number | null
+	purchaseDate?: string | null
+	saveReceipt: boolean
+	items: ReceiptCommitItem[]
 }
 
 export interface Store {
@@ -97,6 +149,18 @@ export interface ProductPayload {
 	isIncome?: boolean
 }
 
+export interface ProductMergePayload {
+	primaryId: string
+	secondaryId: string
+	name: string
+	categoryId?: string | null
+	barcode?: string | null
+	isFavorite?: boolean
+	isSubscription?: boolean
+	isIncome?: boolean
+	pictureFrom?: 'primary' | 'secondary' | 'none'
+}
+
 export interface ListItem {
 	id: string
 	listId: string
@@ -128,4 +192,31 @@ export interface CategorySpending {
 export interface DashboardSpending {
 	total: number
 	byCategory: CategorySpending[]
+}
+
+export type LlmProvider = 'deepseek' | 'siliconflow' | 'gemini' | 'openai' | 'anthropic' | 'grok'
+
+export interface LlmProfile {
+	id: string
+	name: string
+	provider: LlmProvider
+	apiKeyMasked: string
+	model: string | null
+	connectTimeoutSeconds: number
+	readTimeoutSeconds: number
+	maxTokens: number
+	isActive: boolean
+	createdAt: string
+	updatedAt?: string | null
+}
+
+export interface LlmProfilePayload {
+	name: string
+	provider: LlmProvider
+	apiKey?: string
+	model?: string | null
+	connectTimeoutSeconds?: number
+	readTimeoutSeconds?: number
+	maxTokens?: number
+	isActive?: boolean
 }

@@ -10,6 +10,7 @@ import NcListItem from '@nextcloud/vue/components/NcListItem'
 import ConfirmDialog from '../../../src/components/ConfirmDialog.vue'
 import NewListDialog from '../../../src/components/NewListDialog.vue'
 import PurchaseDialog from '../../../src/components/PurchaseDialog.vue'
+import ReceiptViewDialog from '../../../src/components/ReceiptViewDialog.vue'
 import ShoppingLists from '../../../src/views/ShoppingLists.vue'
 import * as api from '../../../src/services/listsApi.ts'
 
@@ -21,6 +22,12 @@ vi.mock('../../../src/services/listsApi.ts', () => ({
 	fetchListItems: vi.fn(),
 	deleteListItem: vi.fn(),
 	deleteList: vi.fn(),
+	fetchListReceipt: vi.fn(),
+	deleteListReceipt: vi.fn(),
+}))
+
+vi.mock('../../../src/services/llmApi.ts', () => ({
+	fetchLlmProfiles: vi.fn().mockResolvedValue([]),
 }))
 
 function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
@@ -36,6 +43,7 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 		isIncome: false,
 		isSubscription: false,
 		isRecurring: false,
+		hasReceipt: false,
 		...overrides,
 	}
 }
@@ -64,6 +72,12 @@ async function clickDeleteMenuItem(wrapper: Awaited<ReturnType<typeof render>>) 
 	await nextTick()
 }
 
+function listDeleteConfirm(wrapper: Awaited<ReturnType<typeof render>>) {
+	const dialog = wrapper.findAllComponents(ConfirmDialog).find((candidate) => candidate.props('title') === 'Delete list')
+	expect(dialog).toBeDefined()
+	return dialog!
+}
+
 enableAutoUnmount(afterEach)
 
 describe('ShoppingLists', () => {
@@ -85,7 +99,7 @@ describe('ShoppingLists', () => {
 		await openListMenu(wrapper)
 		await clickDeleteMenuItem(wrapper)
 
-		const dialog = wrapper.findComponent(ConfirmDialog)
+		const dialog = listDeleteConfirm(wrapper)
 		expect(dialog.props('open')).toBe(true)
 		expect(dialog.props('title')).toBe('Delete list')
 		expect(dialog.props('message')).toContain('Weekly groceries')
@@ -98,7 +112,7 @@ describe('ShoppingLists', () => {
 
 		await openListMenu(wrapper)
 		await clickDeleteMenuItem(wrapper)
-		await wrapper.findComponent(ConfirmDialog).vm.$emit('confirm')
+		await listDeleteConfirm(wrapper).vm.$emit('confirm')
 		await flushPromises()
 
 		expect(api.deleteList).toHaveBeenCalledWith('l1')
@@ -110,7 +124,7 @@ describe('ShoppingLists', () => {
 
 		await openListMenu(wrapper)
 		await clickDeleteMenuItem(wrapper)
-		await wrapper.findComponent(ConfirmDialog).vm.$emit('update:open', false)
+		await listDeleteConfirm(wrapper).vm.$emit('update:open', false)
 		await nextTick()
 
 		expect(api.deleteList).not.toHaveBeenCalled()
@@ -169,5 +183,32 @@ describe('ShoppingLists', () => {
 		const dialog = wrapper.findComponent(PurchaseDialog)
 		expect(dialog.props('open')).toBe(true)
 		expect(dialog.props('initialMode')).toBe('scan')
+	})
+
+	it('shows a view receipt action that opens the receipt dialog', async () => {
+		const wrapper = await render([list({ id: 'r1', name: 'With receipt', hasReceipt: true })])
+
+		await openListMenu(wrapper)
+		await vi.waitFor(() => {
+			expect(wrapper.findAllComponents(NcActionButton).some((button) => button.text() === 'View receipt')).toBe(true)
+		})
+		const viewButton = wrapper.findAllComponents(NcActionButton).find((button) => button.text() === 'View receipt')!
+		await viewButton.find('button').trigger('click')
+		await flushPromises()
+		await nextTick()
+
+		const dialog = wrapper.findComponent(ReceiptViewDialog)
+		expect(dialog.props('open')).toBe(true)
+		expect(dialog.props('listId')).toBe('r1')
+	})
+
+	it('clears hasReceipt after the receipt is deleted', async () => {
+		const wrapper = await render([list({ id: 'r1', name: 'With receipt', hasReceipt: true })])
+
+		await wrapper.findComponent(ReceiptViewDialog).vm.$emit('deleted', 'r1')
+		await nextTick()
+		await openListMenu(wrapper)
+
+		expect(wrapper.findAllComponents(NcActionButton).some((button) => button.text() === 'View receipt')).toBe(false)
 	})
 })
