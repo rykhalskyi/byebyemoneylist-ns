@@ -81,8 +81,11 @@ Frontend:
 
 - `src/components/catalog/ProductMergeDialog.vue` — select + compare steps, merged
   alias chips, picture choice, live result summary.
-- `src/components/catalog/ProductRow.vue` merge action; `src/views/Catalog.vue`
-  opens the dialog and swaps the merged product in place.
+- `src/components/catalog/ProductRow.vue` — every product now exposes a vertical
+  three-dot menu (`NcActions`) with Edit, Merge and Delete; the Delete entry is
+  styled with `--color-error` and the toggle stops click propagation so it does not
+  open the product info dialog. `src/views/Catalog.vue` opens the merge dialog and
+  swaps the merged product in place.
 - `src/types.ts`, `src/services/listsApi.ts`; l10n `en/de/uk`.
 - `tests/js/components/catalog/ProductMergeDialog.spec.ts`, extended
   `ProductRow.spec.ts`.

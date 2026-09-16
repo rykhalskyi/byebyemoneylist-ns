@@ -68,6 +68,7 @@ OC.L10N.register(
 		"Delete the receipt for {name}? This cannot be undone." : "Beleg für {name} löschen? Dies kann nicht rückgängig gemacht werden.",
 		"Delete this product's picture? This cannot be undone." : "Das Bild dieses Produkts löschen? Dies kann nicht rückgängig gemacht werden.",
 		"Delete {name}" : "{name} löschen",
+		"Edit" : "Bearbeiten",
 		"Edit LLM profile" : "LLM-Profil bearbeiten",
 		"Edit category" : "Kategorie bearbeiten",
 		"Edit product" : "Produkt bearbeiten",

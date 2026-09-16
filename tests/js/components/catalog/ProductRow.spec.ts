@@ -1,8 +1,9 @@
 import type { Category, Product } from '../../../../src/types.ts'
 
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import ProductRow from '../../../../src/components/catalog/ProductRow.vue'
 import { formatTotal } from '../../../../src/utils/format.ts'
 
@@ -40,6 +41,22 @@ async function render(props: { product: Product, category?: Category | null, sea
 	return wrapper
 }
 
+async function openMenu(wrapper: Awaited<ReturnType<typeof render>>) {
+	await wrapper.find('.action-item__menutoggle').trigger('click')
+	await flushPromises()
+	await nextTick()
+	await flushPromises()
+	await nextTick()
+}
+
+async function clickAction(wrapper: Awaited<ReturnType<typeof render>>, name: string) {
+	const action = wrapper.findAllComponents(NcActionButton).find((button) => button.text() === name)
+	expect(action, `action "${name}"`).toBeDefined()
+	await action!.find('button').trigger('click')
+	await flushPromises()
+	await nextTick()
+}
+
 describe('ProductRow', () => {
 	it('renders the product and category names', async () => {
 		const wrapper = await render({ product: product(), category: dairy })
@@ -69,24 +86,49 @@ describe('ProductRow', () => {
 		expect(wrapper.emitted('open')?.[0]).toEqual([value])
 	})
 
+	it('shows the edit, merge and delete actions in a three-dot menu', async () => {
+		const wrapper = await render({ product: product() })
+		expect(wrapper.find('.action-item__menutoggle').exists()).toBe(true)
+
+		await openMenu(wrapper)
+		expect(wrapper.findAllComponents(NcActionButton).map((button) => button.text()))
+			.toEqual(['Edit', 'Merge', 'Delete'])
+	})
+
+	it('styles the delete action as destructive', async () => {
+		const wrapper = await render({ product: product() })
+		await openMenu(wrapper)
+		const remove = wrapper.findAllComponents(NcActionButton).find((button) => button.text() === 'Delete')
+		expect(remove!.classes()).toContain('bbml-product-action-delete')
+	})
+
+	it('does not open the product when the menu is toggled', async () => {
+		const wrapper = await render({ product: product() })
+		await openMenu(wrapper)
+		expect(wrapper.emitted('open')).toBeUndefined()
+	})
+
 	it('emits edit', async () => {
 		const value = product()
 		const wrapper = await render({ product: value })
-		await wrapper.find('button[aria-label="Edit Milk"]').trigger('click')
+		await openMenu(wrapper)
+		await clickAction(wrapper, 'Edit')
 		expect(wrapper.emitted('edit')?.[0]).toEqual([value])
-	})
-
-	it('emits delete', async () => {
-		const value = product()
-		const wrapper = await render({ product: value })
-		await wrapper.find('button[aria-label="Delete Milk"]').trigger('click')
-		expect(wrapper.emitted('delete')?.[0]).toEqual([value])
 	})
 
 	it('emits merge', async () => {
 		const value = product()
 		const wrapper = await render({ product: value })
-		await wrapper.find('button[aria-label="Merge Milk"]').trigger('click')
+		await openMenu(wrapper)
+		await clickAction(wrapper, 'Merge')
 		expect(wrapper.emitted('merge')?.[0]).toEqual([value])
+	})
+
+	it('emits delete', async () => {
+		const value = product()
+		const wrapper = await render({ product: value })
+		await openMenu(wrapper)
+		await clickAction(wrapper, 'Delete')
+		expect(wrapper.emitted('delete')?.[0]).toEqual([value])
 	})
 })

@@ -68,6 +68,7 @@ OC.L10N.register(
 		"Delete the receipt for {name}? This cannot be undone." : "Видалити чек для {name}? Це неможливо скасувати.",
 		"Delete this product's picture? This cannot be undone." : "Видалити зображення цього продукту? Цю дію не можна скасувати.",
 		"Delete {name}" : "Видалити {name}",
+		"Edit" : "Редагувати",
 		"Edit LLM profile" : "Редагувати профіль LLM",
 		"Edit category" : "Редагувати категорію",
 		"Edit product" : "Редагувати продукт",
