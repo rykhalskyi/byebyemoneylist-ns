@@ -77,7 +77,8 @@ class ProductMergeService {
 			$targetPath = null;
 		} elseif ($pictureFrom === 'secondary') {
 			$copiedPath = $this->pictureService->copy($userId, $secondaryPath, $primaryId);
-			$targetPath = $copiedPath;
+			// Keep the primary picture if the secondary file could not be copied.
+			$targetPath = $copiedPath ?? $primaryPath;
 		}
 
 		$aliases = $this->collectAliases($userId, $primary, $secondary, $name);
@@ -97,12 +98,15 @@ class ProductMergeService {
 
 			$this->productAliasMapper->deleteByProductId($primaryId, $userId);
 			$this->productAliasMapper->deleteByProductId($secondaryId, $userId);
-			foreach ($aliases as $aliasName) {
+			foreach ($aliases as $aliasData) {
 				$alias = new ProductAliasEntity();
 				$alias->setId(Uuid::v4());
 				$alias->setOwner($userId);
 				$alias->setProductId($primaryId);
-				$alias->setAliasName($aliasName);
+				$alias->setAliasName($aliasData['name']);
+				if ($aliasData['storeId'] !== null) {
+					$alias->setStoreId($aliasData['storeId']);
+				}
 				$this->productAliasMapper->insert($alias);
 			}
 
@@ -131,25 +135,29 @@ class ProductMergeService {
 
 	/**
 	 * Concatenate the aliases of both products plus their original names, remove
-	 * duplicates (case-insensitive) and the chosen result name.
+	 * duplicates (case-insensitive) and the chosen result name. Alias store
+	 * associations are carried over so matching stays store-aware.
 	 *
-	 * @return list<string>
+	 * @return list<array{name: string, storeId: ?string}>
 	 */
 	private function collectAliases(string $userId, ProductEntity $primary, ProductEntity $secondary, string $name): array {
 		$ids = [$primary->getId(), $secondary->getId()];
-		$names = [
-			$primary->getName() ?? '',
-			$secondary->getName() ?? '',
+		$candidates = [
+			['name' => $primary->getName() ?? '', 'storeId' => null],
+			['name' => $secondary->getName() ?? '', 'storeId' => null],
 		];
 		foreach ($this->productAliasMapper->findByProductIds($ids, $userId) as $alias) {
-			$names[] = $alias->getAliasName() ?? '';
+			$candidates[] = [
+				'name' => $alias->getAliasName() ?? '',
+				'storeId' => $alias->getStoreId(),
+			];
 		}
 
 		$resultName = mb_strtolower(trim($name));
 		$seen = [];
 		$aliases = [];
-		foreach ($names as $candidate) {
-			$trimmed = trim($candidate);
+		foreach ($candidates as $candidate) {
+			$trimmed = trim($candidate['name']);
 			if ($trimmed === '') {
 				continue;
 			}
@@ -158,7 +166,7 @@ class ProductMergeService {
 				continue;
 			}
 			$seen[$lower] = true;
-			$aliases[] = $trimmed;
+			$aliases[] = ['name' => $trimmed, 'storeId' => $candidate['storeId']];
 		}
 
 		return $aliases;

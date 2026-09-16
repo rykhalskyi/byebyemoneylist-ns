@@ -132,6 +132,15 @@ class ReceiptCommitController extends OCSController {
 			}
 		}
 
+		$categoryIds = [];
+		if (isset($decoded['categoryIds']) && is_array($decoded['categoryIds'])) {
+			foreach ($decoded['categoryIds'] as $categoryId) {
+				if (is_string($categoryId) && $categoryId !== '') {
+					$categoryIds[] = $categoryId;
+				}
+			}
+		}
+
 		$saveReceipt = (bool)($decoded['saveReceipt'] ?? false);
 		$receiptTmpPath = null;
 		$receiptExtension = null;
@@ -167,6 +176,7 @@ class ReceiptCommitController extends OCSController {
 				$saveReceipt,
 				$receiptTmpPath,
 				$receiptExtension,
+				$categoryIds,
 			);
 		} catch (\Exception $e) {
 			$this->logger->error('Failed to save scanned receipt', ['exception' => $e]);

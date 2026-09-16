@@ -336,11 +336,12 @@ class LlmProfileController extends OCSController {
 	 */
 	private function serializeProfile(LlmProfileEntity $profile, ?string $knownRawKey = null): array {
 		$maskedKey = '••••••••';
+		$encryptedKey = $profile->getApiKey();
 		if ($knownRawKey !== null) {
 			$maskedKey = $this->maskKey($knownRawKey);
-		} elseif ($profile->getApiKey() !== null) {
+		} elseif ($encryptedKey !== null) {
 			try {
-				$decrypted = $this->crypto->decrypt($profile->getApiKey());
+				$decrypted = $this->crypto->decrypt($encryptedKey);
 				$maskedKey = $this->maskKey($decrypted);
 			} catch (\Exception $e) {
 				$this->logger->warning('Could not decrypt LLM API key for masking', ['exception' => $e]);

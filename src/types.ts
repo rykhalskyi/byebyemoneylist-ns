@@ -59,6 +59,7 @@ export interface ReceiptCommitPayload {
 	name: string
 	storeName?: string | null
 	storeAddress?: string | null
+	categoryIds?: string[]
 	finalTotal?: number | null
 	purchaseDate?: string | null
 	saveReceipt: boolean

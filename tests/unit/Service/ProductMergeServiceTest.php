@@ -63,12 +63,15 @@ final class ProductMergeServiceTest extends TestCase {
 		return $product;
 	}
 
-	private function alias(string $productId, string $name): ProductAliasEntity {
+	private function alias(string $productId, string $name, ?string $storeId = null): ProductAliasEntity {
 		$alias = new ProductAliasEntity();
 		$alias->setId('alias-' . $name);
 		$alias->setOwner('alice');
 		$alias->setProductId($productId);
 		$alias->setAliasName($name);
+		if ($storeId !== null) {
+			$alias->setStoreId($storeId);
+		}
 		return $alias;
 	}
 
@@ -80,7 +83,7 @@ final class ProductMergeServiceTest extends TestCase {
 			->method('findByProductIds')
 			->with(['A', 'B'], 'alice')
 			->willReturn([
-				$this->alias('A', 'M'),
+				$this->alias('A', 'M', 'store-1'),
 				$this->alias('B', 'Milch'),
 				$this->alias('B', 'M'),
 			]);
@@ -97,10 +100,12 @@ final class ProductMergeServiceTest extends TestCase {
 		$this->productMapper->expects($this->once())->method('delete')->with($secondary);
 
 		$inserted = [];
+		$insertedStores = [];
 		$this->productAliasMapper->expects($this->exactly(2))
 			->method('insert')
-			->willReturnCallback(function (ProductAliasEntity $alias) use (&$inserted): ProductAliasEntity {
+			->willReturnCallback(function (ProductAliasEntity $alias) use (&$inserted, &$insertedStores): ProductAliasEntity {
 				$inserted[] = $alias->getAliasName();
+				$insertedStores[] = $alias->getStoreId();
 				return $alias;
 			});
 
@@ -117,6 +122,7 @@ final class ProductMergeServiceTest extends TestCase {
 		$this->assertTrue($result->getIsFavorite());
 		$this->assertSame('reviewed', $result->getStatus());
 		$this->assertSame(['Milch', 'M'], $inserted);
+		$this->assertSame([null, 'store-1'], $insertedStores);
 	}
 
 	public function testMergeRepointsPricesAndKeepsTheLatestOnCollision(): void {

@@ -36,6 +36,7 @@ class LlmProfileEntity extends Entity {
 		$this->addType('updatedAt', Types::DATETIME);
 	}
 
+	/** @psalm-suppress PossiblyUnusedMethod */
 	public function getOwner(): ?string {
 		return $this->owner;
 	}

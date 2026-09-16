@@ -61,19 +61,20 @@ class StoreMapper extends QBMapper {
 
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('store_id')
+			->selectAlias($qb->func()->count('*'), 'store_count')
 			->from('bbml_lists')
 			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
-			->andWhere($qb->expr()->isNotNull('store_id'));
+			->andWhere($qb->expr()->isNotNull('store_id'))
+			->groupBy('store_id');
 
 		$counts = [];
 		$result = $qb->executeQuery();
-		/** @var list<array{store_id: string}> $rows */
+		/** @var list<array{store_id: string, store_count: int|string}> $rows */
 		$rows = $result->fetchAll();
 		$result->closeCursor();
 
 		foreach ($rows as $row) {
-			$storeId = $row['store_id'];
-			$counts[$storeId] = ($counts[$storeId] ?? 0) + 1;
+			$counts[$row['store_id']] = (int)$row['store_count'];
 		}
 
 		usort($stores, static function (StoreEntity $a, StoreEntity $b) use ($counts): int {

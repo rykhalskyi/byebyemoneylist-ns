@@ -14,6 +14,7 @@ use OCP\IDBConnection;
  * @extends QBMapper<LlmProfileEntity>
  */
 class LlmProfileMapper extends QBMapper {
+	/** @psalm-suppress PossiblyUnusedMethod */
 	public function __construct(IDBConnection $db) {
 		parent::__construct($db, 'bbml_llm_profiles', LlmProfileEntity::class);
 	}

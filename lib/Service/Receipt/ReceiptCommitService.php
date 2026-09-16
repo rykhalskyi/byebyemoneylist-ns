@@ -74,6 +74,7 @@ class ReceiptCommitService {
 
 	/**
 	 * @param list<array{productId?: ?string, name: string, quantity: float, price: float, discount?: ?float, isCoupon?: bool, categoryId?: ?string, categoryName?: ?string}> $items
+	 * @param list<string> $categoryIds categories explicitly applied to the finished list
 	 */
 	public function commit(
 		string $userId,
@@ -86,6 +87,7 @@ class ReceiptCommitService {
 		bool $saveReceipt,
 		?string $receiptTmpPath,
 		?string $receiptExtension,
+		array $categoryIds = [],
 	): ListEntity {
 		$stores = array_values($this->storeMapper->findAllByOwner($userId));
 		$products = array_values($this->productMapper->findAllIncludingSpecialByOwner($userId));
@@ -120,7 +122,13 @@ class ReceiptCommitService {
 			$listId = $created->getId();
 
 			$couponProductId = null;
-			$categoryIds = [];
+			$listCategoryIds = [];
+			foreach ($categoryIds as $categoryId) {
+				$category = $this->categoryMapper->findByIdAndOwner($categoryId, $userId);
+				if ($category !== null && !in_array($category->getId(), $listCategoryIds, true)) {
+					$listCategoryIds[] = $category->getId();
+				}
+			}
 			$index = 0;
 			foreach ($items as $item) {
 				$itemName = trim($item['name']);
@@ -133,8 +141,8 @@ class ReceiptCommitService {
 				$discount = $item['discount'] ?? null;
 
 				$categoryId = $this->resolveCategory($userId, $item['categoryId'] ?? null, $item['categoryName'] ?? null);
-				if ($categoryId !== null && !in_array($categoryId, $categoryIds, true)) {
-					$categoryIds[] = $categoryId;
+				if ($categoryId !== null && !in_array($categoryId, $listCategoryIds, true)) {
+					$listCategoryIds[] = $categoryId;
 				}
 
 				$customName = null;
@@ -155,9 +163,9 @@ class ReceiptCommitService {
 				$index++;
 			}
 
-			if ($categoryIds !== []) {
-				$created->setCategoryId($categoryIds[0]);
-				$this->listMapper->replaceCategoriesByListId($listId, $categoryIds);
+			if ($listCategoryIds !== []) {
+				$created->setCategoryId($listCategoryIds[0]);
+				$this->listMapper->replaceCategoriesByListId($listId, $listCategoryIds);
 			}
 
 			if ($saveReceipt && $receiptTmpPath !== null && $receiptExtension !== null) {
@@ -233,8 +241,8 @@ class ReceiptCommitService {
 		string $name,
 		?string $storeId,
 		?string $categoryId,
-		array $products,
-		array $aliasMap,
+		array &$products,
+		array &$aliasMap,
 	): string {
 		if ($productId !== null && $productId !== '') {
 			$existing = $this->productMapper->findByIdAndOwner($productId, $userId);
@@ -249,6 +257,7 @@ class ReceiptCommitService {
 			$nameDiffers = mb_strtolower((string)$matched->getName()) !== $lower;
 			if ($nameDiffers && !isset($aliasMap[$lower])) {
 				$this->insertAlias($userId, $matched->getId(), $name, $storeId);
+				$aliasMap[$lower] = $matched;
 			}
 			return $matched->getId();
 		}
@@ -267,6 +276,8 @@ class ReceiptCommitService {
 		$created = $this->productMapper->insert($product);
 
 		$this->insertAlias($userId, $created->getId(), $name, $storeId);
+		$products[] = $created;
+		$aliasMap[mb_strtolower(trim($name))] = $created;
 
 		return $created->getId();
 	}
@@ -274,7 +285,7 @@ class ReceiptCommitService {
 	/**
 	 * @param list<ProductEntity> $products
 	 */
-	private function getOrCreateCouponProductId(string $userId, array $products): string {
+	private function getOrCreateCouponProductId(string $userId, array &$products): string {
 		foreach ($products as $product) {
 			if (mb_strtolower((string)$product->getName()) === 'coupon') {
 				return $product->getId();
@@ -290,6 +301,8 @@ class ReceiptCommitService {
 		$product->setIsSubscription(false);
 		$product->setIsIncome(false);
 		$this->productMapper->insert($product);
+
+		$products[] = $product;
 
 		return $product->getId();
 	}

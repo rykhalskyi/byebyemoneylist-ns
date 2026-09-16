@@ -132,7 +132,7 @@ function onProfileDeleted(id: string) {
 				<div v-else-if="profiles.length === 0" :class="$style.emptyState">
 					<NcEmptyContent
 						:name="t('No LLM profiles configured')"
-						:description="t('Add your DeepSeek, SiliconFlow, Gemini, or other LLM API keys to enable receipt OCR.')">
+						:description="t('Add a DeepSeek or SiliconFlow API key to enable receipt OCR.')">
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiRobotOutline" :size="64" />
 						</template>

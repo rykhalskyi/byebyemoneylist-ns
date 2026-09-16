@@ -102,7 +102,7 @@ export function listSubname(list: ShoppingList, storeName: string, categoryName:
 }
 
 export function listMarkStyle(color: string | null): Record<string, string> {
-	return color === null ? {} : { 'border-inline-start': `6px solid ${color}`}
+	return color === null ? {} : { 'border-inline-start': `3px solid ${color}` }
 }
 
 export function categoryColor(categoryId: string | null, categories: readonly Category[]): string | null {

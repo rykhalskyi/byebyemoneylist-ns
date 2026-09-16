@@ -307,10 +307,15 @@ async function submitScan() {
 	submitting.value = true
 	error.value = null
 	try {
+		const itemCategoryIds = scan.items
+			.map((item) => item.categoryId)
+			.filter((categoryId): categoryId is string => categoryId !== null)
+		const categoryIds = [...new Set(itemCategoryIds)]
 		const list = await commitReceipt({
 			name: resolvedName,
 			storeName: scan.storeName,
 			storeAddress: scan.storeAddress,
+			categoryIds,
 			finalTotal: scan.totalSum ?? scanItemsSum.value,
 			purchaseDate: new Date().toISOString(),
 			saveReceipt: saveReceipt.value,

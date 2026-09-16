@@ -44,6 +44,10 @@ const isEditing = computed(() => props.entity !== undefined)
 
 const providerPlaceholder = computed(() => selectedProviderOption.value.defaultModel)
 
+function isProviderSelectable(option: ProviderOption): boolean {
+	return option.supported
+}
+
 const canSubmit = computed(() => {
 	if (submitting.value || deleting.value) {
 		return false
@@ -174,13 +178,19 @@ async function onDelete() {
 				:error="name.trim() === '' && name.length > 0"
 				:helperText="t('Give this profile a name to identify it easily.')" />
 
-			<NcSelect
-				v-model="selectedProviderOption"
-				label="label"
-				:inputLabel="t('Provider')"
-				:options="LLM_PROVIDERS"
-				:disabled="submitting || deleting"
-				:clearable="false" />
+			<div :class="$style.field">
+				<NcSelect
+					v-model="selectedProviderOption"
+					label="label"
+					:inputLabel="t('Provider')"
+					:options="LLM_PROVIDERS"
+					:selectable="isProviderSelectable"
+					:disabled="submitting || deleting"
+					:clearable="false" />
+				<p :class="$style.hint">
+					{{ t('Only DeepSeek and SiliconFlow are supported for receipt scanning right now.') }}
+				</p>
+			</div>
 
 			<NcTextField
 				v-model="apiKey"
@@ -265,6 +275,17 @@ async function onDelete() {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.hint {
+	color: var(--color-text-maxcontrast);
+	margin: 0;
 }
 
 .advancedToggle {
