@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Category, Product } from '../../types.ts'
 
-import { mdiDelete, mdiPackageVariant, mdiPencil, mdiStar } from '@mdi/js'
+import { mdiCallMerge, mdiDelete, mdiPackageVariant, mdiPencil, mdiStar } from '@mdi/js'
 import { computed } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcChip from '@nextcloud/vue/components/NcChip'
@@ -24,6 +24,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
 	open: [product: Product]
 	edit: [product: Product]
+	merge: [product: Product]
 	delete: [product: Product]
 }>()
 
@@ -81,6 +82,14 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 					@click.stop="emit('edit', props.product)">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiPencil" :size="20" />
+					</template>
+				</NcButton>
+				<NcButton
+					type="button"
+					:aria-label="t('Merge {name}', { name: props.product.name })"
+					@click.stop="emit('merge', props.product)">
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiCallMerge" :size="20" />
 					</template>
 				</NcButton>
 				<NcButton

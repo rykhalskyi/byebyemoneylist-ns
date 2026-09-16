@@ -10922,6 +10922,689 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/byebyemoneylist/api/products/merge": {
+            "post": {
+                "operationId": "product-merge",
+                "summary": "Merge two of the current user's products into the primary one",
+                "description": "The primary product keeps its id and the chosen fields; the secondary one is deleted. Aliases of both products (and their original names) are concatenated, and all list items and price records of the secondary are moved to the primary.",
+                "tags": [
+                    "product"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "primaryId",
+                                    "secondaryId",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "primaryId": {
+                                        "type": "string",
+                                        "description": "Product id that is kept"
+                                    },
+                                    "secondaryId": {
+                                        "type": "string",
+                                        "description": "Product id that is merged into the primary and deleted"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "Name of the merged product (required)"
+                                    },
+                                    "categoryId": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Optional category id (must belong to the current user; income categories only allowed for income products)"
+                                    },
+                                    "barcode": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Optional barcode of the merged product"
+                                    },
+                                    "isFavorite": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the merged product is a favorite"
+                                    },
+                                    "isSubscription": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the merged product is a subscription"
+                                    },
+                                    "isIncome": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Whether the merged product is an income source"
+                                    },
+                                    "pictureFrom": {
+                                        "type": "string",
+                                        "default": "primary",
+                                        "description": "Which picture to keep: primary, secondary or none"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Products merged",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "product"
+                                                            ],
+                                                            "properties": {
+                                                                "product": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "barcode",
+                                                                        "categoryId",
+                                                                        "aliases",
+                                                                        "isFavorite",
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "barcode": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "aliases": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "isFavorite": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "product"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "product": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "barcode",
+                                                                                "categoryId",
+                                                                                "aliases",
+                                                                                "isFavorite",
+                                                                                "status",
+                                                                                "isSubscription",
+                                                                                "isIncome",
+                                                                                "lastPrice",
+                                                                                "lastPriceDate",
+                                                                                "hasPicture"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "barcode": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryId": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "aliases": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    }
+                                                                                },
+                                                                                "isFavorite": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isSubscription": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isIncome": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "lastPrice": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "lastPriceDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "hasPicture": {
+                                                                                    "type": "boolean"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "A product does not exist or is not owned by the current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "product"
+                                                            ],
+                                                            "properties": {
+                                                                "product": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "barcode",
+                                                                        "categoryId",
+                                                                        "aliases",
+                                                                        "isFavorite",
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "barcode": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "aliases": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "isFavorite": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid input (same id, empty name, invalid category or picture choice)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "product"
+                                                            ],
+                                                            "properties": {
+                                                                "product": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "barcode",
+                                                                        "categoryId",
+                                                                        "aliases",
+                                                                        "isFavorite",
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "barcode": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "aliases": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "isFavorite": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to merge the products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "product"
+                                                            ],
+                                                            "properties": {
+                                                                "product": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "barcode",
+                                                                        "categoryId",
+                                                                        "aliases",
+                                                                        "isFavorite",
+                                                                        "status",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "lastPrice",
+                                                                        "lastPriceDate",
+                                                                        "hasPicture"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "barcode": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "aliases": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "isFavorite": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "lastPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "lastPriceDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/byebyemoneylist/api/products/{id}/picture": {
             "post": {
                 "operationId": "product_image-upload",

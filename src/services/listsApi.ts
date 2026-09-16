@@ -1,4 +1,4 @@
-import type { Category, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductPayload, ProductPicture, ProductPrice, ReceiptPicture, ShoppingList, Store, StorePayload } from '../types.ts'
+import type { Category, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductMergePayload, ProductPayload, ProductPicture, ProductPrice, ReceiptPicture, ShoppingList, Store, StorePayload } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateOcsUrl } from '@nextcloud/router'
@@ -138,6 +138,14 @@ export async function updateProduct(id: string, payload: ProductPayload): Promis
 
 export async function deleteProduct(id: string): Promise<void> {
 	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/products/${id}`))
+}
+
+export async function mergeProducts(payload: ProductMergePayload): Promise<Product> {
+	const { data } = await axios.post<OcsData<{ product: Product }>>(
+		generateOcsUrl('/apps/byebyemoneylist/api/products/merge'),
+		payload,
+	)
+	return data.ocs.data.product
 }
 
 export async function fetchProductPrices(productId: string): Promise<ProductPrice[]> {

@@ -11,6 +11,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import CatalogSearch from '../components/catalog/CatalogSearch.vue'
 import CategoryRow from '../components/catalog/CategoryRow.vue'
+import ProductMergeDialog from '../components/catalog/ProductMergeDialog.vue'
 import ProductRow from '../components/catalog/ProductRow.vue'
 import StoreRow from '../components/catalog/StoreRow.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
@@ -54,6 +55,7 @@ const editingCategory = ref<Category | null>(null)
 const editingStore = ref<Store | null>(null)
 const editingProduct = ref<Product | null>(null)
 const infoProduct = ref<Product | null>(null)
+const mergingProduct = ref<Product | null>(null)
 
 interface DeleteTargetCategory {
 	type: 'category'
@@ -376,6 +378,18 @@ function onProductUpdated(product: Product) {
 	editingProduct.value = null
 }
 
+function onProductMerged(product: Product, mergedAwayId: string) {
+	products.value = products.value
+		.filter((candidate) => candidate.id !== mergedAwayId)
+		.map((candidate) => (candidate.id === product.id ? product : candidate))
+		.sort(compareByName)
+	mergingProduct.value = null
+}
+
+function closeMergeDialog() {
+	mergingProduct.value = null
+}
+
 const pendingCategories = computed(() => categories.value.filter((cat) => cat.status === 'pending_review'))
 
 async function onConfirmCategory(category: Category) {
@@ -683,6 +697,7 @@ function closeInfoDialog() {
 					:search="query"
 					@open="infoProduct = $event"
 					@edit="editingProduct = $event"
+					@merge="mergingProduct = $event"
 					@delete="askDelete({ type: 'product', entity: $event })" />
 
 				<div v-if="hasMoreProducts" :class="$style['load-more']">
@@ -723,6 +738,13 @@ function closeInfoDialog() {
 			:stores="stores"
 			@update:open="closeInfoDialog"
 			@updated="onProductUpdated" />
+		<ProductMergeDialog
+			:open="mergingProduct !== null"
+			:source="mergingProduct ?? undefined"
+			:products="activeTabProducts"
+			:categories="categories"
+			@update:open="closeMergeDialog"
+			@merged="onProductMerged" />
 		<ConfirmDialog
 			:open="pendingDelete !== null"
 			:title="deleteTitle"

@@ -71,3 +71,4 @@
 ## [2026-09-15] ticket | T29 scan receipt — implemented frontend scan tab (image normalization, scan/commit API, one-form result, Save receipt)
 ## [2026-09-15] ticket | T29 scan receipt — Phase 4: shopping-list receipt viewer (view/delete), backend ReceiptImageController tests
 ## [2026-09-15] update | T29 scan receipt — gate Scan tab on an active LLM profile (disabled + hint, manual fallback)
+## [2026-09-16] ticket | T30 — Merge duplicate products implemented (dialog, POST /api/products/merge, transactional service)

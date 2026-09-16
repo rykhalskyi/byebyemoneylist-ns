@@ -14,3 +14,4 @@ Append-only decision record. The "why" lives here; the full change history lives
 - [2026-09-14] D-10 — Run receipt OCR server-side against the active LLM profile — because API keys are stored encrypted server-side and must never reach the browser
 - [2026-09-14] D-11 — Strip receipt EXIF client-side via canvas downscale to 1024px/JPEG q0.6 — because it removes metadata and shrinks the upload, mirroring the Android scanner
 - [2026-09-14] D-12 — Scan endpoint is read-only; a separate transactional commit endpoint writes store/list/product/item/price — because a partial save would corrupt the catalog
+- [2026-09-16] D-13 — Merge duplicate products in one server-side transaction (concatenated aliases, re-pointed list items/prices, secondary deleted) — because a partial merge would corrupt the catalog and the concatenated aliases are what receipt matching relies on

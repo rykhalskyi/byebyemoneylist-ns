@@ -82,4 +82,11 @@ describe('ProductRow', () => {
 		await wrapper.find('button[aria-label="Delete Milk"]').trigger('click')
 		expect(wrapper.emitted('delete')?.[0]).toEqual([value])
 	})
+
+	it('emits merge', async () => {
+		const value = product()
+		const wrapper = await render({ product: value })
+		await wrapper.find('button[aria-label="Merge Milk"]').trigger('click')
+		expect(wrapper.emitted('merge')?.[0]).toEqual([value])
+	})
 })

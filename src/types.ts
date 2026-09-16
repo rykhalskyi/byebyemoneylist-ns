@@ -148,6 +148,18 @@ export interface ProductPayload {
 	isIncome?: boolean
 }
 
+export interface ProductMergePayload {
+	primaryId: string
+	secondaryId: string
+	name: string
+	categoryId?: string | null
+	barcode?: string | null
+	isFavorite?: boolean
+	isSubscription?: boolean
+	isIncome?: boolean
+	pictureFrom?: 'primary' | 'secondary' | 'none'
+}
+
 export interface ListItem {
 	id: string
 	listId: string

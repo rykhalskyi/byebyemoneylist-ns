@@ -14,6 +14,7 @@ use OCA\ByeByeMoneyList\Db\ProductPriceMapper;
 use OCA\ByeByeMoneyList\Entity\ProductAliasEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
+use OCA\ByeByeMoneyList\Service\ProductMergeService;
 use OCA\ByeByeMoneyList\Service\ProductPictureService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
@@ -37,6 +38,7 @@ class ProductController extends OCSController {
 	private ListItemMapper $itemMapper;
 	private ProductPriceMapper $priceMapper;
 	private ProductPictureService $pictureService;
+	private ProductMergeService $mergeService;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
@@ -49,6 +51,7 @@ class ProductController extends OCSController {
 		ListItemMapper $itemMapper,
 		ProductPriceMapper $priceMapper,
 		ProductPictureService $pictureService,
+		ProductMergeService $mergeService,
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
@@ -60,6 +63,7 @@ class ProductController extends OCSController {
 		$this->itemMapper = $itemMapper;
 		$this->priceMapper = $priceMapper;
 		$this->pictureService = $pictureService;
+		$this->mergeService = $mergeService;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -355,6 +359,103 @@ class ProductController extends OCSController {
 		}
 
 		return new DataResponse([], Http::STATUS_OK);
+	}
+
+	/**
+	 * Merge two of the current user's products into the primary one
+	 *
+	 * The primary product keeps its id and the chosen fields; the secondary one is
+	 * deleted. Aliases of both products (and their original names) are concatenated,
+	 * and all list items and price records of the secondary are moved to the primary.
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @param string $primaryId Product id that is kept
+	 * @param string $secondaryId Product id that is merged into the primary and deleted
+	 * @param string $name Name of the merged product (required)
+	 * @param ?string $categoryId Optional category id (must belong to the current user; income categories only allowed for income products)
+	 * @param ?string $barcode Optional barcode of the merged product
+	 * @param bool $isFavorite Whether the merged product is a favorite
+	 * @param bool $isSubscription Whether the merged product is a subscription
+	 * @param bool $isIncome Whether the merged product is an income source
+	 * @param string $pictureFrom Which picture to keep: primary, secondary or none
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}}|array{message: string}, array{}>
+	 *
+	 * 200: Products merged
+	 * 401: Current user is not logged in
+	 * 404: A product does not exist or is not owned by the current user
+	 * 422: Invalid input (same id, empty name, invalid category or picture choice)
+	 * 500: Failed to merge the products
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/products/merge')]
+	public function merge(string $primaryId, string $secondaryId, string $name, ?string $categoryId = null, ?string $barcode = null, bool $isFavorite = false, bool $isSubscription = false, bool $isIncome = false, string $pictureFrom = 'primary'): DataResponse {
+		$userId = $this->userSession->getUser()?->getUID();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($primaryId === $secondaryId) {
+			return new DataResponse(['message' => 'Cannot merge a product with itself'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$primary = $this->mapper->findByIdAndOwner($primaryId, $userId);
+		if ($primary === null) {
+			return new DataResponse(['message' => 'Primary product not found'], Http::STATUS_NOT_FOUND);
+		}
+		$secondary = $this->mapper->findByIdAndOwner($secondaryId, $userId);
+		if ($secondary === null) {
+			return new DataResponse(['message' => 'Secondary product not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$name = trim($name);
+		if ($name === '') {
+			return new DataResponse(['message' => 'Name is required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		if (!in_array($pictureFrom, ['primary', 'secondary', 'none'], true)) {
+			return new DataResponse(['message' => 'Invalid picture choice'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		if ($categoryId !== null && $categoryId !== '') {
+			$category = $this->categoryMapper->findByIdAndOwner($categoryId, $userId);
+			if ($category === null) {
+				return new DataResponse(['message' => 'Category not found'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			if (($category->getIncome() ?? false) && !$isIncome) {
+				return new DataResponse(['message' => 'Category must not be an income category'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		try {
+			$product = $this->mergeService->merge(
+				$userId,
+				$primary,
+				$secondary,
+				$name,
+				$categoryId !== null && $categoryId !== '' ? $categoryId : null,
+				$barcode !== null && $barcode !== '' ? trim($barcode) : null,
+				$isFavorite,
+				$isSubscription,
+				$isIncome,
+				$pictureFrom,
+			);
+		} catch (\Exception $e) {
+			$this->logger->error('Failed to merge products', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to merge products'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		$aliasesByProduct = $this->groupAliases($this->aliasMapper->findByProductIds([$product->getId()], $userId));
+		$latestPrices = $this->priceMapper->findLatestByProductIds([$product->getId()], $userId);
+
+		return new DataResponse([
+			'product' => $this->serializeProduct(
+				$product,
+				$aliasesByProduct[$product->getId()] ?? [],
+				$latestPrices[$product->getId()] ?? null,
+			),
+		], Http::STATUS_OK);
 	}
 
 	/**
