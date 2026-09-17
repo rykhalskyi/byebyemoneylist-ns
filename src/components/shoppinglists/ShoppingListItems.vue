@@ -2,12 +2,14 @@
 import type { Category, ListItem, Product } from '../../types.ts'
 
 import { mdiDelete, mdiPlus } from '@mdi/js'
+import { computed } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import ProductThumb from '../catalog/ProductThumb.vue'
 import { t } from '../../utils/l10n.ts'
-import { itemDetails, itemSubname, productCategoryColor } from '../../utils/listDisplay.ts'
+import { itemDetails, itemSubname, productCategory } from '../../utils/listDisplay.ts'
 
 const props = defineProps<{
 	items: ListItem[]
@@ -23,10 +25,15 @@ const emit = defineEmits<{
 	delete: [item: ListItem]
 }>()
 
-function itemStyle(item: ListItem): Record<string, string> {
-	const color = productCategoryColor(item, props.products, props.categories)
-	return color === null ? {} : { borderInlineStart: `2px solid ${color}` }
+function productOf(item: ListItem): Product | null {
+	return props.products.find((candidate) => candidate.id === item.productId) ?? null
 }
+
+const rows = computed(() => props.items.map((item) => ({
+	item,
+	product: productOf(item),
+	category: productCategory(item, props.products, props.categories),
+})))
 </script>
 
 <template>
@@ -42,21 +49,25 @@ function itemStyle(item: ListItem): Record<string, string> {
 		<template v-else>
 			<ul v-if="props.items.length > 0" :class="$style['item-list']">
 				<NcListItem
-					v-for="item in props.items"
-					:key="item.id"
-					:name="item.productName"
-					:details="itemDetails(item)"
+					v-for="row in rows"
+					:key="row.item.id"
+					:name="row.item.productName"
+					:details="itemDetails(row.item)"
 					compact
-					oneLine
-					:style="itemStyle(item)">
+					oneLine>
+					<template #icon>
+						<ProductThumb
+							:product="row.product"
+							:category="row.category" />
+					</template>
 					<template #subname>
-						<span v-if="itemSubname(item)">{{ itemSubname(item) }}</span>
+						<span v-if="itemSubname(row.item)">{{ itemSubname(row.item) }}</span>
 					</template>
 					<template #extra-actions>
 						<NcButton
 							type="button"
-							:aria-label="t('Delete {name}', { name: item.productName })"
-							@click="emit('delete', item)">
+							:aria-label="t('Delete {name}', { name: row.item.productName })"
+							@click="emit('delete', row.item)">
 							<template #icon>
 								<NcIconSvgWrapper :path="mdiDelete" :size="20" />
 							</template>
