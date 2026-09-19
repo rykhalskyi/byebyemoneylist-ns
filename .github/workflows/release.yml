@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, must match appinfo/info.xml (e.g. 1.0.2)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build app artifact
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        env:
+          CYPRESS_INSTALL_BINARY: 0
+          PUPPETEER_SKIP_DOWNLOAD: true
+        run: npm ci
+
+      - name: Build translations and frontend
+        run: |
+          npm run l10n
+          npm run build
+
+      - name: Resolve and validate version
+        id: version
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ github.event.inputs.version }}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
+          app_version="$(grep -oP '(?<=<version>)[^<]+' appinfo/info.xml)"
+          echo "release version: $version"
+          echo "appinfo version: $app_version"
+          if [ "$version" != "$app_version" ]; then
+            echo "::error::Version mismatch: tag/input '$version' != appinfo/info.xml '$app_version'"
+            exit 1
+          fi
+          test -f js/byebyemoneylist-main.mjs || { echo "::error::missing built js entry"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Package runtime tree
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          stage="$(mktemp -d)"
+          mkdir -p "$stage/byebyemoneylist"
+          for item in appinfo lib templates l10n js css img composer.json CHANGELOG.md LICENSE README.md; do
+            cp -a "$item" "$stage/byebyemoneylist/"
+          done
+          tar -C "$stage" -czf "byebyemoneylist-${version}.tar.gz" byebyemoneylist
+          sha256sum "byebyemoneylist-${version}.tar.gz" > "byebyemoneylist-${version}.tar.gz.sha256"
+          tar -tzf "byebyemoneylist-${version}.tar.gz" | head
+          ls -l byebyemoneylist-*
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          gh release create "v${version}" \
+            "byebyemoneylist-${version}.tar.gz" \
+            "byebyemoneylist-${version}.tar.gz.sha256" \
+            --title "v${version}" \
+            --generate-notes
