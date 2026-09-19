@@ -3,7 +3,7 @@ import type { Category, ListItem, Product, ShoppingList } from '../../../src/typ
 import { mdiAutorenew, mdiCart, mdiCashPlus } from '@mdi/js'
 import { describe, expect, it } from 'vitest'
 import { formatDate, formatTotal } from '../../../src/utils/format.ts'
-import { addItemLabel, categoryColor, checkedSum, itemDetails, itemSubname, listIcon, listMarkStyle, listSubname, listTotal, priceText, productCategoryColor, statusLabel, statusVariant } from '../../../src/utils/listDisplay.ts'
+import { addItemLabel, categoryColor, checkedSum, itemDetails, itemSubname, listIcon, listMarkStyle, listSubname, listTotal, priceText, productCategory, productCategoryColor, statusLabel, statusVariant } from '../../../src/utils/listDisplay.ts'
 
 function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 	return {
@@ -141,5 +141,15 @@ describe('colors', () => {
 		]
 		expect(productCategoryColor(item(), products, categories)).toBe('#ff0000')
 		expect(productCategoryColor(item({ productId: 'missing' }), products, categories)).toBeNull()
+	})
+
+	it('resolves the product category', () => {
+		const products: Product[] = [
+			{ id: 'p1', name: 'Milk', barcode: null, categoryId: 'c1', aliases: [], isFavorite: false, status: 'ok', isSubscription: false, isIncome: false, lastPrice: null, lastPriceDate: null, hasPicture: false },
+			{ id: 'p2', name: 'Water', barcode: null, categoryId: null, aliases: [], isFavorite: false, status: 'ok', isSubscription: false, isIncome: false, lastPrice: null, lastPriceDate: null, hasPicture: false },
+		]
+		expect(productCategory(item(), products, categories)).toBe(categories[0])
+		expect(productCategory(item({ productId: 'p2' }), products, categories)).toBeNull()
+		expect(productCategory(item({ productId: 'missing' }), products, categories)).toBeNull()
 	})
 })

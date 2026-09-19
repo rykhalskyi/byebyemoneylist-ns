@@ -307,3 +307,16 @@ async function onDelete() {
 	margin: 0;
 }
 </style>
+
+<style>
+/*
+ * NcSelect appends its dropdown to <body>, outside the .nc-select root where
+ * Nextcloud defines the vue-select CSS variables. Without them the dropdown
+ * falls back to vue-select's light defaults, so disabled options render bright
+ * white in the dark theme. Restore the theme-aware values for the floating menu.
+ */
+.nc-select__dropdown.vs__dropdown-menu {
+	--vs-state-disabled-bg: var(--color-background-hover);
+	--vs-state-disabled-color: var(--color-text-maxcontrast);
+}
+</style>

@@ -58,6 +58,9 @@
 - [tickets/ticket-28-dashboard-info-widget](pages/tickets/ticket-28-dashboard-info-widget.md) — T9.5 — Info widget (app logo + version injected via the page template)
 - [tickets/ticket-29-scan-receipt](pages/tickets/ticket-29-scan-receipt.md) — T3/T11 — Scan receipt in the Purchase dialog: LLM OCR, review, and save
 - [tickets/ticket-30-product-merge](pages/tickets/ticket-30-product-merge.md) — T30 — Merge duplicate products (choose fields, concatenate aliases)
+- [tickets/ticket-31-analytics-overview-api](pages/tickets/ticket-31-analytics-overview-api.md) — T10.1 — Analytics overview API (spent/income totals + category/store/list breakdowns)
+- [tickets/ticket-32-analytics-pie](pages/tickets/ticket-32-analytics-pie.md) — T10.2 — Analytics page shell, month picker, account card and drilldown category donut
+- [tickets/ticket-33-analytics-top-bars](pages/tickets/ticket-33-analytics-top-bars.md) — T10.3 — Top 5 stores and top 5 shopping lists bar charts
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.

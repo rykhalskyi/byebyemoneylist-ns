@@ -109,7 +109,14 @@ export function categoryColor(categoryId: string | null, categories: readonly Ca
 	return categories.find((category) => category.id === categoryId)?.color ?? null
 }
 
-export function productCategoryColor(item: ListItem, products: readonly Product[], categories: readonly Category[]): string | null {
+export function productCategory(item: ListItem, products: readonly Product[], categories: readonly Category[]): Category | null {
 	const product = products.find((candidate) => candidate.id === item.productId)
-	return product?.categoryId ? categoryColor(product.categoryId, categories) : null
+	if (!product?.categoryId) {
+		return null
+	}
+	return categories.find((category) => category.id === product.categoryId) ?? null
+}
+
+export function productCategoryColor(item: ListItem, products: readonly Product[], categories: readonly Category[]): string | null {
+	return productCategory(item, products, categories)?.color ?? null
 }
