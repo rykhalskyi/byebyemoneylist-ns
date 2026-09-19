@@ -75,7 +75,7 @@ jobs:
           done
           tar -C "$stage" -czf "byebyemoneylist-${version}.tar.gz" byebyemoneylist
           sha256sum "byebyemoneylist-${version}.tar.gz" > "byebyemoneylist-${version}.tar.gz.sha256"
-          tar -tzf "byebyemoneylist-${version}.tar.gz" | head
+          echo "packaged $(tar -tzf "byebyemoneylist-${version}.tar.gz" | wc -l) entries"
           ls -l byebyemoneylist-*
 
       - name: Publish GitHub release
