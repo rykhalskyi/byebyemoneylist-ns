@@ -15,3 +15,6 @@ Append-only decision record. The "why" lives here; the full change history lives
 - [2026-09-14] D-11 — Strip receipt EXIF client-side via canvas downscale to 1024px/JPEG q0.6 — because it removes metadata and shrinks the upload, mirroring the Android scanner
 - [2026-09-14] D-12 — Scan endpoint is read-only; a separate transactional commit endpoint writes store/list/product/item/price — because a partial save would corrupt the catalog
 - [2026-09-16] D-13 — Merge duplicate products in one server-side transaction (concatenated aliases, re-pointed list items/prices, secondary deleted) — because a partial merge would corrupt the catalog and the concatenated aliases are what receipt matching relies on
+- [2026-09-19] D-14 — Adopt Apache ECharts (tree-shaken, lazy-loaded Analytics chunk) for the Analytics charts — because emoji connector labels, center text and drilldown aren't provided by @nextcloud/vue and ECharts covers both donut and bar charts in one tree-shakeable dependency
+- [2026-09-19] D-15 — Analytics aggregates at list level (bbml_lists.final_total + primary list category) — because it matches the D-08 dashboard semantics and the web app has no actual-price-rule setting yet
+- [2026-09-19] D-16 — Top-5 store/list bars are horizontal — because long names stay readable and the category axis doubles as the legend

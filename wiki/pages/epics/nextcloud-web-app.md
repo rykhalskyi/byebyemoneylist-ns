@@ -49,7 +49,7 @@ Implementation order is tracked by numbered tickets (e.g. [ticket-01-shopping-li
 | T7 | Subscriptions & Income — dedicated tabs/views, list flags | §2.10, §2.11, §5.4, §5.5 | open |
 | T8 | Recurring lists — WEEK/MONTH/YEAR period, forward empty/with items, auto-archive + create | §2.9 | open |
 | T9 | Dashboard — user-managed widgets (spent today, this month, category spending, add/scan purchase, info) | §3 | in progress — split into [T9.1 shell](../tickets/ticket-24-dashboard-shell.md), [T9.2 spending API](../tickets/ticket-25-dashboard-spending-api.md), [T9.3 data widgets](../tickets/ticket-26-dashboard-data-widgets.md), [T9.4 action widgets](../tickets/ticket-27-dashboard-action-widgets.md), [T9.5 info widget](../tickets/ticket-28-dashboard-info-widget.md) |
-| T10 | Analytics — period picker, overview charts, product stats, budget hints, PDF report, AI assistant semantics | §4 | open |
+| T10 | Analytics — period picker, overview charts, product stats, budget hints, PDF report, AI assistant semantics | §4 | partial — monthly overview (month picker, account card, drilldown category donut, top-5 stores/lists) done in [T10.1](../tickets/ticket-31-analytics-overview-api.md), [T10.2](../tickets/ticket-32-analytics-pie.md), [T10.3](../tickets/ticket-33-analytics-top-bars.md); product stats, budget hints, PDF report, AI assistant open |
 | T11 | Settings — currency, actual-price rule, dashboard toggle, LLM/AI profiles, CSV export, share identity, version/privacy | §6 | open |
 | T12 | Multi-user, sharing & ownership — user/group sharing, permissions, owner-only ops, group budget view | §1 | open |
 | T13 | Server sync API — real API/DAV endpoint replacing folder sync, conflict resolution, access control, product matching | §7 | open |

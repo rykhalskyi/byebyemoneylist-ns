@@ -72,3 +72,6 @@
 ## [2026-09-15] ticket | T29 scan receipt — Phase 4: shopping-list receipt viewer (view/delete), backend ReceiptImageController tests
 ## [2026-09-15] update | T29 scan receipt — gate Scan tab on an active LLM profile (disabled + hint, manual fallback)
 ## [2026-09-16] ticket | T30 — Merge duplicate products implemented (dialog, POST /api/products/merge, transactional service)
+## [2026-09-19] ticket | T10.1 Analytics overview API
+## [2026-09-19] ticket | T10.2 Analytics page and drilldown category donut
+## [2026-09-19] ticket | T10.3 Top 5 stores/lists bars

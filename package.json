@@ -23,8 +23,10 @@
     "@nextcloud/l10n": "^3.4.1",
     "@nextcloud/router": "^3.1.0",
     "@nextcloud/vue": "^9.11.0",
+    "echarts": "^6.1.0",
     "fuse.js": "^7.5.0",
-    "vue": "^3.5.42"
+    "vue": "^3.5.42",
+    "vue-echarts": "^8.3.0"
   },
   "devDependencies": {
     "@nextcloud/browserslist-config": "^3.1.2",

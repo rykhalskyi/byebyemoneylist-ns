@@ -194,6 +194,30 @@ export interface DashboardSpending {
 	byCategory: CategorySpending[]
 }
 
+export interface AnalyticsCategoryTotal {
+	categoryId: string | null
+	total: number
+}
+
+export interface AnalyticsStoreTotal {
+	storeId: string | null
+	total: number
+}
+
+export interface AnalyticsListTotal {
+	listId: string
+	name: string
+	total: number
+}
+
+export interface AnalyticsOverview {
+	totalSpent: number
+	totalIncome: number
+	byCategory: AnalyticsCategoryTotal[]
+	byStore: AnalyticsStoreTotal[]
+	byList: AnalyticsListTotal[]
+}
+
 export type LlmProvider = 'deepseek' | 'siliconflow' | 'gemini' | 'openai' | 'anthropic' | 'grok'
 
 export interface LlmProfile {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mdiCart, mdiChartPie, mdiCog, mdiPackageVariant, mdiViewDashboard } from '@mdi/js'
-import { computed, ref } from 'vue'
+import { computed, defineAsyncComponent, ref } from 'vue'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcContent from '@nextcloud/vue/components/NcContent'
 import Menu from './components/Menu.vue'
@@ -9,6 +9,8 @@ import Dashboard from './views/Dashboard.vue'
 import Settings from './views/Settings.vue'
 import ShoppingLists from './views/ShoppingLists.vue'
 import { t } from './utils/l10n.ts'
+
+const Analytics = defineAsyncComponent(() => import('./views/Analytics.vue'))
 
 const items = [
 	{ id: 'dashboard', label: t('Dashboard'), icon: mdiViewDashboard },
@@ -42,6 +44,7 @@ function openPurchase(mode: 'manual' | 'scan') {
 				v-else-if="currentView === 'lists'"
 				:purchaseMode="purchaseIntent"
 				@purchaseOpened="purchaseIntent = null" />
+			<Analytics v-else-if="currentView === 'analytics'" />
 			<Catalog v-else-if="currentView === 'catalog'" />
 			<Settings v-else-if="currentView === 'settings'" />
 			<h2 v-else>
