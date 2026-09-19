@@ -133,6 +133,6 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 <style>
 .bbml-product-action-delete .action-button,
 .bbml-product-action-delete .action-button * {
-	color: var(-color-warning));
+	color: var(--color-error-text, var(--color-error));
 }
 </style>
