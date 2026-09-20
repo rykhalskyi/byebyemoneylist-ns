@@ -8524,6 +8524,396 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/byebyemoneylist/api/llm-profiles/ensure-default": {
+            "post": {
+                "operationId": "llm_profile-ensure-default",
+                "summary": "Ensure the default SiliconFlow profile exists and is active",
+                "description": "Creates a SiliconFlow profile seeded from the SILICONFLOW_API_KEY in the git-ignored .env file when the current user has no LLM profiles yet.",
+                "tags": [
+                    "llm_profile"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default profile ensured",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "created",
+                                                                "profile"
+                                                            ],
+                                                            "properties": {
+                                                                "created": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "profile": {
+                                                                    "type": "object",
+                                                                    "nullable": true,
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "provider",
+                                                                        "apiKeyMasked",
+                                                                        "model",
+                                                                        "connectTimeoutSeconds",
+                                                                        "readTimeoutSeconds",
+                                                                        "maxTokens",
+                                                                        "isActive",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "provider": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "apiKeyMasked": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "model": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "connectTimeoutSeconds": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "readTimeoutSeconds": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "maxTokens": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "created",
+                                                                        "profile"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "created": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "profile": {
+                                                                            "type": "object",
+                                                                            "nullable": true,
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "provider",
+                                                                                "apiKeyMasked",
+                                                                                "model",
+                                                                                "connectTimeoutSeconds",
+                                                                                "readTimeoutSeconds",
+                                                                                "maxTokens",
+                                                                                "isActive",
+                                                                                "createdAt",
+                                                                                "updatedAt"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "provider": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "apiKeyMasked": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "model": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "connectTimeoutSeconds": {
+                                                                                    "type": "integer",
+                                                                                    "format": "int64"
+                                                                                },
+                                                                                "readTimeoutSeconds": {
+                                                                                    "type": "integer",
+                                                                                    "format": "int64"
+                                                                                },
+                                                                                "maxTokens": {
+                                                                                    "type": "integer",
+                                                                                    "format": "int64"
+                                                                                },
+                                                                                "isActive": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "createdAt": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "updatedAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create default profile",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "created",
+                                                                "profile"
+                                                            ],
+                                                            "properties": {
+                                                                "created": {
+                                                                    "type": "boolean"
+                                                                },
+                                                                "profile": {
+                                                                    "type": "object",
+                                                                    "nullable": true,
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "provider",
+                                                                        "apiKeyMasked",
+                                                                        "model",
+                                                                        "connectTimeoutSeconds",
+                                                                        "readTimeoutSeconds",
+                                                                        "maxTokens",
+                                                                        "isActive",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "provider": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "apiKeyMasked": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "model": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "connectTimeoutSeconds": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "readTimeoutSeconds": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "maxTokens": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/byebyemoneylist/api/llm-profiles/{id}": {
             "put": {
                 "operationId": "llm_profile-update",

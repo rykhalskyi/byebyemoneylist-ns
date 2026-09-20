@@ -9,6 +9,7 @@ use DateTimeInterface;
 use OCA\ByeByeMoneyList\AppInfo\Application;
 use OCA\ByeByeMoneyList\Db\LlmProfileMapper;
 use OCA\ByeByeMoneyList\Entity\LlmProfileEntity;
+use OCA\ByeByeMoneyList\Service\DefaultLlmProfileService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -28,6 +29,7 @@ class LlmProfileController extends OCSController {
 	private ICrypto $crypto;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
+	private DefaultLlmProfileService $defaultLlmProfileService;
 
 	public function __construct(
 		IRequest $request,
@@ -35,12 +37,14 @@ class LlmProfileController extends OCSController {
 		ICrypto $crypto,
 		IUserSession $userSession,
 		LoggerInterface $logger,
+		DefaultLlmProfileService $defaultLlmProfileService,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 		$this->mapper = $mapper;
 		$this->crypto = $crypto;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
+		$this->defaultLlmProfileService = $defaultLlmProfileService;
 	}
 
 	/**
@@ -68,6 +72,41 @@ class LlmProfileController extends OCSController {
 		));
 
 		return new DataResponse(['profiles' => $serialized], Http::STATUS_OK);
+	}
+
+	/**
+	 * Ensure the default SiliconFlow profile exists and is active
+	 *
+	 * Creates a SiliconFlow profile seeded from the SILICONFLOW_API_KEY in the
+	 * git-ignored .env file when the current user has no LLM profiles yet.
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_INTERNAL_SERVER_ERROR, array{created: bool, profile: array{id: string, name: string, provider: string, apiKeyMasked: string, model: ?string, connectTimeoutSeconds: int, readTimeoutSeconds: int, maxTokens: int, isActive: bool, createdAt: string, updatedAt: ?string}|null}|array{message: string}, array{}>
+	 *
+	 * 200: Default profile ensured
+	 * 401: Current user is not logged in
+	 * 500: Failed to create default profile
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/llm-profiles/ensure-default')]
+	public function ensureDefault(): DataResponse {
+		$userId = $this->userSession->getUser()?->getUID();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$created = $this->defaultLlmProfileService->ensureForUser($userId);
+		} catch (\Exception $e) {
+			$this->logger->error('Failed to ensure default LLM profile', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to create default profile'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse([
+			'created' => $created !== null,
+			'profile' => $created !== null ? $this->serializeProfile($created) : null,
+		], Http::STATUS_OK);
 	}
 
 	/**
