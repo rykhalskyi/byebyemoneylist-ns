@@ -3,6 +3,7 @@ import type { Category } from '../types.ts'
 import { ref } from 'vue'
 import { buildDefaultCategoryPayload } from '../constants/defaultCategories.ts'
 import { createCategoriesBatch, fetchCategories } from '../services/listsApi.ts'
+import { ensureDefaultLlmProfile } from '../services/llmApi.ts'
 import { t } from '../utils/l10n.ts'
 
 export function useCategoryInitialization() {
@@ -28,7 +29,13 @@ export function useCategoryInitialization() {
 				return existing
 			}
 
-			return await createCategoriesBatch(buildDefaultCategoryPayload(), true)
+			const created = await createCategoriesBatch(buildDefaultCategoryPayload(), true)
+			try {
+				await ensureDefaultLlmProfile()
+			} catch {
+				// Best-effort: default categories were created successfully.
+			}
+			return created
 		} catch {
 			error.value = t('Failed to create the category. Please try again.')
 			return null

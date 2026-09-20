@@ -3,10 +3,15 @@ import type { Category } from '../../../src/types.ts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useCategoryInitialization } from '../../../src/composables/useCategoryInitialization.ts'
 import * as api from '../../../src/services/listsApi.ts'
+import * as llmApi from '../../../src/services/llmApi.ts'
 
 vi.mock('../../../src/services/listsApi.ts', () => ({
 	fetchCategories: vi.fn(),
 	createCategoriesBatch: vi.fn(),
+}))
+
+vi.mock('../../../src/services/llmApi.ts', () => ({
+	ensureDefaultLlmProfile: vi.fn(),
 }))
 
 function category(overrides: Partial<Category> = {}): Category {
@@ -42,6 +47,7 @@ describe('useCategoryInitialization', () => {
 	it('creates the confirmed default set for an empty account', async () => {
 		vi.mocked(api.fetchCategories).mockResolvedValue([])
 		vi.mocked(api.createCategoriesBatch).mockResolvedValue([category()])
+		vi.mocked(llmApi.ensureDefaultLlmProfile).mockResolvedValue(null)
 
 		const { initialize, busy, error } = useCategoryInitialization()
 		const result = await initialize()
@@ -51,10 +57,24 @@ describe('useCategoryInitialization', () => {
 		expect(error.value).toBeNull()
 		expect(api.createCategoriesBatch).toHaveBeenCalledTimes(1)
 		expect(api.createCategoriesBatch).toHaveBeenCalledWith(expect.any(Array), true)
+		expect(llmApi.ensureDefaultLlmProfile).toHaveBeenCalledTimes(1)
 
 		const [payload] = vi.mocked(api.createCategoriesBatch).mock.calls[0]
 		expect(payload).toHaveLength(33)
 		expect(payload.every((item) => item.status === 'confirmed')).toBe(true)
+	})
+
+	it('still succeeds when ensuring the default LLM profile fails', async () => {
+		vi.mocked(api.fetchCategories).mockResolvedValue([])
+		vi.mocked(api.createCategoriesBatch).mockResolvedValue([category()])
+		vi.mocked(llmApi.ensureDefaultLlmProfile).mockRejectedValue(new Error('boom'))
+
+		const { initialize, error } = useCategoryInitialization()
+		const result = await initialize()
+
+		expect(result).toHaveLength(1)
+		expect(error.value).toBeNull()
+		expect(llmApi.ensureDefaultLlmProfile).toHaveBeenCalledTimes(1)
 	})
 
 	it('re-checks before creating and skips when categories appeared', async () => {
@@ -64,6 +84,7 @@ describe('useCategoryInitialization', () => {
 
 		expect(result).toHaveLength(1)
 		expect(api.createCategoriesBatch).not.toHaveBeenCalled()
+		expect(llmApi.ensureDefaultLlmProfile).not.toHaveBeenCalled()
 	})
 
 	it('surfaces an error and reports failure when creation fails', async () => {

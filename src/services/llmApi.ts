@@ -37,3 +37,8 @@ export async function deleteLlmProfile(id: string): Promise<void> {
 export async function activateLlmProfile(id: string, active = true): Promise<void> {
 	await axios.post(generateOcsUrl(`/apps/byebyemoneylist/api/llm-profiles/${id}/activate`), { active })
 }
+
+export async function ensureDefaultLlmProfile(): Promise<LlmProfile | null> {
+	const { data } = await axios.post<OcsData<{ created: boolean, profile: LlmProfile | null }>>(generateOcsUrl('/apps/byebyemoneylist/api/llm-profiles/ensure-default'))
+	return data.ocs.data.profile
+}
