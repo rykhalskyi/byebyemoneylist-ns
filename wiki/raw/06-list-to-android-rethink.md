@@ -24,4 +24,12 @@ In this case, there must be some family groups i can share my lists to.
 
 *How this family group feature should be designed? by addin emails or usernames?*
 
+### How to share lists between users in nextcloud?
 
+I want to have "Share with" dialog for lists.
+List sharing leads to sync users products.
+Must all users have own set of products or procuct can be shared? Maybe both optons are possible. 
+Or products/categories/stores are shared within a group?
+Different sharing options? User can Allow others to use his/her own catalog?
+
+Looks like separate big epic with sharing. I need best practices and brainstorm

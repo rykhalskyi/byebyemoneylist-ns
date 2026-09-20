@@ -7,7 +7,9 @@ namespace Controller;
 use OCA\ByeByeMoneyList\Controller\CategoryController;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Entity\CategoryEntity;
+use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
+use OCP\DB\Exception as DbException;
 use OCP\DB\QueryBuilder\IExpressionBuilder;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
@@ -480,6 +482,94 @@ final class CategoryControllerTest extends TestCase {
 		$response = $this->controller->batchCreate([]);
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testBatchCreateOnlyIfEmptyReturnsExistingWithoutCreating(): void {
+		$this->mockUser('alice');
+
+		$existing = new CategoryEntity();
+		$existing->setId('11111111-2222-4333-8444-555555555555');
+		$existing->setOwner('alice');
+		$existing->setName('Food');
+
+		$this->mapper->expects($this->once())
+			->method('findAllByOwner')
+			->with('alice')
+			->willReturn([$existing]);
+		$this->db->expects($this->never())->method('beginTransaction');
+		$this->mapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->batchCreate([
+			['name' => 'Food', 'tempId' => 'supermarket']
+		], true);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertCount(1, $response->getData()['categories']);
+		$this->assertSame('Food', $response->getData()['categories'][0]['name']);
+	}
+
+	public function testBatchCreateOnlyIfEmptyCreatesDeterministicSetWhenEmpty(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findAllByOwner')
+			->with('alice')
+			->willReturn([]);
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$inserted = [];
+		$this->mapper->expects($this->exactly(2))
+			->method('insert')
+			->willReturnCallback(function (CategoryEntity $category) use (&$inserted): CategoryEntity {
+				$inserted[] = $category;
+				return $category;
+			});
+
+		$response = $this->controller->batchCreate([
+			['name' => 'Food', 'tempId' => 'supermarket'],
+			['name' => 'Bakery', 'parentId' => 'supermarket', 'tempId' => 'supermarket-bakery'],
+		], true);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertCount(2, $inserted);
+		$this->assertSame(Uuid::v5('alice:supermarket'), $inserted[0]->getId());
+		$this->assertSame(Uuid::v5('alice:supermarket-bakery'), $inserted[1]->getId());
+		$this->assertSame($inserted[0]->getId(), $inserted[1]->getParentId());
+	}
+
+	public function testBatchCreateOnlyIfEmptyRecoversWhenConcurrentInsertWins(): void {
+		$this->mockUser('alice');
+
+		$existing = new CategoryEntity();
+		$existing->setId(Uuid::v5('alice:supermarket'));
+		$existing->setOwner('alice');
+		$existing->setName('Food');
+
+		// The pre-check sees an empty account, the recovery read returns the winner's rows.
+		$this->mapper->expects($this->exactly(2))
+			->method('findAllByOwner')
+			->with('alice')
+			->willReturnOnConsecutiveCalls([], [$existing]);
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->never())->method('commit');
+		$this->db->expects($this->once())->method('rollBack');
+
+		$exception = $this->createMock(DbException::class);
+		$exception->method('getReason')->willReturn(DbException::REASON_UNIQUE_CONSTRAINT_VIOLATION);
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willThrowException($exception);
+
+		$response = $this->controller->batchCreate([
+			['name' => 'Food', 'tempId' => 'supermarket']
+		], true);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('Food', $response->getData()['categories'][0]['name']);
 	}
 
 	public function testConfirmUpdatesCategoryStatusToConfirmed(): void {

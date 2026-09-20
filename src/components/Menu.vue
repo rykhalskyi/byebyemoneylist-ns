@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
 import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -10,14 +9,11 @@ export interface MenuItem {
 	icon: string
 }
 
-const props = defineProps<{ items: MenuItem[] }>()
+const props = defineProps<{ items: MenuItem[], active: string }>()
 
 const emit = defineEmits<{ select: [id: string] }>()
 
-const activeId = ref(props.items[0]?.id ?? '')
-
 function onSelect(id: string) {
-	activeId.value = id
 	emit('select', id)
 }
 </script>
@@ -28,7 +24,7 @@ function onSelect(id: string) {
 			<NcAppNavigationItem
 				:name="item.label"
 				:title="item.label"
-				:active="activeId === item.id"
+				:active="props.active === item.id"
 				@click="onSelect(item.id)">
 				<template #icon>
 					<NcIconSvgWrapper :path="item.icon" :size="20" />

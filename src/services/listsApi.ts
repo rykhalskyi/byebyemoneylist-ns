@@ -1,4 +1,4 @@
-import type { Category, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductMergePayload, ProductPayload, ProductPicture, ProductPrice, ReceiptPicture, ShoppingList, Store, StorePayload } from '../types.ts'
+import type { Category, CategoryBatchItem, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductMergePayload, ProductPayload, ProductPicture, ProductPrice, ReceiptPicture, ShoppingList, Store, StorePayload } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateOcsUrl } from '@nextcloud/router'
@@ -69,6 +69,14 @@ export async function createCategory(payload: CategoryPayload): Promise<Category
 		payload,
 	)
 	return data.ocs.data.category
+}
+
+export async function createCategoriesBatch(categories: CategoryBatchItem[], onlyIfEmpty = false): Promise<Category[]> {
+	const { data } = await axios.post<OcsData<{ categories: Category[] }>>(
+		generateOcsUrl('/apps/byebyemoneylist/api/categories/batch'),
+		{ categories, onlyIfEmpty },
+	)
+	return data.ocs.data.categories
 }
 
 export async function updateCategory(id: string, payload: CategoryPayload): Promise<Category> {

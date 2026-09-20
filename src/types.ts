@@ -104,6 +104,11 @@ export interface CategoryPayload {
 	income?: boolean
 }
 
+export interface CategoryBatchItem extends CategoryPayload {
+	tempId?: string
+	status?: string
+}
+
 export interface StorePayload {
 	name: string
 	address?: string | null
