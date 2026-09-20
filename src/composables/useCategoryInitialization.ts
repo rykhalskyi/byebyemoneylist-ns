@@ -28,7 +28,7 @@ export function useCategoryInitialization() {
 				return existing
 			}
 
-			return await createCategoriesBatch(buildDefaultCategoryPayload())
+			return await createCategoriesBatch(buildDefaultCategoryPayload(), true)
 		} catch {
 			error.value = t('Failed to create the category. Please try again.')
 			return null

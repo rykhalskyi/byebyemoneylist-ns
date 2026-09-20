@@ -50,6 +50,7 @@ describe('useCategoryInitialization', () => {
 		expect(busy.value).toBe(false)
 		expect(error.value).toBeNull()
 		expect(api.createCategoriesBatch).toHaveBeenCalledTimes(1)
+		expect(api.createCategoriesBatch).toHaveBeenCalledWith(expect.any(Array), true)
 
 		const [payload] = vi.mocked(api.createCategoriesBatch).mock.calls[0]
 		expect(payload).toHaveLength(33)

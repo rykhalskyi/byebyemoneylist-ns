@@ -76,3 +76,4 @@
 ## [2026-09-19] ticket | T10.2 Analytics page and drilldown category donut
 ## [2026-09-19] ticket | T10.3 Top 5 stores/lists bars
 ## [2026-09-20] ticket | T34 — Initialize default categories (first-open dialog, localized, backend batch) implemented
+## [2026-09-20] ticket | T34 hardened: onlyIfEmpty + deterministic UUIDv5 ids prevent duplicate default sets from concurrent initialization

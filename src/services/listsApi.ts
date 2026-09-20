@@ -71,10 +71,10 @@ export async function createCategory(payload: CategoryPayload): Promise<Category
 	return data.ocs.data.category
 }
 
-export async function createCategoriesBatch(categories: CategoryBatchItem[]): Promise<Category[]> {
+export async function createCategoriesBatch(categories: CategoryBatchItem[], onlyIfEmpty = false): Promise<Category[]> {
 	const { data } = await axios.post<OcsData<{ categories: Category[] }>>(
 		generateOcsUrl('/apps/byebyemoneylist/api/categories/batch'),
-		{ categories },
+		{ categories, onlyIfEmpty },
 	)
 	return data.ocs.data.categories
 }

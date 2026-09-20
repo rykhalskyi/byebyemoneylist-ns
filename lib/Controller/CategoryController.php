@@ -138,10 +138,19 @@ class CategoryController extends OCSController {
 	 *
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement, DocblockTypeContradiction, RedundantConditionGivenDocblockType, RedundantCastGivenDocblockType, InvalidArrayOffset
 	 *
+	 * When $onlyIfEmpty is true the batch is only applied if the current user
+	 * has no categories yet, and each item's server id is derived deterministically
+	 * from its tempId. This makes the endpoint safe to call concurrently (e.g. two
+	 * browser tabs initializing the default set): the second request either sees the
+	 * categories created by the first or loses the unique-constraint race and returns
+	 * them, so no duplicate set is ever created.
+	 *
 	 * @param list<array{name: string, color?: ?string, emoji?: ?string, parentId?: ?string, income?: bool, tempId?: ?string}> $categories Categories list to create (required)
+	 * @param bool $onlyIfEmpty Only create the batch when the user has no categories yet (idempotent initialization)
 	 *
-	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{categories: list<array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool, tempId?: ?string}>}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{categories: list<array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool, tempId?: ?string}>}|array{message: string}, array{}>
 	 *
+	 * 200: Existing categories returned because the account was not empty
 	 * 201: Categories created
 	 * 401: Current user is not logged in
 	 * 422: Categories array is empty or contains invalid items
@@ -149,7 +158,7 @@ class CategoryController extends OCSController {
 	 */
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'POST', url: '/api/categories/batch')]
-	public function batchCreate(array $categories = []): DataResponse {
+	public function batchCreate(array $categories = [], bool $onlyIfEmpty = false): DataResponse {
 		$userId = $this->userSession->getUser()?->getUID();
 		if ($userId === null) {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
@@ -157,6 +166,13 @@ class CategoryController extends OCSController {
 
 		if (count($categories) === 0) {
 			return new DataResponse(['message' => 'Categories array is required and must not be empty'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		if ($onlyIfEmpty) {
+			$existing = $this->mapper->findAllByOwner($userId);
+			if (count($existing) > 0) {
+				return new DataResponse(['categories' => $this->serializeCategories($existing)], Http::STATUS_OK);
+			}
 		}
 
 		$transactionStarted = false;
@@ -192,7 +208,11 @@ class CategoryController extends OCSController {
 				$parentId = isset($catData['parentId']) && is_string($catData['parentId']) && $catData['parentId'] !== '' ? $catData['parentId'] : null;
 				$status = isset($catData['status']) && is_string($catData['status']) ? $catData['status'] : 'pending_review';
 
-				$newId = Uuid::v4();
+				if ($onlyIfEmpty && $tempId !== null && $tempId !== '') {
+					$newId = Uuid::v5($userId . ':' . $tempId);
+				} else {
+					$newId = Uuid::v4();
+				}
 				if ($tempId !== null && $tempId !== '') {
 					$tempIdToRealIdMap[$tempId] = $newId;
 				}
@@ -298,6 +318,16 @@ class CategoryController extends OCSController {
 		} catch (\Exception $e) {
 			if ($transactionStarted) {
 				$this->db->rollBack();
+			}
+			$reason = $e instanceof \OCP\DB\Exception ? $e->getReason() : null;
+			if ($onlyIfEmpty && in_array($reason, [
+				\OCP\DB\Exception::REASON_UNIQUE_CONSTRAINT_VIOLATION,
+				\OCP\DB\Exception::REASON_CONSTRAINT_VIOLATION,
+			], true)) {
+				// A concurrent request created the same deterministic set first.
+				$existing = $this->mapper->findAllByOwner($userId);
+
+				return new DataResponse(['categories' => $this->serializeCategories($existing)], Http::STATUS_OK);
 			}
 			$this->logger->error('Failed to batch create categories', ['exception' => $e]);
 			return new DataResponse(['message' => 'Failed to batch create categories'], Http::STATUS_INTERNAL_SERVER_ERROR);
@@ -535,6 +565,17 @@ class CategoryController extends OCSController {
 			'income' => $category->getIncome() ?? false,
 			'status' => $category->getStatus() ?? 'confirmed',
 		];
+	}
+
+	/**
+	 * @param CategoryEntity[] $categories
+	 * @return list<array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool, status: string}>
+	 */
+	private function serializeCategories(array $categories): array {
+		return array_values(array_map(
+			fn (CategoryEntity $category): array => $this->serializeCategory($category),
+			$categories,
+		));
 	}
 
 	/**

@@ -39,9 +39,14 @@ Android reference `CategoryRepository.createDefaultCategories()` in the Android 
 
 Implemented (2026-09-20).
 
-- No backend change: the existing transactional batch endpoint stores the rows with
-  fresh random UUIDv4 ids scoped to the user. Ids are intentionally **not** shared
+- No backend change was needed for the happy path: the existing transactional batch
+  endpoint stores the rows scoped to the user. Ids are intentionally **not** shared
   across users ([D-17](../../decisions.md)); cross-user correlation is future link/mapping work.
+- Hardened against concurrent initialization (two tabs): `POST /api/categories/batch`
+  gained an `onlyIfEmpty` flag. When set, the server skips the batch if the account is
+  already non-empty and derives each id deterministically (UUIDv5 of `owner:tempId`), so a
+  racing request loses the primary-key race and returns the winner's rows instead of
+  creating a duplicate set ([D-18](../../decisions.md)).
 - Tree ported exactly from Android (`CategoryRepository.kt`): 7 roots / 26 children
   (**33** nodes — the ticket summary's “27 children” was an overcount). Colors reuse
   `src/constants/categoryColors.ts`; emojis carry the Android variation selectors.
@@ -49,5 +54,8 @@ Implemented (2026-09-20).
   strings authored.
 - Tests: `tests/js/constants/defaultCategories.spec.ts`,
   `tests/js/composables/useCategoryInitialization.spec.ts`,
-  `tests/js/components/InitializeCategoriesDialog.spec.ts`.
-- Verified: `npm run l10n`, `npm run lint`, `npm run test` (188 tests), `npm run build`.
+  `tests/js/components/InitializeCategoriesDialog.spec.ts`,
+  `tests/unit/Controller/CategoryControllerTest.php` (onlyIfEmpty paths),
+  `tests/unit/Util/UuidTest.php`.
+- Verified: `npm run l10n`, `npm run lint`, `npm run test` (188 tests), `npm run build`,
+  `composer run test:unit` (185 tests), `composer run psalm`, `composer run openapi`.
