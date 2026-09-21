@@ -241,7 +241,7 @@ async function scanReceiptImage() {
 onBeforeUnmount(clearReceiptPreview)
 
 async function onSubmit() {
-	if (submitting.value) {
+	if (submitting.value || scanning.value) {
 		return
 	}
 	if (mode.value === 'scan') {
@@ -455,6 +455,7 @@ async function submitScan() {
 						v-else
 						type="button"
 						variant="secondary"
+						:class="$style['scan-button']"
 						:disabled="submitting || scanning"
 						@click="chooseReceipt">
 						<template #icon>
@@ -474,6 +475,7 @@ async function submitScan() {
 					v-if="receiptFile !== null && scanResult === null"
 					type="button"
 					variant="primary"
+					:class="$style['scan-button']"
 					:disabled="submitting || scanning"
 					@click="scanReceiptImage">
 					<template #icon>
@@ -551,7 +553,7 @@ async function submitScan() {
 				@click="onCancel">
 				{{ t('Cancel') }}
 			</NcButton>
-			<NcButton type="submit" variant="primary" :disabled="submitting">
+			<NcButton type="submit" variant="primary" :disabled="submitting || scanning">
 				<template #icon>
 					<NcLoadingIcon v-if="submitting" />
 				</template>
@@ -590,6 +592,7 @@ async function submitScan() {
 .receipt-preview {
 	display: flex;
 	flex-direction: column;
+	align-items: center;
 	gap: 8px;
 }
 
@@ -598,12 +601,17 @@ async function submitScan() {
 	max-height: 240px;
 	border-radius: var(--border-radius);
 	object-fit: contain;
-	align-self: flex-start;
+	align-self: center;
 }
 
 .receipt-actions {
 	display: flex;
+	justify-content: center;
 	gap: 8px;
+}
+
+.scan-button {
+	align-self: center;
 }
 
 .hint {
