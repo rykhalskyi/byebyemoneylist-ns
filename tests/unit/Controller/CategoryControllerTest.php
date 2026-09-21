@@ -53,6 +53,7 @@ final class CategoryControllerTest extends TestCase {
 		$qb->method('executeStatement')->willReturn(1);
 		$expr = $this->createMock(IExpressionBuilder::class);
 		$expr->method('eq')->willReturn('1=1');
+		$expr->method('in')->willReturn('1=1');
 		$qb->method('expr')->willReturn($expr);
 		$this->db->method('getQueryBuilder')->willReturn($qb);
 	}
@@ -268,17 +269,82 @@ final class CategoryControllerTest extends TestCase {
 			->with('11111111-2222-4333-8444-555555555555', 'alice')
 			->willReturn($category);
 
+		$this->mapper->expects($this->once())
+			->method('findAllByOwner')
+			->with('alice')
+			->willReturn([$category]);
+
 		$this->db->expects($this->once())->method('beginTransaction');
 		$this->db->expects($this->once())->method('commit');
 		$this->db->expects($this->never())->method('rollBack');
 
 		$this->mockQueryBuilder();
 
-		$this->mapper->expects($this->once())->method('delete')->with($category);
-
 		$response = $this->controller->destroy('11111111-2222-4333-8444-555555555555');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}
+
+	public function testDestroyDeletesCategoryWithDescendants(): void {
+		$this->mockUser('alice');
+
+		$root = new CategoryEntity();
+		$root->setId('11111111-1111-4111-8111-111111111111');
+		$root->setOwner('alice');
+
+		$child = new CategoryEntity();
+		$child->setId('22222222-2222-4222-8222-222222222222');
+		$child->setOwner('alice');
+		$child->setParentId($root->getId());
+
+		$grandchild = new CategoryEntity();
+		$grandchild->setId('33333333-3333-4333-8333-333333333333');
+		$grandchild->setOwner('alice');
+		$grandchild->setParentId($child->getId());
+
+		$unrelated = new CategoryEntity();
+		$unrelated->setId('44444444-4444-4444-8444-444444444444');
+		$unrelated->setOwner('alice');
+
+		$this->mapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->willReturn($root);
+		$this->mapper->expects($this->once())
+			->method('findAllByOwner')
+			->with('alice')
+			->willReturn([$root, $child, $grandchild, $unrelated]);
+
+		$this->db->expects($this->once())->method('beginTransaction');
+		$this->db->expects($this->once())->method('commit');
+		$this->db->expects($this->never())->method('rollBack');
+
+		$deletedIds = [];
+		$qb = $this->createMock(IQueryBuilder::class);
+		$qb->method('update')->willReturnSelf();
+		$qb->method('delete')->willReturnSelf();
+		$qb->method('set')->willReturnSelf();
+		$qb->method('where')->willReturnSelf();
+		$qb->method('andWhere')->willReturnSelf();
+		$qb->method('executeStatement')->willReturn(1);
+		$qb->method('createNamedParameter')->willReturnCallback(function (mixed $value) use (&$deletedIds): string {
+			if (is_array($value)) {
+				$deletedIds = $value;
+			}
+			return 'param';
+		});
+		$expr = $this->createMock(IExpressionBuilder::class);
+		$expr->method('eq')->willReturn('1=1');
+		$expr->method('in')->willReturn('1=1');
+		$qb->method('expr')->willReturn($expr);
+		$this->db->method('getQueryBuilder')->willReturn($qb);
+
+		$response = $this->controller->destroy($root->getId());
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			[$root->getId(), $child->getId(), $grandchild->getId()],
+			$deletedIds,
+		);
 	}
 
 	public function testDestroyReturnsNotFoundWhenNotOwned(): void {

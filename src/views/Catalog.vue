@@ -413,8 +413,25 @@ async function onConfirmAll() {
 	}
 }
 
+function descendantCategoryIds(rootId: string): Set<string> {
+	const ids = new Set<string>()
+	const stack = [rootId]
+	while (stack.length > 0) {
+		const current = stack.pop() as string
+		for (const category of categories.value) {
+			if (category.parentId === current && !ids.has(category.id)) {
+				ids.add(category.id)
+				stack.push(category.id)
+			}
+		}
+	}
+	return ids
+}
+
 async function onDeleteCategory(category: Category) {
-	categories.value = categories.value.filter((candidate) => candidate.id !== category.id)
+	const removedIds = descendantCategoryIds(category.id)
+	removedIds.add(category.id)
+	categories.value = categories.value.filter((candidate) => !removedIds.has(candidate.id))
 	try {
 		await deleteCategory(category.id)
 	} catch {

@@ -2838,8 +2838,8 @@
             },
             "delete": {
                 "operationId": "category-destroy",
-                "summary": "Delete a category for the current user",
-                "description": "References are nulled out: products.category_id, lists.category_id and child categories' parent_id.",
+                "summary": "Delete a category and all of its descendants for the current user",
+                "description": "References to every deleted category are nulled out: products.category_id and lists.category_id. Rows in bbml_list_categories are removed as well.",
                 "tags": [
                     "category"
                 ],
