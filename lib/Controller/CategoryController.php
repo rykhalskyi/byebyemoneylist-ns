@@ -477,10 +477,11 @@ class CategoryController extends OCSController {
 	}
 
 	/**
-	 * Delete a category for the current user
+	 * Delete a category and all of its descendants for the current user
 	 *
-	 * References are nulled out: products.category_id, lists.category_id and
-	 * child categories' parent_id.
+	 * References to every deleted category are nulled out:
+	 * products.category_id and lists.category_id. Rows in bbml_list_categories
+	 * are removed as well.
 	 *
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
@@ -506,21 +507,20 @@ class CategoryController extends OCSController {
 			return new DataResponse(['message' => 'Category not found'], Http::STATUS_NOT_FOUND);
 		}
 
+		$categoryIds = array_merge([$id], $this->collectDescendantIds($id, $userId));
+
 		$transactionStarted = false;
 		try {
 			$this->db->beginTransaction();
 			$transactionStarted = true;
 
-			$this->nullReference('bbml_products', 'category_id', $id, $userId);
-			$this->nullReference('bbml_lists', 'category_id', $id, $userId);
-			$this->reparentChildren('bbml_categories', $id, $userId);
+			foreach ($categoryIds as $categoryId) {
+				$this->nullReference('bbml_products', 'category_id', $categoryId, $userId);
+				$this->nullReference('bbml_lists', 'category_id', $categoryId, $userId);
+				$this->deleteListCategoryReferences($categoryId);
+			}
 
-			$qb = $this->db->getQueryBuilder();
-			$qb->delete('bbml_list_categories')
-				->where($qb->expr()->eq('category_id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_STR)));
-			$qb->executeStatement();
-
-			$this->mapper->delete($category);
+			$this->deleteCategoriesByIds($categoryIds, $userId);
 
 			$this->db->commit();
 		} catch (\Exception $e) {
@@ -534,21 +534,67 @@ class CategoryController extends OCSController {
 		return new DataResponse([], Http::STATUS_OK);
 	}
 
+	/**
+	 * Collect the ids of every transitive child of the given category.
+	 *
+	 * @return list<string>
+	 */
+	private function collectDescendantIds(string $categoryId, string $userId): array {
+		$childrenByParent = [];
+		foreach ($this->mapper->findAllByOwner($userId) as $category) {
+			$parentId = $category->getParentId();
+			if ($parentId === null || $parentId === '') {
+				continue;
+			}
+			$childrenByParent[$parentId][] = $category->getId();
+		}
+
+		$descendants = [];
+		$visited = [$categoryId => true];
+		$stack = [$categoryId];
+		while ($stack !== []) {
+			$current = array_pop($stack);
+			foreach ($childrenByParent[$current] ?? [] as $childId) {
+				if (isset($visited[$childId])) {
+					continue;
+				}
+				$visited[$childId] = true;
+				$descendants[] = $childId;
+				$stack[] = $childId;
+			}
+		}
+
+		return $descendants;
+	}
+
+	/**
+	 * @param list<string> $categoryIds
+	 */
+	private function deleteCategoriesByIds(array $categoryIds, string $userId): void {
+		if ($categoryIds === []) {
+			return;
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete('bbml_categories')
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->in('id', $qb->createNamedParameter($categoryIds, IQueryBuilder::PARAM_STR_ARRAY)));
+		$qb->executeStatement();
+	}
+
+	private function deleteListCategoryReferences(string $categoryId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete('bbml_list_categories')
+			->where($qb->expr()->eq('category_id', $qb->createNamedParameter($categoryId, IQueryBuilder::PARAM_STR)));
+		$qb->executeStatement();
+	}
+
 	private function nullReference(string $table, string $column, string $categoryId, string $userId): void {
 		$qb = $this->db->getQueryBuilder();
 		$qb->update($table)
 			->set($column, $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
 			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
 			->andWhere($qb->expr()->eq($column, $qb->createNamedParameter($categoryId, IQueryBuilder::PARAM_STR)));
-		$qb->executeStatement();
-	}
-
-	private function reparentChildren(string $table, string $categoryId, string $userId): void {
-		$qb = $this->db->getQueryBuilder();
-		$qb->update($table)
-			->set('parent_id', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
-			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
-			->andWhere($qb->expr()->eq('parent_id', $qb->createNamedParameter($categoryId, IQueryBuilder::PARAM_STR)));
 		$qb->executeStatement();
 	}
 

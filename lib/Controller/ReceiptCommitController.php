@@ -197,11 +197,18 @@ class ReceiptCommitController extends OCSController {
 		$createdAt = $list->getCreatedAt();
 		$updatedAt = $list->getUpdatedAt();
 		$purchaseDate = $list->getPurchaseDate();
+		$primaryId = $list->getCategoryId();
+		if ($primaryId !== null && $primaryId !== '' && in_array($primaryId, $categoryIds, true)) {
+			$categoryIds = array_merge(
+				[$primaryId],
+				array_filter($categoryIds, static fn (string $id): bool => $id !== $primaryId),
+			);
+		}
 		return [
 			'id' => $list->getId(),
 			'name' => $list->getName() ?? '',
 			'storeId' => $list->getStoreId(),
-			'categoryId' => $categoryIds[0] ?? $list->getCategoryId(),
+			'categoryId' => $primaryId ?? ($categoryIds[0] ?? null),
 			'categoryIds' => $categoryIds,
 			'status' => $list->getStatus() ?? 'new',
 			'finalTotal' => $list->getFinalTotal(),
