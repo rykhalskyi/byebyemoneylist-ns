@@ -6,6 +6,7 @@ namespace OCA\ByeByeMoneyList\Db;
 
 use DateTimeInterface;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
+use OCA\ByeByeMoneyList\Util\CategorySpendingSplitter;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
@@ -17,9 +18,10 @@ use OCP\IDBConnection;
  * must be finished and non-subscription, and are placed in the month by
  * `created_at`. Income and expense lists are reported separately.
  *
- * Each list belongs to at most one analytics category: the first
- * `bbml_list_categories` row ordered by junction id (the app's de-facto primary
- * category), so the pie segments sum to the month total instead of
+ * Each expense list total is split across the product categories of its items so
+ * drilling into a parent category reveals the purchased subcategories. A list
+ * with no priced items falls back to its stored `bbml_lists.category_id` (the
+ * user-selected category). Segments still sum to the month total instead of
  * double-counting multi-category lists.
  *
  * @extends QBMapper<ListEntity>
@@ -41,7 +43,7 @@ class AnalyticsMapper extends QBMapper {
 	 */
 	public function overview(string $owner, DateTimeInterface $from, DateTimeInterface $to): array {
 		$qb = $this->db->getQueryBuilder();
-		$qb->select('id', 'name', 'store_id', 'final_total', 'is_income')
+		$qb->select('id', 'name', 'store_id', 'category_id', 'final_total', 'is_income')
 			->from($this->tableName, 'l')
 			->where($qb->expr()->eq('l.owner', $qb->createNamedParameter($owner, IQueryBuilder::PARAM_STR)))
 			->andWhere($qb->expr()->eq('l.is_finished', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
@@ -50,7 +52,7 @@ class AnalyticsMapper extends QBMapper {
 			->andWhere($qb->expr()->lt('l.created_at', $qb->createNamedParameter($to, IQueryBuilder::PARAM_DATETIME_MUTABLE)));
 
 		$result = $qb->executeQuery();
-		/** @var list<array{id: string, name: string, store_id: ?string, final_total: float|int|string|null, is_income: bool|int|string}> $rows */
+		/** @var list<array{id: string, name: string, store_id: ?string, category_id: ?string, final_total: float|int|string|null, is_income: bool|int|string}> $rows */
 		$rows = $result->fetchAll();
 		$result->closeCursor();
 
@@ -64,14 +66,12 @@ class AnalyticsMapper extends QBMapper {
 			];
 		}
 
-		$listIds = array_map(static fn (array $row): string => $row['id'], $rows);
-		$primaryCategories = $this->findPrimaryCategoryByListIds($listIds);
-
 		$totalSpent = 0.0;
 		$totalIncome = 0.0;
-		$byCategory = [];
 		$byStore = [];
 		$byList = [];
+		/** @var array<string, array{total: float, categoryId: ?string}> $expenseLists */
+		$expenseLists = [];
 
 		foreach ($rows as $row) {
 			$total = (float)($row['final_total'] ?? 0.0);
@@ -89,49 +89,75 @@ class AnalyticsMapper extends QBMapper {
 				'total' => $total,
 			];
 
-			$categoryId = $primaryCategories[$row['id']] ?? '';
-			$byCategory[$categoryId] = ($byCategory[$categoryId] ?? 0.0) + $total;
+			$expenseLists[$row['id']] = [
+				'total' => $total,
+				'categoryId' => $row['category_id'],
+			];
 			$storeKey = $row['store_id'] ?? '';
 			$byStore[$storeKey] = ($byStore[$storeKey] ?? 0.0) + $total;
+		}
+
+		$weightsByList = $this->findItemWeightsByListIds(array_keys($expenseLists));
+		$splitInputs = [];
+		foreach ($expenseLists as $listId => $entry) {
+			$splitInputs[] = [
+				'total' => $entry['total'],
+				'categoryId' => $entry['categoryId'],
+				'weights' => $weightsByList[$listId] ?? [],
+			];
 		}
 
 		return [
 			'totalSpent' => $totalSpent,
 			'totalIncome' => $totalIncome,
-			'byCategory' => $this->toCategoryBreakdown($byCategory),
+			'byCategory' => $this->toCategoryBreakdown(CategorySpendingSplitter::split($splitInputs)),
 			'byStore' => $this->toStoreBreakdown($byStore),
 			'byList' => $this->sortByTotalDesc($byList, 'total'),
 		];
 	}
 
 	/**
-	 * Map each list to its first category (by junction id), mirroring how the
-	 * list API exposes a single `categoryId`.
+	 * Sum item weights per list and product category.
+	 *
+	 * Weight mirrors the Android item total: `price * quantity - discount`,
+	 * clamped at zero. Items without a resolvable product category are keyed by
+	 * the empty string so they end up in the uncategorized bucket.
 	 *
 	 * @param list<string> $listIds
 	 *
-	 * @return array<string, string>
+	 * @return array<string, array<string, float>> list id => (category id or '' => weight)
 	 */
-	private function findPrimaryCategoryByListIds(array $listIds): array {
+	private function findItemWeightsByListIds(array $listIds): array {
+		if ($listIds === []) {
+			return [];
+		}
+
 		$qb = $this->db->getQueryBuilder();
-		$qb->select('list_id', 'category_id')
-			->from('bbml_list_categories')
-			->where($qb->expr()->in('list_id', $qb->createNamedParameter($listIds, IQueryBuilder::PARAM_STR_ARRAY)))
-			->orderBy('id', 'ASC');
+		$qb->select('li.list_id', 'p.category_id', 'li.price', 'li.quantity', 'li.discount')
+			->from('bbml_list_items', 'li')
+			->leftJoin('li', 'bbml_products', 'p', 'li.product_id = p.id')
+			->where($qb->expr()->in('li.list_id', $qb->createNamedParameter($listIds, IQueryBuilder::PARAM_STR_ARRAY)));
 
 		$result = $qb->executeQuery();
-		/** @var list<array{list_id: string, category_id: string}> $rows */
+		/** @var list<array{list_id: string, category_id: ?string, price: float|int|string|null, quantity: float|int|string|null, discount: float|int|string|null}> $rows */
 		$rows = $result->fetchAll();
 		$result->closeCursor();
 
-		$primary = [];
+		$weights = [];
 		foreach ($rows as $row) {
-			if (!isset($primary[$row['list_id']])) {
-				$primary[$row['list_id']] = $row['category_id'];
+			$price = (float)($row['price'] ?? 0.0);
+			$quantity = (float)($row['quantity'] ?? 0.0);
+			$discount = (float)($row['discount'] ?? 0.0);
+			$weight = max(0.0, $price * $quantity - $discount);
+			if ($weight <= 0.0) {
+				continue;
 			}
+
+			$categoryKey = $row['category_id'] ?? '';
+			$weights[$row['list_id']][$categoryKey] = ($weights[$row['list_id']][$categoryKey] ?? 0.0) + $weight;
 		}
 
-		return $primary;
+		return $weights;
 	}
 
 	/**

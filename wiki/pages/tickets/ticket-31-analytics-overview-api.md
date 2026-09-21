@@ -26,14 +26,21 @@ GET /api/analytics/overview?from=<ISO8601>&to=<ISO8601>
 - Owner-scoped finished, non-income, non-subscription lists by `created_at`
   ([D-08](../../decisions.md)); `totalSpent`/`totalIncome` split by `is_income`.
 - Breakdowns cover **expense** lists only. `byCategory`/`byStore`/`byList` are each
-  attributed once, so segments sum to `totalSpent` ([D-15](../../decisions.md)).
-- No migration; reads existing `bbml_lists` / `bbml_list_categories`.
+  attributed once, so segments sum to `totalSpent` ([D-15](../../decisions.md),
+  revised by [D-19](../../decisions.md)).
+- `byCategory` splits each list's total across its items' product categories
+  (`bbml_list_items` → `bbml_products.category_id`), falling back to the stored
+  `bbml_lists.category_id` when a list has no priced items, so the donut drilldown
+  shows real subcategories.
+- No migration; reads existing `bbml_lists` / `bbml_list_items` / `bbml_products`
+  (the junction table is no longer used for analytics).
 
 ## Plan
 
 1. `lib/Db/AnalyticsMapper.php` — `overview($owner, $from, $to)` fetches the lists in
-   range and aggregates in PHP, mapping each list to its first
-   `bbml_list_categories` row (ordered by junction `id`) as its primary category.
+   range and aggregates in PHP; `byCategory` splits each list's `final_total`
+   across its item product categories (proportional to
+   `price * quantity - discount`) and falls back to the list's stored category.
 2. `lib/Controller/AnalyticsController.php` — `GET /api/analytics/overview`
    (`#[ApiRoute]`, `#[NoAdminRequired]`), ISO parsing/validation mirroring
    `DashboardController::parseDate`.
@@ -48,11 +55,17 @@ GET /api/analytics/overview?from=<ISO8601>&to=<ISO8601>
 Implemented (2026-09-19).
 
 - `AnalyticsMapper::overview()` returns totals plus sorted category/store/list
-  breakdowns; a month with no lists short-circuits to an empty result.
+  breakdowns; a month with no lists short-circuits to an empty result. Category
+  totals are split by item category via `Util\CategorySpendingSplitter` (D-19).
+- `ListMapper::findCategoryIdsByListIds()` and the list serializers use the stored
+  `bbml_lists.category_id` as the deterministic primary instead of the random
+  junction UUID.
 - `AnalyticsController` exposes the endpoint with UTC normalization and 422/401
-  errors; 5 controller tests.
-- Files: `lib/Db/AnalyticsMapper.php`, `lib/Controller/AnalyticsController.php`,
-  `tests/unit/Controller/AnalyticsControllerTest.php`, `src/types.ts`,
-  `src/services/analyticsApi.ts`, `openapi.json`.
+  errors; controller tests in `tests/unit/Controller/AnalyticsControllerTest.php`.
+- Files: `lib/Db/AnalyticsMapper.php`, `lib/Util/CategorySpendingSplitter.php`,
+  `lib/Db/ListMapper.php`, `lib/Controller/{List,ReceiptCommit}Controller.php`,
+  `lib/Controller/AnalyticsController.php`,
+  `tests/unit/{Util/CategorySpendingSplitterTest.php,Controller/AnalyticsControllerTest.php}`,
+  `src/types.ts`, `src/services/analyticsApi.ts`, `openapi.json`.
 - Verified: `composer lint`, `composer cs:check`, `composer psalm`,
   `composer test:unit` (178 tests, 701 assertions), `composer openapi` (25 routes).

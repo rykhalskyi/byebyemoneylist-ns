@@ -48,7 +48,11 @@ class ListMapper extends QBMapper {
 	}
 
 	/**
-	 * List-category junction ids grouped by list id, ordered by junction row id.
+	 * List-category junction category ids grouped by list id.
+	 *
+	 * Ordered deterministically by category id (the junction primary key is a
+	 * random UUID, so ordering by it was nondeterministic). Callers that need the
+	 * user-selected primary category first should reorder using the list entity.
 	 *
 	 * @param array<array-key, string> $listIds
 	 *
@@ -63,7 +67,8 @@ class ListMapper extends QBMapper {
 		$qb->select('list_id', 'category_id')
 			->from('bbml_list_categories')
 			->where($qb->expr()->in('list_id', $qb->createNamedParameter($listIds, IQueryBuilder::PARAM_STR_ARRAY)))
-			->orderBy('id', 'ASC');
+			->orderBy('list_id', 'ASC')
+			->addOrderBy('category_id', 'ASC');
 
 		$result = $qb->executeQuery();
 		/** @var list<array{list_id: string, category_id: string}> $rows */

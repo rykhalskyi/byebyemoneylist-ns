@@ -77,3 +77,4 @@
 ## [2026-09-19] ticket | T10.3 Top 5 stores/lists bars
 ## [2026-09-20] ticket | T34 — Initialize default categories (first-open dialog, localized, backend batch) implemented
 ## [2026-09-20] ticket | T34 hardened: onlyIfEmpty + deterministic UUIDv5 ids prevent duplicate default sets from concurrent initialization
+## [2026-09-21] fix | Fix Analytics category drilldown: split list totals across item categories and make list primary category deterministic (D-19)
