@@ -61,7 +61,7 @@ class Version1006Date20260905 extends SimpleMigrationStep {
 			$table->addColumn('category_id', Types::STRING, ['length' => 36, 'notnull' => true]);
 			$table->setPrimaryKey(['id']);
 			$table->addIndex(['list_id'], 'bbml_list_categories_list_idx');
-			$table->addIndex(['category_id'], 'bbml_list_categories_category_idx');
+			$table->addIndex(['category_id'], 'bbml_list_cat_category_idx');
 		}
 
 		return $schema;
