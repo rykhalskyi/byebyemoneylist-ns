@@ -34,7 +34,7 @@ class Version1006Date20260905 extends SimpleMigrationStep {
 			$lists->addColumn('purchase_date', Types::DATETIME, ['notnull' => false]);
 		}
 		if (!$lists->hasColumn('is_finished')) {
-			$lists->addColumn('is_finished', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
+			$lists->addColumn('is_finished', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
 		}
 		if (!$lists->hasColumn('updated_at')) {
 			$lists->addColumn('updated_at', Types::DATETIME, ['notnull' => false]);

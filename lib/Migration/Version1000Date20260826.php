@@ -48,7 +48,7 @@ class Version1000Date20260826 extends SimpleMigrationStep {
 			$table->addColumn('color', Types::STRING, ['length' => 7, 'notnull' => false]);
 			$table->addColumn('emoji', Types::STRING, ['length' => 8, 'notnull' => false]);
 			$table->addColumn('parent_id', Types::STRING, ['length' => 36, 'notnull' => false]);
-			$table->addColumn('income', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
+			$table->addColumn('income', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
 			$table->setPrimaryKey(['id']);
 			$table->addIndex(['owner'], 'bbml_categories_owner_idx');
 		}

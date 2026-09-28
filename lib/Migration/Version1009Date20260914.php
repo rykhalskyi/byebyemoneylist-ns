@@ -31,7 +31,7 @@ class Version1009Date20260914 extends SimpleMigrationStep {
 			$table->addColumn('connect_timeout', Types::INTEGER, ['notnull' => true, 'default' => 30]);
 			$table->addColumn('read_timeout', Types::INTEGER, ['notnull' => true, 'default' => 60]);
 			$table->addColumn('max_tokens', Types::INTEGER, ['notnull' => true, 'default' => 2048]);
-			$table->addColumn('is_active', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
+			$table->addColumn('is_active', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
 			$table->addColumn('created_at', Types::DATETIME, ['notnull' => true]);
 			$table->addColumn('updated_at', Types::DATETIME, ['notnull' => false]);
 			$table->setPrimaryKey(['id']);

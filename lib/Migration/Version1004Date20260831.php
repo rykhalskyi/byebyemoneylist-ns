@@ -19,19 +19,19 @@ class Version1004Date20260831 extends SimpleMigrationStep {
 
 		$table = $schema->getTable('bbml_lists');
 		if (!$table->hasColumn('is_subscription')) {
-			$table->addColumn('is_subscription', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
+			$table->addColumn('is_subscription', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
 		}
 		if (!$table->hasColumn('is_income')) {
-			$table->addColumn('is_income', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
+			$table->addColumn('is_income', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
 		}
 		if (!$table->hasColumn('is_recurring')) {
-			$table->addColumn('is_recurring', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
+			$table->addColumn('is_recurring', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
 		}
 		if (!$table->hasColumn('recurring_period')) {
 			$table->addColumn('recurring_period', Types::STRING, ['length' => 16, 'notnull' => true, 'default' => 'MONTH']);
 		}
 		if (!$table->hasColumn('is_forward_empty')) {
-			$table->addColumn('is_forward_empty', Types::BOOLEAN, ['notnull' => true, 'default' => true]);
+			$table->addColumn('is_forward_empty', Types::BOOLEAN, ['notnull' => false, 'default' => true]);
 		}
 
 		return $schema;

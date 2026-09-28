@@ -26,9 +26,9 @@ class Version1001Date20260827 extends SimpleMigrationStep {
 			$table->addColumn('category_id', Types::STRING, ['length' => 36, 'notnull' => false]);
 			$table->addColumn('status', Types::STRING, ['length' => 32, 'notnull' => true, 'default' => 'reviewed']);
 			$table->addColumn('picture_path', Types::STRING, ['length' => 500, 'notnull' => false]);
-			$table->addColumn('is_subscription', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
-			$table->addColumn('is_favorite', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
-			$table->addColumn('is_income', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
+			$table->addColumn('is_subscription', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
+			$table->addColumn('is_favorite', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
+			$table->addColumn('is_income', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
 			$table->setPrimaryKey(['id']);
 			$table->addIndex(['owner'], 'bbml_products_owner_idx');
 			$table->addIndex(['category_id'], 'bbml_products_category_idx');

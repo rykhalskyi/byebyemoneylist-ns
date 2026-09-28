@@ -19,7 +19,7 @@ class Version1003Date20260829 extends SimpleMigrationStep {
 
 		$table = $schema->getTable('bbml_list_items');
 		if (!$table->hasColumn('is_checked')) {
-			$table->addColumn('is_checked', Types::BOOLEAN, ['notnull' => true, 'default' => false]);
+			$table->addColumn('is_checked', Types::BOOLEAN, ['notnull' => false, 'default' => false]);
 		}
 
 		return $schema;
