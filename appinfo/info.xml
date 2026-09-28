@@ -46,6 +46,9 @@ No accounts, no ads, no tracking — just your shopping and expenses, organized 
 	<bugs>https://github.com/rykhalskyi/byebyemoneylist/issues</bugs>
 	<dependencies>
 		<nextcloud min-version="31" max-version="35"/>
+		<database>sqlite</database>
+		<database>mysql</database>
+		<database>pgsql</database>
 	</dependencies>
 	<navigations>
 		<navigation>
