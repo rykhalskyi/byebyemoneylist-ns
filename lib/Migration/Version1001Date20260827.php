@@ -43,7 +43,7 @@ class Version1001Date20260827 extends SimpleMigrationStep {
 			$table->addColumn('store_id', Types::STRING, ['length' => 36, 'notnull' => false]);
 			$table->setPrimaryKey(['id']);
 			$table->addIndex(['owner'], 'bbml_product_aliases_owner_idx');
-			$table->addIndex(['product_id'], 'bbml_product_aliases_product_idx');
+			$table->addIndex(['product_id'], 'bbml_prod_alias_product_idx');
 		}
 
 		return $schema;

@@ -32,7 +32,7 @@ class Version1008Date20260908 extends SimpleMigrationStep {
 			$table->addColumn('created_at', Types::DATETIME, ['notnull' => true]);
 			$table->setPrimaryKey(['id']);
 			$table->addIndex(['owner'], 'bbml_product_prices_owner_idx');
-			$table->addIndex(['product_id'], 'bbml_product_prices_product_idx');
+			$table->addIndex(['product_id'], 'bbml_prod_price_product_idx');
 			$table->addIndex(['store_id'], 'bbml_product_prices_store_idx');
 		}
 

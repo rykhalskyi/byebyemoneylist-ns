@@ -34,8 +34,8 @@ class Version1007Date20260907 extends SimpleMigrationStep {
 			$table->addColumn('store_id', Types::STRING, ['length' => 36, 'notnull' => true]);
 			$table->addColumn('category_id', Types::STRING, ['length' => 36, 'notnull' => true]);
 			$table->setPrimaryKey(['id']);
-			$table->addIndex(['store_id'], 'bbml_store_categories_store_idx');
-			$table->addIndex(['category_id'], 'bbml_store_categories_category_idx');
+			$table->addIndex(['store_id'], 'bbml_store_cat_store_idx');
+			$table->addIndex(['category_id'], 'bbml_store_cat_category_idx');
 		}
 
 		return $schema;
