@@ -10309,7 +10309,9 @@
                                                                             "isIncome",
                                                                             "lastPrice",
                                                                             "lastPriceDate",
-                                                                            "hasPicture"
+                                                                            "hasPicture",
+                                                                            "owner",
+                                                                            "shared"
                                                                         ],
                                                                         "properties": {
                                                                             "id": {
@@ -10354,6 +10356,12 @@
                                                                                 "nullable": true
                                                                             },
                                                                             "hasPicture": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "owner": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "shared": {
                                                                                 "type": "boolean"
                                                                             }
                                                                         }
@@ -10427,7 +10435,9 @@
                                                                                     "isIncome",
                                                                                     "lastPrice",
                                                                                     "lastPriceDate",
-                                                                                    "hasPicture"
+                                                                                    "hasPicture",
+                                                                                    "owner",
+                                                                                    "shared"
                                                                                 ],
                                                                                 "properties": {
                                                                                     "id": {
@@ -10472,6 +10482,12 @@
                                                                                         "nullable": true
                                                                                     },
                                                                                     "hasPicture": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "owner": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "shared": {
                                                                                         "type": "boolean"
                                                                                     }
                                                                                 }
@@ -10647,7 +10663,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -10692,6 +10710,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -10762,7 +10786,9 @@
                                                                                 "isIncome",
                                                                                 "lastPrice",
                                                                                 "lastPriceDate",
-                                                                                "hasPicture"
+                                                                                "hasPicture",
+                                                                                "owner",
+                                                                                "shared"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -10807,6 +10833,12 @@
                                                                                     "nullable": true
                                                                                 },
                                                                                 "hasPicture": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "owner": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "shared": {
                                                                                     "type": "boolean"
                                                                                 }
                                                                             }
@@ -10898,7 +10930,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -10943,6 +10977,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -11011,7 +11051,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -11056,6 +11098,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -11218,7 +11266,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -11263,6 +11313,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -11333,7 +11389,9 @@
                                                                                 "isIncome",
                                                                                 "lastPrice",
                                                                                 "lastPriceDate",
-                                                                                "hasPicture"
+                                                                                "hasPicture",
+                                                                                "owner",
+                                                                                "shared"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -11378,6 +11436,12 @@
                                                                                     "nullable": true
                                                                                 },
                                                                                 "hasPicture": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "owner": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "shared": {
                                                                                     "type": "boolean"
                                                                                 }
                                                                             }
@@ -11469,7 +11533,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -11514,6 +11580,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -11582,7 +11654,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -11627,6 +11701,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -11695,7 +11775,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -11740,6 +11822,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -12144,7 +12232,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -12189,6 +12279,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -12259,7 +12355,9 @@
                                                                                 "isIncome",
                                                                                 "lastPrice",
                                                                                 "lastPriceDate",
-                                                                                "hasPicture"
+                                                                                "hasPicture",
+                                                                                "owner",
+                                                                                "shared"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -12304,6 +12402,12 @@
                                                                                     "nullable": true
                                                                                 },
                                                                                 "hasPicture": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "owner": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "shared": {
                                                                                     "type": "boolean"
                                                                                 }
                                                                             }
@@ -12395,7 +12499,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -12440,6 +12546,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -12508,7 +12620,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -12553,6 +12667,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -12621,7 +12741,9 @@
                                                                         "isIncome",
                                                                         "lastPrice",
                                                                         "lastPriceDate",
-                                                                        "hasPicture"
+                                                                        "hasPicture",
+                                                                        "owner",
+                                                                        "shared"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -12666,6 +12788,12 @@
                                                                             "nullable": true
                                                                         },
                                                                         "hasPicture": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "shared": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }

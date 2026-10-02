@@ -7,6 +7,7 @@ namespace Controller;
 use OCA\ByeByeMoneyList\Controller\CategoryController;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Entity\CategoryEntity;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\DB\Exception as DbException;
@@ -22,17 +23,19 @@ use Psr\Log\LoggerInterface;
 final class CategoryControllerTest extends TestCase {
 	private CategoryController $controller;
 	private CategoryMapper $mapper;
+	private ListAccessService $listAccess;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 
 	protected function setUp(): void {
 		$request = $this->createMock(IRequest::class);
 		$this->mapper = $this->createMock(CategoryMapper::class);
+		$this->listAccess = $this->createMock(ListAccessService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
 
-		$this->controller = new CategoryController($request, $this->mapper, $this->db, $this->userSession, $logger);
+		$this->controller = new CategoryController($request, $this->mapper, $this->listAccess, $this->db, $this->userSession, $logger);
 	}
 
 	private function mockUser(string $uid): IUser {
@@ -69,9 +72,11 @@ final class CategoryControllerTest extends TestCase {
 		$category->setEmoji('🍎');
 		$category->setIncome(false);
 
+		$this->listAccess->method('visibleCatalogOwners')->with('alice')->willReturn(['alice']);
+
 		$this->mapper->expects($this->once())
-			->method('findAllByOwner')
-			->with('alice')
+			->method('findAllByOwners')
+			->with(['alice'])
 			->willReturn([$category]);
 
 		$response = $this->controller->index();
@@ -83,6 +88,30 @@ final class CategoryControllerTest extends TestCase {
 		$this->assertSame('#ff0000', $categories[0]['color']);
 		$this->assertSame('🍎', $categories[0]['emoji']);
 		$this->assertFalse($categories[0]['income']);
+		$this->assertSame('alice', $categories[0]['owner']);
+		$this->assertFalse($categories[0]['shared']);
+	}
+
+	public function testIndexIncludesSharedCategoriesFromSharingUsers(): void {
+		$this->mockUser('bob');
+		$this->listAccess->method('visibleCatalogOwners')->with('bob')->willReturn(['bob', 'alice']);
+
+		$shared = new CategoryEntity();
+		$shared->setId('22222222-3333-4444-8555-666666666666');
+		$shared->setOwner('alice');
+		$shared->setName('Dairy');
+		$shared->setIncome(false);
+
+		$this->mapper->expects($this->once())
+			->method('findAllByOwners')
+			->with(['bob', 'alice'])
+			->willReturn([$shared]);
+
+		$response = $this->controller->index();
+		$categories = $response->getData()['categories'];
+
+		$this->assertSame('alice', $categories[0]['owner']);
+		$this->assertTrue($categories[0]['shared']);
 	}
 
 	public function testIndexReturnsUnauthorizedWhenNotLoggedIn(): void {

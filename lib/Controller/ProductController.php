@@ -16,6 +16,7 @@ use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
 use OCA\ByeByeMoneyList\Service\ProductMergeService;
 use OCA\ByeByeMoneyList\Service\ProductPictureService;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -39,6 +40,7 @@ class ProductController extends OCSController {
 	private ProductPriceMapper $priceMapper;
 	private ProductPictureService $pictureService;
 	private ProductMergeService $mergeService;
+	private ListAccessService $listAccess;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
@@ -52,6 +54,7 @@ class ProductController extends OCSController {
 		ProductPriceMapper $priceMapper,
 		ProductPictureService $pictureService,
 		ProductMergeService $mergeService,
+		ListAccessService $listAccess,
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
@@ -64,6 +67,7 @@ class ProductController extends OCSController {
 		$this->priceMapper = $priceMapper;
 		$this->pictureService = $pictureService;
 		$this->mergeService = $mergeService;
+		$this->listAccess = $listAccess;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -76,7 +80,7 @@ class ProductController extends OCSController {
 	 *
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{products: list<array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}>}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{products: list<array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool, owner: string, shared: bool}>}|array{message: string}, array{}>
 	 *
 	 * 200: Products returned
 	 * 401: Current user is not logged in
@@ -89,25 +93,21 @@ class ProductController extends OCSController {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$products = match ($type) {
-			'subscriptions' => $this->mapper->findSubscriptionsByOwner($userId),
-			'income' => $this->mapper->findIncomeByOwner($userId),
-			'all' => $this->mapper->findAllIncludingSpecialByOwner($userId),
-			default => $this->mapper->findAllByOwner($userId),
-		};
+		$owners = $this->listAccess->visibleCatalogOwners($userId);
+		$type = in_array($type, ['normal', 'subscriptions', 'income', 'all'], true) ? $type : 'normal';
+		$products = $this->mapper->findAllVisibleByOwners($owners, $type);
+		$productIds = array_values(array_map(fn (ProductEntity $product): string => $product->getId(), $products));
 		$aliasesByProduct = $this->groupAliases(
-			$this->aliasMapper->findByProductIds(array_map(fn (ProductEntity $product): string => $product->getId(), $products), $userId)
+			$this->aliasMapper->findByProductIdsForOwners($productIds, $owners),
 		);
-		$latestPrices = $this->priceMapper->findLatestByProductIds(
-			array_values(array_map(fn (ProductEntity $product): string => $product->getId(), $products)),
-			$userId,
-		);
+		$latestPrices = $this->priceMapper->findLatestByProductIdsForOwners($productIds, $owners);
 
 		$serialized = array_map(
 			fn (ProductEntity $product): array => $this->serializeProduct(
 				$product,
 				$aliasesByProduct[$product->getId()] ?? [],
 				$latestPrices[$product->getId()] ?? null,
+				$userId,
 			),
 			$products,
 		);
@@ -128,7 +128,7 @@ class ProductController extends OCSController {
 	 * @param bool $isSubscription Whether the product is a subscription
 	 * @param bool $isIncome Whether the product is an income source
 	 *
-	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool, owner: string, shared: bool}}|array{message: string}, array{}>
 	 *
 	 * 201: Product created
 	 * 401: Current user is not logged in
@@ -214,7 +214,7 @@ class ProductController extends OCSController {
 	 * @param bool $isSubscription Whether the product is a subscription
 	 * @param bool $isIncome Whether the product is an income source
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool, owner: string, shared: bool}}|array{message: string}, array{}>
 	 *
 	 * 200: Product updated
 	 * 401: Current user is not logged in
@@ -380,7 +380,7 @@ class ProductController extends OCSController {
 	 * @param bool $isIncome Whether the merged product is an income source
 	 * @param string $pictureFrom Which picture to keep: primary, secondary or none
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{product: array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool, owner: string, shared: bool}}|array{message: string}, array{}>
 	 *
 	 * 200: Products merged
 	 * 401: Current user is not logged in
@@ -498,9 +498,9 @@ class ProductController extends OCSController {
 	/**
 	 * @param list<string> $aliases
 	 *
-	 * @return array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool}
+	 * @return array{id: string, name: string, barcode: ?string, categoryId: ?string, aliases: list<string>, isFavorite: bool, status: string, isSubscription: bool, isIncome: bool, lastPrice: ?float, lastPriceDate: ?string, hasPicture: bool, owner: string, shared: bool}
 	 */
-	private function serializeProduct(ProductEntity $product, array $aliases = [], ?ProductPriceEntity $lastPrice = null): array {
+	private function serializeProduct(ProductEntity $product, array $aliases = [], ?ProductPriceEntity $lastPrice = null, ?string $viewerId = null): array {
 		return [
 			'id' => $product->getId(),
 			'name' => $product->getName() ?? '',
@@ -514,6 +514,8 @@ class ProductController extends OCSController {
 			'lastPrice' => $lastPrice?->getValue(),
 			'lastPriceDate' => $lastPrice?->getPriceDate()?->format(DateTimeInterface::ATOM),
 			'hasPicture' => $product->getPicturePath() !== null,
+			'owner' => $product->getOwner() ?? '',
+			'shared' => $viewerId !== null && $product->getOwner() !== $viewerId,
 		];
 	}
 }

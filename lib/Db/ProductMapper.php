@@ -20,39 +20,24 @@ class ProductMapper extends QBMapper {
 	}
 
 	/**
-	 * Find all normal products (not subscription, not income) for the current user
-	 *
-	 * @return ProductEntity[]
-	 */
-	public function findAllByOwner(string $userId): array {
-		return $this->findByOwner($userId, 'normal');
-	}
-
-	/**
-	 * Find all subscription products for the current user
-	 *
-	 * @return ProductEntity[]
-	 */
-	public function findSubscriptionsByOwner(string $userId): array {
-		return $this->findByOwner($userId, 'subscriptions');
-	}
-
-	/**
-	 * Find all income products for the current user
-	 *
-	 * @return ProductEntity[]
-	 */
-	public function findIncomeByOwner(string $userId): array {
-		return $this->findByOwner($userId, 'income');
-	}
-
-	/**
 	 * Find all products of the current user regardless of type
 	 *
 	 * @return ProductEntity[]
 	 */
 	public function findAllIncludingSpecialByOwner(string $userId): array {
 		return $this->findByOwner($userId, 'all');
+	}
+
+	/**
+	 * Find all products of the given owners filtered by type.
+	 *
+	 * @param array<array-key, string> $ownerIds
+	 * @param 'normal'|'subscriptions'|'income'|'all' $type
+	 *
+	 * @return ProductEntity[]
+	 */
+	public function findAllVisibleByOwners(array $ownerIds, string $type = 'all'): array {
+		return $this->findByOwners($ownerIds, $type);
 	}
 
 	/**

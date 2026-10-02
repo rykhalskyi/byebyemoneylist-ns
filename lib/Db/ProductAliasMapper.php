@@ -26,14 +26,26 @@ class ProductAliasMapper extends QBMapper {
 	 * @return ProductAliasEntity[]
 	 */
 	public function findByProductIds(array $productIds, string $userId): array {
-		if ($productIds === []) {
+		return $this->findByProductIdsForOwners($productIds, [$userId]);
+	}
+
+	/**
+	 * Find all aliases for the given products across the given owners.
+	 *
+	 * @param array<array-key, string> $productIds
+	 * @param array<array-key, string> $ownerIds
+	 *
+	 * @return ProductAliasEntity[]
+	 */
+	public function findByProductIdsForOwners(array $productIds, array $ownerIds): array {
+		if ($productIds === [] || $ownerIds === []) {
 			return [];
 		}
 
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->tableName)
-			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->where($qb->expr()->in('owner', $qb->createNamedParameter($ownerIds, IQueryBuilder::PARAM_STR_ARRAY)))
 			->andWhere($qb->expr()->in('product_id', $qb->createNamedParameter($productIds, IQueryBuilder::PARAM_STR_ARRAY)));
 
 		return $this->findEntities($qb);

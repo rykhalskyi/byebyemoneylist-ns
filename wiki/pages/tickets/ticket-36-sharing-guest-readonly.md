@@ -51,5 +51,12 @@ T36a — backend list read scoping implemented (2026-10-02).
   `ListItemControllerTest`.
 - Verified: `test:unit` (231 tests), `psalm`, `cs:check`, `openapi` (list response
   gains `sharedBy`/`shareMode`/`revoked`).
-- Still open: catalog visibility (owner products/categories/stores in the guest's
-  expanders), copy-to-own-DB endpoint, and all frontend.
+- Still open: copy-to-own-DB endpoint, and all frontend.
+- T36b — catalog visibility (2026-10-02): `Category`/`Store`/`Product` `index`
+  endpoints now read across `visibleCatalogOwners` (`findAllByOwners` /
+  `findAllVisibleByOwners`) and each serialized item carries `owner` + `shared`, so
+  a guest sees the owner's catalog in separate expanders. Aliases and last prices
+  resolve across the same owner set (`findByProductIdsForOwners` /
+  `findLatestByProductIdsForOwners`). Removed the now-redundant owner-only
+  `ProductMapper::{findAllByOwner,findSubscriptionsByOwner,findIncomeByOwner}`.
+  Verified: 234 tests, psalm, cs, openapi.

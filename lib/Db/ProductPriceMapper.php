@@ -43,14 +43,26 @@ class ProductPriceMapper extends QBMapper {
 	 * @return array<string, ProductPriceEntity>
 	 */
 	public function findLatestByProductIds(array $productIds, string $userId): array {
-		if ($productIds === []) {
+		return $this->findLatestByProductIdsForOwners($productIds, [$userId]);
+	}
+
+	/**
+	 * Latest price record per product across the given owners, keyed by product id.
+	 *
+	 * @param list<string> $productIds
+	 * @param array<array-key, string> $ownerIds
+	 *
+	 * @return array<string, ProductPriceEntity>
+	 */
+	public function findLatestByProductIdsForOwners(array $productIds, array $ownerIds): array {
+		if ($productIds === [] || $ownerIds === []) {
 			return [];
 		}
 
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->tableName)
-			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->where($qb->expr()->in('owner', $qb->createNamedParameter($ownerIds, IQueryBuilder::PARAM_STR_ARRAY)))
 			->andWhere($qb->expr()->in('product_id', $qb->createNamedParameter($productIds, IQueryBuilder::PARAM_STR_ARRAY)))
 			->orderBy('price_date', 'DESC')
 			->addOrderBy('created_at', 'DESC');
