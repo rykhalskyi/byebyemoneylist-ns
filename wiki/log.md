@@ -78,3 +78,10 @@
 ## [2026-09-20] ticket | T34 — Initialize default categories (first-open dialog, localized, backend batch) implemented
 ## [2026-09-20] ticket | T34 hardened: onlyIfEmpty + deterministic UUIDv5 ids prevent duplicate default sets from concurrent initialization
 ## [2026-09-21] fix | Fix Analytics category drilldown: split list totals across item categories and make list primary category deterministic (D-19)
+## [2026-10-02] spec | List sharing Phase 1 — access layer, share tables, catalog visibility, buyer attribution
+## [2026-10-02] ticket | T35 sharing foundation (schema, access layer, share CRUD)
+## [2026-10-02] ticket | T36 read-only sharing guest view + copy to own DB
+## [2026-10-02] ticket | T37 read/write sharing (item ownership, publish confirmation)
+## [2026-10-02] ticket | T38 purchaser attribution for shared lists
+## [2026-10-02] ticket | T39 family groups (Phase 2)
+## [2026-10-02] update | T35 sharing foundation implemented; migration 1011 applied, tests/psalm/cs/openapi green

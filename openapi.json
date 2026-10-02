@@ -16713,6 +16713,1802 @@
                 }
             }
         },
+        "/ocs/v2.php/apps/byebyemoneylist/api/shares/incoming": {
+            "get": {
+                "operationId": "share-incoming",
+                "summary": "Lists currently shared with the current user (including revoked, name-only)",
+                "tags": [
+                    "share"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Shares returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "shares"
+                                                            ],
+                                                            "properties": {
+                                                                "shares": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "id",
+                                                                            "listId",
+                                                                            "owner",
+                                                                            "sharedWith",
+                                                                            "mode",
+                                                                            "status",
+                                                                            "revoked",
+                                                                            "listName",
+                                                                            "createdAt",
+                                                                            "updatedAt"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "listId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "owner": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "sharedWith": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "mode": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "status": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "revoked": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "listName": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "updatedAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "shares"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "shares": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "id",
+                                                                                    "listId",
+                                                                                    "owner",
+                                                                                    "sharedWith",
+                                                                                    "mode",
+                                                                                    "status",
+                                                                                    "revoked",
+                                                                                    "listName",
+                                                                                    "createdAt",
+                                                                                    "updatedAt"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "id": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "listId": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "owner": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "sharedWith": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "mode": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "status": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "revoked": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "listName": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "createdAt": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "updatedAt": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/byebyemoneylist/api/lists/{id}/shares": {
+            "get": {
+                "operationId": "share-index",
+                "summary": "Shares created for a list owned by the current user",
+                "tags": [
+                    "share"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "List id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Shares returned",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "shares"
+                                                            ],
+                                                            "properties": {
+                                                                "shares": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "id",
+                                                                            "listId",
+                                                                            "owner",
+                                                                            "sharedWith",
+                                                                            "mode",
+                                                                            "status",
+                                                                            "revoked",
+                                                                            "listName",
+                                                                            "createdAt",
+                                                                            "updatedAt"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "listId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "owner": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "sharedWith": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "mode": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "status": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "revoked": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "listName": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "updatedAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "shares"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "shares": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "object",
+                                                                                "required": [
+                                                                                    "id",
+                                                                                    "listId",
+                                                                                    "owner",
+                                                                                    "sharedWith",
+                                                                                    "mode",
+                                                                                    "status",
+                                                                                    "revoked",
+                                                                                    "listName",
+                                                                                    "createdAt",
+                                                                                    "updatedAt"
+                                                                                ],
+                                                                                "properties": {
+                                                                                    "id": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "listId": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "owner": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "sharedWith": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "mode": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "status": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "revoked": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "listName": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "createdAt": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    },
+                                                                                    "updatedAt": {
+                                                                                        "type": "string",
+                                                                                        "nullable": true
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "List not found or not owned by the current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "shares"
+                                                            ],
+                                                            "properties": {
+                                                                "shares": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "object",
+                                                                        "required": [
+                                                                            "id",
+                                                                            "listId",
+                                                                            "owner",
+                                                                            "sharedWith",
+                                                                            "mode",
+                                                                            "status",
+                                                                            "revoked",
+                                                                            "listName",
+                                                                            "createdAt",
+                                                                            "updatedAt"
+                                                                        ],
+                                                                        "properties": {
+                                                                            "id": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "listId": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "owner": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "sharedWith": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "mode": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "status": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "revoked": {
+                                                                                "type": "boolean"
+                                                                            },
+                                                                            "listName": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "createdAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            },
+                                                                            "updatedAt": {
+                                                                                "type": "string",
+                                                                                "nullable": true
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "share-create",
+                "summary": "Share a list with another user",
+                "tags": [
+                    "share"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "sharedWith"
+                                ],
+                                "properties": {
+                                    "sharedWith": {
+                                        "type": "string",
+                                        "description": "User id to share with"
+                                    },
+                                    "mode": {
+                                        "type": "string",
+                                        "description": "Share mode (readonly, readwrite)"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "List id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Share created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "share"
+                                                            ],
+                                                            "properties": {
+                                                                "share": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "listId",
+                                                                        "owner",
+                                                                        "sharedWith",
+                                                                        "mode",
+                                                                        "status",
+                                                                        "revoked",
+                                                                        "listName",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "listId": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sharedWith": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "listName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Share updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "share"
+                                                            ],
+                                                            "properties": {
+                                                                "share": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "listId",
+                                                                        "owner",
+                                                                        "sharedWith",
+                                                                        "mode",
+                                                                        "status",
+                                                                        "revoked",
+                                                                        "listName",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "listId": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sharedWith": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "listName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "share"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "share": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "listId",
+                                                                                "owner",
+                                                                                "sharedWith",
+                                                                                "mode",
+                                                                                "status",
+                                                                                "revoked",
+                                                                                "listName",
+                                                                                "createdAt",
+                                                                                "updatedAt"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "listId": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "owner": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "sharedWith": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "mode": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "revoked": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "listName": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "createdAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "updatedAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "List not found or not owned by the current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "share"
+                                                            ],
+                                                            "properties": {
+                                                                "share": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "listId",
+                                                                        "owner",
+                                                                        "sharedWith",
+                                                                        "mode",
+                                                                        "status",
+                                                                        "revoked",
+                                                                        "listName",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "listId": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sharedWith": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "listName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing/blank recipient or invalid mode",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "share"
+                                                            ],
+                                                            "properties": {
+                                                                "share": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "listId",
+                                                                        "owner",
+                                                                        "sharedWith",
+                                                                        "mode",
+                                                                        "status",
+                                                                        "revoked",
+                                                                        "listName",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "listId": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sharedWith": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "listName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create the share",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "share"
+                                                            ],
+                                                            "properties": {
+                                                                "share": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "listId",
+                                                                        "owner",
+                                                                        "sharedWith",
+                                                                        "mode",
+                                                                        "status",
+                                                                        "revoked",
+                                                                        "listName",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "listId": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sharedWith": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "listName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/byebyemoneylist/api/lists/{id}/shares/{shareId}": {
+            "delete": {
+                "operationId": "share-destroy",
+                "summary": "Revoke a list share (kept as a name-only placeholder for the guest)",
+                "tags": [
+                    "share"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "List id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "shareId",
+                        "in": "path",
+                        "description": "Share id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Share revoked",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "share"
+                                                            ],
+                                                            "properties": {
+                                                                "share": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "listId",
+                                                                        "owner",
+                                                                        "sharedWith",
+                                                                        "mode",
+                                                                        "status",
+                                                                        "revoked",
+                                                                        "listName",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "listId": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sharedWith": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "listName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "share"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "share": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "listId",
+                                                                                "owner",
+                                                                                "sharedWith",
+                                                                                "mode",
+                                                                                "status",
+                                                                                "revoked",
+                                                                                "listName",
+                                                                                "createdAt",
+                                                                                "updatedAt"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "listId": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "owner": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "sharedWith": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "mode": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "revoked": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "listName": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "createdAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "updatedAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "List or share not found or not owned by the current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "share"
+                                                            ],
+                                                            "properties": {
+                                                                "share": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "listId",
+                                                                        "owner",
+                                                                        "sharedWith",
+                                                                        "mode",
+                                                                        "status",
+                                                                        "revoked",
+                                                                        "listName",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "listId": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sharedWith": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "listName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to revoke the share",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "share"
+                                                            ],
+                                                            "properties": {
+                                                                "share": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "listId",
+                                                                        "owner",
+                                                                        "sharedWith",
+                                                                        "mode",
+                                                                        "status",
+                                                                        "revoked",
+                                                                        "listName",
+                                                                        "createdAt",
+                                                                        "updatedAt"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "listId": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "owner": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "sharedWith": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "mode": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "listName": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ocs/v2.php/apps/byebyemoneylist/api/stores": {
             "get": {
                 "operationId": "store-index",
