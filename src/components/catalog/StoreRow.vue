@@ -3,6 +3,7 @@ import type { Store } from '../../types.ts'
 
 import { mdiDelete, mdiPencil, mdiStore } from '@mdi/js'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcChip from '@nextcloud/vue/components/NcChip'
 import NcHighlight from '@nextcloud/vue/components/NcHighlight'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
@@ -34,13 +35,21 @@ const emit = defineEmits<{
 			<template #icon>
 				<NcIconSvgWrapper :path="mdiStore" :size="20" />
 			</template>
-			<template v-if="props.store.address" #subname>
-				<span :class="$style['store-address']">
-					<NcHighlight :text="props.store.address" :search="props.search" />
-				</span>
+			<template #subname>
+				<div :class="$style.subname">
+					<span v-if="props.store.address" :class="$style['store-address']">
+						<NcHighlight :text="props.store.address" :search="props.search" />
+					</span>
+					<NcChip
+						v-if="props.store.shared"
+						:text="t('Shared')"
+						variant="tertiary"
+						noClose />
+				</div>
 			</template>
 			<template #extra-actions>
 				<NcButton
+					v-if="!props.store.shared"
 					type="button"
 					:aria-label="t('Edit {name}', { name: props.store.name })"
 					@click="emit('edit', props.store)">
@@ -49,6 +58,7 @@ const emit = defineEmits<{
 					</template>
 				</NcButton>
 				<NcButton
+					v-if="!props.store.shared"
 					type="button"
 					:aria-label="t('Delete {name}', { name: props.store.name })"
 					@click="emit('delete', props.store)">
@@ -75,5 +85,14 @@ const emit = defineEmits<{
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+.subname {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-inline-start: auto;
+	width: 100%;
 }
 </style>

@@ -51,7 +51,7 @@ const dairy: Category = {
 	income: false,
 }
 
-async function render(props: { items: ListItem[], products?: Product[], categories?: Category[] }) {
+async function render(props: { items: ListItem[], products?: Product[], categories?: Category[], readonly?: boolean }) {
 	const wrapper = mount(ShoppingListItems, {
 		props: {
 			items: props.items,
@@ -60,6 +60,7 @@ async function render(props: { items: ListItem[], products?: Product[], categori
 			addLabel: 'Add product',
 			products: props.products ?? [],
 			categories: props.categories ?? [],
+			readonly: props.readonly ?? false,
 		},
 	})
 	await nextTick()
@@ -95,5 +96,18 @@ describe('ShoppingListItems', () => {
 		expect(img.exists()).toBe(true)
 		expect(img.attributes('src')).toBe('data:image/png;base64,abc')
 		expect(wrapper.text()).not.toContain('🥛')
+	})
+
+	it('hides edit actions and shows a note in read-only mode', async () => {
+		const wrapper = await render({ items: [item()], products: [product()], readonly: true })
+		expect(wrapper.text()).toContain('This list is shared with you and is read-only.')
+		expect(wrapper.text()).not.toContain('Add product')
+		expect(wrapper.find('[aria-label="Delete Milk"]').exists()).toBe(false)
+	})
+
+	it('shows the add action when editable', async () => {
+		const wrapper = await render({ items: [item()], products: [product()] })
+		expect(wrapper.text()).toContain('Add product')
+		expect(wrapper.find('[aria-label="Delete Milk"]').exists()).toBe(true)
 	})
 })

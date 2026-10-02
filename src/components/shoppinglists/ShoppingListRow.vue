@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Category, ListItem, Product, ShoppingList, Store } from '../../types.ts'
 
-import { mdiChevronDown, mdiDelete, mdiDotsVertical, mdiReceiptText } from '@mdi/js'
+import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiDotsVertical, mdiReceiptText } from '@mdi/js'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcChip from '@nextcloud/vue/components/NcChip'
@@ -9,7 +9,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import ShoppingListItems from './ShoppingListItems.vue'
 import { t } from '../../utils/l10n.ts'
-import { addItemLabel, categoryColor, listIcon, listMarkStyle, listSubname, priceText, statusLabel, statusVariant } from '../../utils/listDisplay.ts'
+import { addItemLabel, categoryColor, isReadOnlyList, isRevokedList, isSharedList, listIcon, listMarkStyle, listSubname, priceText, sharedByLabel, statusLabel, statusVariant } from '../../utils/listDisplay.ts'
 
 const props = defineProps<{
 	list: ShoppingList
@@ -26,9 +26,16 @@ const emit = defineEmits<{
 	toggle: []
 	delete: []
 	receipt: []
+	copy: []
 	addItem: []
 	deleteItem: [item: ListItem]
 }>()
+
+function onToggle() {
+	if (!isRevokedList(props.list)) {
+		emit('toggle')
+	}
+}
 
 function storeName(storeId: string | null): string {
 	return props.stores.find((store) => store.id === storeId)?.name ?? ''
@@ -41,18 +48,23 @@ function categoryName(categoryId: string | null): string {
 
 <template>
 	<div
-		:class="$style.item"
+		:class="[$style.item, { [$style.revoked]: isRevokedList(props.list) }]"
 		:style="listMarkStyle(categoryColor(props.list.categoryId, props.categories))">
 		<NcListItem
 			:name="props.list.name"
 			oneLine
-			@click="emit('toggle')">
+			@click="onToggle">
 			<template #icon>
 				<NcIconSvgWrapper :path="listIcon(props.list)" :size="20" />
 			</template>
 			<template #subname>
 				<div :class="$style.subname">
 					<span>{{ listSubname(props.list, storeName(props.list.storeId), categoryName(props.list.categoryId)) }}</span>
+					<NcChip
+						v-if="isSharedList(props.list)"
+						:text="sharedByLabel(props.list)"
+						variant="tertiary"
+						noClose />
 					<NcChip
 						v-if="priceText(props.list, props.items) !== null"
 						:text="priceText(props.list, props.items) ?? ''"
@@ -72,13 +84,19 @@ function categoryName(categoryId: string | null): string {
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiDotsVertical" :size="20" />
 					</template>
-					<NcActionButton v-if="props.list.hasReceipt" @click.stop="emit('receipt')">
+					<NcActionButton v-if="isSharedList(props.list)" @click.stop="emit('copy')">
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiContentCopy" :size="20" />
+						</template>
+						{{ t('Copy to my catalog') }}
+					</NcActionButton>
+					<NcActionButton v-if="!isSharedList(props.list) && props.list.hasReceipt" @click.stop="emit('receipt')">
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiReceiptText" :size="20" />
 						</template>
 						{{ t('View receipt') }}
 					</NcActionButton>
-					<NcActionButton @click.stop="emit('delete')">
+					<NcActionButton v-if="!isSharedList(props.list)" @click.stop="emit('delete')">
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiDelete" :size="20" />
 						</template>
@@ -96,6 +114,7 @@ function categoryName(categoryId: string | null): string {
 			:addLabel="addItemLabel(props.list)"
 			:products="props.products"
 			:categories="props.categories"
+			:readonly="isReadOnlyList(props.list)"
 			@add="emit('addItem')"
 			@delete="emit('deleteItem', $event)" />
 	</div>
@@ -107,6 +126,11 @@ function categoryName(categoryId: string | null): string {
 	margin-block: 2px;
 	border-inline-start: 3px solid transparent;
 	padding-inline-start: 8px;
+}
+
+.revoked {
+	opacity: 0.5;
+	filter: grayscale(1);
 }
 
 .subname {

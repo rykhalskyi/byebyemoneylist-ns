@@ -131,4 +131,15 @@ describe('ProductRow', () => {
 		await clickAction(wrapper, 'Delete')
 		expect(wrapper.emitted('delete')?.[0]).toEqual([value])
 	})
+
+	it('hides edit, merge and delete for shared products', async () => {
+		const wrapper = await render({ product: product({ shared: true }) })
+		expect(wrapper.text()).toContain('Shared')
+		if (wrapper.find('.action-item__menutoggle').exists()) {
+			await openMenu(wrapper)
+		}
+		const names = wrapper.findAllComponents(NcActionButton).map((button) => button.text())
+		expect(names).not.toContain('Edit')
+		expect(names).not.toContain('Delete')
+	})
 })

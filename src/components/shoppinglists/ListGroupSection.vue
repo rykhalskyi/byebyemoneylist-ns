@@ -27,6 +27,7 @@ const emit = defineEmits<{
 	toggle: [list: ShoppingList]
 	delete: [list: ShoppingList]
 	receipt: [list: ShoppingList]
+	copy: [list: ShoppingList]
 	addItem: [list: ShoppingList]
 	deleteItem: [list: ShoppingList, item: ListItem]
 }>()
@@ -87,6 +88,7 @@ function monthLabel(month: number | null): string {
 						@toggle="emit('toggle', list)"
 						@delete="emit('delete', list)"
 						@receipt="emit('receipt', list)"
+						@copy="emit('copy', list)"
 						@addItem="emit('addItem', list)"
 						@deleteItem="emit('deleteItem', list, $event)" />
 				</div>

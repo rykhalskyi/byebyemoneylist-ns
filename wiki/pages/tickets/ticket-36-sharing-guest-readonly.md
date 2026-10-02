@@ -63,5 +63,13 @@ T36a — backend list read scoping implemented (2026-10-02).
   readable list into the caller's catalog via `ListCopyService` (transactional;
   categories/products/stores matched by name and reused, new list is unfinished
   with items reset to unchecked). Verified: 240 tests, psalm, cs, openapi.
-- Still open: all frontend (shared badge, greyed revoked row, read-only detail,
-  catalog expanders, copy button).
+- T36d — frontend (2026-10-02): Shopping Lists shows a “Shared by X” chip on
+  shared lists, greys revoked lists, hides receipt/delete for shared lists and
+  adds a “Copy to my catalog” action that calls `POST /api/lists/{id}/copy` and
+  prepends the copy. Shared read-only lists render items without add/delete and
+  show a read-only note. Catalog rows for shared categories/stores/products show
+  a “Shared” chip and hide edit/merge/delete. New `copyList` API + sharing
+  helpers in `listDisplay`. Verified: `npm run lint`, `npm run stylelint`,
+  `npm run test` (205 tests), `npm run build`.
+- Still open: per-owner grouped expanders in Catalog (currently a flat list with
+  per-row “Shared” markers); read/write item editing ([T37](ticket-37-sharing-readwrite.md)).

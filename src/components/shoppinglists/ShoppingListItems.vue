@@ -18,6 +18,7 @@ const props = defineProps<{
 	addLabel: string
 	products: Product[]
 	categories: Category[]
+	readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -65,6 +66,7 @@ const rows = computed(() => props.items.map((item) => ({
 					</template>
 					<template #extra-actions>
 						<NcButton
+							v-if="!props.readonly"
 							type="button"
 							:aria-label="t('Delete {name}', { name: row.item.productName })"
 							@click="emit('delete', row.item)">
@@ -79,7 +81,11 @@ const rows = computed(() => props.items.map((item) => ({
 				{{ t('No items yet.') }}
 			</p>
 
-			<div :class="$style['list-actions']">
+			<p v-if="props.readonly" :class="$style['readonly-note']">
+				{{ t('This list is shared with you and is read-only.') }}
+			</p>
+
+			<div v-else :class="$style['list-actions']">
 				<NcButton
 					type="button"
 					variant="primary"
@@ -117,6 +123,12 @@ const rows = computed(() => props.items.map((item) => ({
 	color: var(--color-text-maxcontrast);
 	margin: 0;
 	padding: 8px 0;
+}
+
+.readonly-note {
+	color: var(--color-text-maxcontrast);
+	margin: 8px 0 0;
+	font-style: italic;
 }
 
 .items-error {

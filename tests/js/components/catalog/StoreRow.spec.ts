@@ -51,4 +51,11 @@ describe('StoreRow', () => {
 		await wrapper.find('button[aria-label="Delete Aldi"]').trigger('click')
 		expect(wrapper.emitted('delete')?.[0]).toEqual([value])
 	})
+
+	it('shows a shared chip and hides edit/delete for shared stores', async () => {
+		const wrapper = await render({ store: store({ address: null, shared: true }) })
+		expect(wrapper.text()).toContain('Shared')
+		expect(wrapper.find('button[aria-label="Edit Aldi"]').exists()).toBe(false)
+		expect(wrapper.find('button[aria-label="Delete Aldi"]').exists()).toBe(false)
+	})
 })

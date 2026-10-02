@@ -56,6 +56,7 @@ const {
 	openReceipt,
 	onReceiptDeleted,
 	closeReceipt,
+	onCopyList,
 } = useShoppingLists()
 
 const showDialog = ref(false)
@@ -179,6 +180,7 @@ watch(
 				@toggle="toggleExpand"
 				@delete="askDelete"
 				@receipt="openReceipt"
+				@copy="onCopyList"
 				@addItem="openAddProduct"
 				@deleteItem="onDeleteItem" />
 		</div>

@@ -34,6 +34,11 @@ export async function deleteList(id: string): Promise<void> {
 	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}`))
 }
 
+export async function copyList(id: string): Promise<ShoppingList> {
+	const { data } = await axios.post<OcsData<{ list: ShoppingList }>>(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}/copy`))
+	return data.ocs.data.list
+}
+
 export async function uploadListReceipt(id: string, file: File): Promise<ReceiptPicture> {
 	const formData = new FormData()
 	formData.append('receipt', file)

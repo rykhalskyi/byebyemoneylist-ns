@@ -3,7 +3,7 @@ import type { Category, ListItem, Product, ShoppingList } from '../../../src/typ
 import { mdiAutorenew, mdiCart, mdiCashPlus } from '@mdi/js'
 import { describe, expect, it } from 'vitest'
 import { formatDate, formatTotal } from '../../../src/utils/format.ts'
-import { addItemLabel, categoryColor, checkedSum, itemDetails, itemSubname, listIcon, listMarkStyle, listSubname, listTotal, priceText, productCategory, productCategoryColor, statusLabel, statusVariant } from '../../../src/utils/listDisplay.ts'
+import { addItemLabel, categoryColor, checkedSum, isReadOnlyList, isRevokedList, isSharedList, itemDetails, itemSubname, listIcon, listMarkStyle, listSubname, listTotal, priceText, productCategory, productCategoryColor, sharedByLabel, statusLabel, statusVariant } from '../../../src/utils/listDisplay.ts'
 
 function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 	return {
@@ -115,6 +115,29 @@ describe('listSubname', () => {
 		expect(listSubname(list({ createdAt: iso }), 'Lidl', 'Groceries')).toBe(`Lidl · Groceries · ${formatDate(iso)}`)
 		expect(listSubname(list({ createdAt: iso }), '', 'Groceries')).toBe(`Groceries · ${formatDate(iso)}`)
 		expect(listSubname(list(), '', '')).toBe('')
+	})
+})
+
+describe('sharing helpers', () => {
+	it('detects owned lists as not shared', () => {
+		expect(isSharedList(list())).toBe(false)
+		expect(isSharedList(list({ sharedBy: 'alice' }))).toBe(true)
+	})
+
+	it('treats revoked lists as read-only and revoked', () => {
+		const revoked = list({ sharedBy: 'alice', shareMode: 'readwrite', revoked: true })
+		expect(isRevokedList(revoked)).toBe(true)
+		expect(isReadOnlyList(revoked)).toBe(true)
+	})
+
+	it('marks read/write shares as editable but read-only shares as not', () => {
+		expect(isReadOnlyList(list({ sharedBy: 'alice', shareMode: 'readwrite' }))).toBe(false)
+		expect(isReadOnlyList(list({ sharedBy: 'alice', shareMode: 'readonly' }))).toBe(true)
+		expect(isReadOnlyList(list())).toBe(false)
+	})
+
+	it('labels who shared the list', () => {
+		expect(sharedByLabel(list({ sharedBy: 'alice' }))).toContain('alice')
 	})
 })
 
