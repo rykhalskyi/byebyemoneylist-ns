@@ -81,13 +81,4 @@ final class CatalogSharingServiceTest extends TestCase {
 
 		$this->service->revokeItem(CatalogShareEntity::TYPE_STORE, 'store-1');
 	}
-
-	public function testVisibleOwnersForCatalogDelegates(): void {
-		$this->mapper->expects($this->once())
-			->method('findActiveOwnerIdsByRecipient')
-			->with('alice', CatalogShareEntity::TYPE_CATEGORY)
-			->willReturn(['bob']);
-
-		$this->assertSame(['bob'], $this->service->visibleOwnersForCatalog('alice', CatalogShareEntity::TYPE_CATEGORY));
-	}
 }

@@ -53,17 +53,10 @@ class CatalogSharingService {
 
 	/**
 	 * Revoke every active grant of an item (called when the item is deleted).
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
 	 */
 	public function revokeItem(string $itemType, string $itemId): void {
 		$this->mapper->revokeByItem($itemType, $itemId);
-	}
-
-	/**
-	 * Owners who published items of the given type to the user.
-	 *
-	 * @return list<string>
-	 */
-	public function visibleOwnersForCatalog(string $userId, string $itemType): array {
-		return $this->mapper->findActiveOwnerIdsByRecipient($userId, $itemType);
 	}
 }

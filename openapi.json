@@ -6986,7 +6986,7 @@
                                 "properties": {
                                     "productId": {
                                         "type": "string",
-                                        "description": "Product id (required, must belong to the current user)"
+                                        "description": "Product id (required; owned by the current user or a sharing user)"
                                     },
                                     "price": {
                                         "type": "number",
@@ -7019,6 +7019,11 @@
                                         "nullable": true,
                                         "default": null,
                                         "description": "Optional display name override"
+                                    },
+                                    "publishToOwner": {
+                                        "type": "boolean",
+                                        "default": false,
+                                        "description": "Publish the current user's own product to the list owner's catalog"
                                     }
                                 }
                             }

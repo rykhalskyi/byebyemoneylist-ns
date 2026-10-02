@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Service;
 
+use OCA\ByeByeMoneyList\Db\CatalogShareMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Db\ListShareMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
@@ -14,12 +15,14 @@ use PHPUnit\Framework\TestCase;
 final class ListAccessServiceTest extends TestCase {
 	private ListMapper $listMapper;
 	private ListShareMapper $shareMapper;
+	private CatalogShareMapper $catalogShareMapper;
 	private ListAccessService $service;
 
 	protected function setUp(): void {
 		$this->listMapper = $this->createMock(ListMapper::class);
 		$this->shareMapper = $this->createMock(ListShareMapper::class);
-		$this->service = new ListAccessService($this->listMapper, $this->shareMapper);
+		$this->catalogShareMapper = $this->createMock(CatalogShareMapper::class);
+		$this->service = new ListAccessService($this->listMapper, $this->shareMapper, $this->catalogShareMapper);
 	}
 
 	private function makeList(string $id, string $owner): ListEntity {
@@ -125,7 +128,11 @@ final class ListAccessServiceTest extends TestCase {
 			->method('findByRecipient')
 			->with('bob')
 			->willReturn([$active, $revoked]);
+		$this->catalogShareMapper->expects($this->once())
+			->method('findActiveOwnerIdsByRecipient')
+			->with('bob')
+			->willReturn(['dave']);
 
-		$this->assertSame(['bob', 'alice'], $this->service->visibleCatalogOwners('bob'));
+		$this->assertSame(['bob', 'alice', 'dave'], $this->service->visibleCatalogOwners('bob'));
 	}
 }

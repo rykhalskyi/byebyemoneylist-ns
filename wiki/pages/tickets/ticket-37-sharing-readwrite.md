@@ -1,7 +1,7 @@
 ---
 created: 2026-10-02
 type: ticket
-status: proposed
+status: in-progress
 summary: T37 — Read/write sharing (guest manages own items, uses owner catalog, publish confirmation)
 ---
 
@@ -39,4 +39,21 @@ and [T36](ticket-36-sharing-guest-readonly.md).
 
 ## Outcome
 
-Not started.
+T37a — backend read/write implemented (2026-10-02).
+
+- `ListItemController` create/update/destroy authorize via
+  `ListAccessService::findWritable` (owner or active read/write share). Item
+  mutation requires `item.owner === user` or `list.owner === user`.
+- `create` may reference a product visible through the owner set (not only the
+  caller's own); `publishToOwner=true` publishes the caller's own product to the
+  list owner via `CatalogSharingService` (the confirmation dialog is the client's
+  job).
+- `ListAccessService::visibleCatalogOwners` now also includes users who published
+  catalog items (`bbml_catalog_shares`), so the list owner sees guest-published
+  items in their catalog.
+- Removed the now-unused `ProductMapper::findByIds`.
+- Tests: shared-list create/update/destroy authorization, owner-product use,
+  publish flag.
+- Verified: 244 tests, psalm, cs, openapi.
+- Still open: frontend confirmation dialog when publishing an own item; wiring
+  `CatalogSharingService::revokeItem` on catalog deletion.

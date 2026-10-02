@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\ByeByeMoneyList\Service\Sharing;
 
+use OCA\ByeByeMoneyList\Db\CatalogShareMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Db\ListShareMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
@@ -17,6 +18,7 @@ class ListAccessService {
 	public function __construct(
 		private ListMapper $listMapper,
 		private ListShareMapper $shareMapper,
+		private CatalogShareMapper $catalogShareMapper,
 	) {
 	}
 
@@ -86,7 +88,8 @@ class ListAccessService {
 
 	/**
 	 * Catalog owner uids whose items are visible to the user: the user plus every
-	 * user who has an active list share with them.
+	 * user who shared a list with them and every user who published a catalog item
+	 * to them.
 	 *
 	 * @return list<string>
 	 * @psalm-suppress PossiblyUnusedMethod
@@ -98,6 +101,9 @@ class ListAccessService {
 			if ($share->getStatus() === ListShareEntity::STATUS_ACTIVE && $owner !== null) {
 				$owners[] = $owner;
 			}
+		}
+		foreach ($this->catalogShareMapper->findActiveOwnerIdsByRecipient($userId) as $owner) {
+			$owners[] = $owner;
 		}
 
 		return array_values(array_unique($owners));
