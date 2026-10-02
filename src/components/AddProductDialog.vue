@@ -10,10 +10,11 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { addListItem, createProduct, fetchProducts } from '../services/listsApi.ts'
 import { t } from '../utils/l10n.ts'
 
-const props = defineProps<{ open: boolean, listId: string, type?: 'subscriptions' | 'income' }>()
+const props = defineProps<{ open: boolean, listId: string, type?: 'subscriptions' | 'income', sharedOwner?: string | null }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
@@ -33,6 +34,8 @@ const catalogFailed = ref(false)
 const error = ref<string | null>(null)
 const searchField = ref<InstanceType<typeof NcTextField> | null>(null)
 const newProductField = ref<InstanceType<typeof NcTextField> | null>(null)
+const showPublishConfirm = ref(false)
+const publishToOwner = ref(false)
 
 const searchResults = computed(() => {
 	const query = search.value.trim().toLowerCase()
@@ -77,6 +80,15 @@ const priceValid = computed(() => {
 
 const canSubmit = computed(() => selectedProduct.value !== null && quantityValid.value && priceValid.value && !submitting.value)
 
+const needsPublishConfirmation = computed(() => props.sharedOwner !== null
+	&& props.sharedOwner !== undefined
+	&& selectedProduct.value !== null
+	&& selectedProduct.value.shared !== true)
+
+const publishMessage = computed(() => t('Share "{name}" with the list owner so it appears in their catalog?', {
+	name: selectedProduct.value?.name ?? '',
+}))
+
 watch(
 	() => props.open,
 	(open) => {
@@ -89,6 +101,8 @@ watch(
 			newProductName.value = ''
 			price.value = ''
 			quantity.value = '1'
+			showPublishConfirm.value = false
+			publishToOwner.value = false
 			requestAnimationFrame(() => searchField.value?.focus())
 			loadCatalog()
 		}
@@ -148,6 +162,29 @@ async function onSubmit() {
 	if (!canSubmit.value || selectedProduct.value === null) {
 		return
 	}
+	if (needsPublishConfirmation.value && !publishToOwner.value) {
+		showPublishConfirm.value = true
+		return
+	}
+	await submit()
+}
+
+function onConfirmPublish() {
+	showPublishConfirm.value = false
+	publishToOwner.value = true
+	void submit()
+}
+
+function onCancelPublish(open: boolean) {
+	if (!open) {
+		showPublishConfirm.value = false
+	}
+}
+
+async function submit() {
+	if (selectedProduct.value === null) {
+		return
+	}
 	submitting.value = true
 	error.value = null
 	try {
@@ -155,6 +192,7 @@ async function onSubmit() {
 			productId: selectedProduct.value.id,
 			price: parsedPrice.value,
 			quantity: parsedQuantity.value ?? 1,
+			publishToOwner: publishToOwner.value,
 		})
 		emit('added', item)
 		emit('update:open', false)
@@ -346,6 +384,15 @@ function openCreateNew() {
 			</NcButton>
 		</template>
 	</NcDialog>
+
+	<ConfirmDialog
+		:open="showPublishConfirm"
+		:title="t('Share product')"
+		:message="publishMessage"
+		:confirmLabel="t('Share')"
+		:busy="submitting"
+		@update:open="onCancelPublish"
+		@confirm="onConfirmPublish" />
 </template>
 
 <style module>

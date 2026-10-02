@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiCashPlus, mdiPlus } from '@mdi/js'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -63,6 +63,11 @@ const showDialog = ref(false)
 const newListIsIncome = ref(false)
 const showPurchaseDialog = ref(false)
 const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
+
+const addProductSharedOwner = computed<string | null>(() => {
+	const list = lists.value.find((candidate) => candidate.id === addProductListId.value)
+	return list?.sharedBy ?? null
+})
 
 onMounted(loadData)
 
@@ -208,6 +213,7 @@ watch(
 			:open="addProductListId !== null"
 			:listId="addProductListId ?? ''"
 			:type="addProductType"
+			:sharedOwner="addProductSharedOwner"
 			@update:open="closeAddProduct"
 			@added="onItemAdded" />
 		<ConfirmDialog

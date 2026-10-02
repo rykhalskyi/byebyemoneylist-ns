@@ -88,3 +88,4 @@
 ## [2026-10-02] update | T36a backend list read scoping (shared lists + item reads); catalog visibility/copy/frontend remain
 ## [2026-10-02] update | T36 backend complete: catalog visibility + copy-to-own-DB; frontend remains
 ## [2026-10-02] update | T36 frontend: shared-list UI, revoked greying, read-only items, copy action, catalog Shared chips
+## [2026-10-02] update | T36 complete: catalog owner expanders; sharing read-only backend+frontend done

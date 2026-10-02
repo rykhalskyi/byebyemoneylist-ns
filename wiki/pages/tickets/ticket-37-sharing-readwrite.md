@@ -1,7 +1,7 @@
 ---
 created: 2026-10-02
 type: ticket
-status: in-progress
+status: implemented
 summary: T37 — Read/write sharing (guest manages own items, uses owner catalog, publish confirmation)
 ---
 
@@ -55,5 +55,10 @@ T37a — backend read/write implemented (2026-10-02).
 - Tests: shared-list create/update/destroy authorization, owner-product use,
   publish flag.
 - Verified: 244 tests, psalm, cs, openapi.
-- Still open: frontend confirmation dialog when publishing an own item; wiring
-  `CatalogSharingService::revokeItem` on catalog deletion.
+- T37b — frontend publish confirmation (2026-10-02): `AddProductDialog` now
+  receives the target list's `sharedOwner`; adding the user's own product to a
+  shared list shows a confirmation dialog and submits with `publishToOwner: true`.
+  Owner products (already shared) and own lists submit directly. Verified: 214
+  frontend tests, lint, stylelint, build.
+- T37 complete for the current publish path (list items are products). Still open:
+  wiring `CatalogSharingService::revokeItem` when a published product is deleted.

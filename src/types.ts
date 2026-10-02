@@ -192,6 +192,7 @@ export interface ListItemPayload {
 	productId: string
 	price?: number | null
 	quantity?: number
+	publishToOwner?: boolean
 }
 
 export interface ListItemUpdatePayload {
