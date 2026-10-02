@@ -1,7 +1,7 @@
 ---
 created: 2026-10-02
 type: ticket
-status: in-progress
+status: implemented
 summary: T36 — Read-only sharing (guest sees marked lists, catalog expanders, copy to own DB)
 ---
 
@@ -71,5 +71,9 @@ T36a — backend list read scoping implemented (2026-10-02).
   a “Shared” chip and hide edit/merge/delete. New `copyList` API + sharing
   helpers in `listDisplay`. Verified: `npm run lint`, `npm run stylelint`,
   `npm run test` (205 tests), `npm run build`.
-- Still open: per-owner grouped expanders in Catalog (currently a flat list with
-  per-row “Shared” markers); read/write item editing ([T37](ticket-37-sharing-readwrite.md)).
+- T36e — catalog owner expanders (2026-10-02): each Catalog tab lists own items
+  first, then one collapsible “Shared by {owner}” section per sharing user
+  (`groupByOwner` + `SharedOwnerSection`), expanded by default. Verified: 211
+  tests, lint, stylelint, build.
+- T36 complete (backend + frontend). Next: read/write item editing
+  ([T37](ticket-37-sharing-readwrite.md)).

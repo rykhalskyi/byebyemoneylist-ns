@@ -265,6 +265,7 @@ OC.L10N.register(
 		"Set as active profile" : "Встановити як активний профіль",
 		"Settings" : "Налаштування",
 		"Shared" : "Спільний",
+		"Shared by {owner}" : "Надано {owner}",
 		"Shared by {user}" : "Надано {user}",
 		"Shopping Lists" : "Списки покупок",
 		"Show advanced options" : "Показати розширені параметри",

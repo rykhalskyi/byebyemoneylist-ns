@@ -265,6 +265,7 @@ OC.L10N.register(
 		"Set as active profile" : "Set as active profile",
 		"Settings" : "Settings",
 		"Shared" : "Shared",
+		"Shared by {owner}" : "Shared by {owner}",
 		"Shared by {user}" : "Shared by {user}",
 		"Shopping Lists" : "Shopping Lists",
 		"Show advanced options" : "Show advanced options",
