@@ -14,6 +14,7 @@ use OCA\ByeByeMoneyList\Db\ListShareMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
 use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
+use OCA\ByeByeMoneyList\Service\Sharing\ListCopyService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -35,6 +36,7 @@ class ListController extends OCSController {
 	private ListItemMapper $itemMapper;
 	private ListShareMapper $shareMapper;
 	private ReceiptPictureService $receiptPictureService;
+	private ListCopyService $listCopyService;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
@@ -45,6 +47,7 @@ class ListController extends OCSController {
 		ListItemMapper $itemMapper,
 		ListShareMapper $shareMapper,
 		ReceiptPictureService $receiptPictureService,
+		ListCopyService $listCopyService,
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
@@ -54,6 +57,7 @@ class ListController extends OCSController {
 		$this->itemMapper = $itemMapper;
 		$this->shareMapper = $shareMapper;
 		$this->receiptPictureService = $receiptPictureService;
+		$this->listCopyService = $listCopyService;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -390,6 +394,44 @@ class ListController extends OCSController {
 		}
 
 		return new DataResponse([], Http::STATUS_OK);
+	}
+
+	/**
+	 * Copy a readable list (and its catalog items) into the current user's catalog
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @param string $id List id
+	 *
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool, sharedBy: ?string, shareMode: ?string, revoked: bool}}|array{message: string}, array{}>
+	 *
+	 * 201: List copied
+	 * 401: Current user is not logged in
+	 * 404: List not found or not readable by the current user
+	 * 500: Failed to copy the list
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/lists/{id}/copy')]
+	public function copy(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$list = $this->listCopyService->copy($id, $userId);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to copy list', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to copy list'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		if ($list === null) {
+			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$categoryIds = $this->mapper->findCategoryIdsByListIds([$list->getId()])[$list->getId()] ?? [];
+
+		return new DataResponse(['list' => $this->serializeList($list, null, $categoryIds)], Http::STATUS_CREATED);
 	}
 
 	private function getCurrentUserId(): ?string {

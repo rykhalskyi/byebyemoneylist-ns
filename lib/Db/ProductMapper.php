@@ -80,6 +80,23 @@ class ProductMapper extends QBMapper {
 	}
 
 	/**
+	 * Find a product by name within a user's catalog.
+	 */
+	public function findByNameAndOwner(string $name, string $userId): ?ProductEntity {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->eq('name', $qb->createNamedParameter($name, IQueryBuilder::PARAM_STR)));
+
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException) {
+			return null;
+		}
+	}
+
+	/**
 	 * Find the given products across the given owners, regardless of type.
 	 *
 	 * @param array<array-key, string> $productIds
