@@ -7,7 +7,9 @@ namespace Controller;
 use OCA\ByeByeMoneyList\Controller\ListController;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
+use OCA\ByeByeMoneyList\Db\ListShareMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
+use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
 use OCP\AppFramework\Http;
 use OCP\IDBConnection;
@@ -21,6 +23,7 @@ final class ListControllerTest extends TestCase {
 	private ListController $controller;
 	private ListMapper $mapper;
 	private ListItemMapper $itemMapper;
+	private ListShareMapper $shareMapper;
 	private ReceiptPictureService $receiptPictureService;
 	private IDBConnection $db;
 	private IUserSession $userSession;
@@ -29,6 +32,7 @@ final class ListControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$this->mapper = $this->createMock(ListMapper::class);
 		$this->itemMapper = $this->createMock(ListItemMapper::class);
+		$this->shareMapper = $this->createMock(ListShareMapper::class);
 		$this->receiptPictureService = $this->createMock(ReceiptPictureService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
@@ -38,6 +42,7 @@ final class ListControllerTest extends TestCase {
 			$request,
 			$this->mapper,
 			$this->itemMapper,
+			$this->shareMapper,
 			$this->receiptPictureService,
 			$this->db,
 			$this->userSession,
@@ -107,6 +112,65 @@ final class ListControllerTest extends TestCase {
 		$this->assertFalse($lists[0]['isRecurring']);
 		$this->assertSame('MONTH', $lists[0]['recurringPeriod']);
 		$this->assertTrue($lists[0]['isForwardEmpty']);
+		$this->assertNull($lists[0]['sharedBy']);
+		$this->assertNull($lists[0]['shareMode']);
+		$this->assertFalse($lists[0]['revoked']);
+	}
+
+	public function testIndexIncludesSharedAndRevokedLists(): void {
+		$this->mockUser('bob');
+
+		$activeListId = 'aaaaaaaa-2222-4333-8444-555555555555';
+		$revokedListId = 'bbbbbbbb-2222-4333-8444-555555555555';
+
+		$this->mapper->expects($this->once())
+			->method('findAllByOwner')
+			->with('bob')
+			->willReturn([]);
+		$this->mapper->method('findById')
+			->willReturnCallback(function (string $id) use ($activeListId, $revokedListId): ?ListEntity {
+				if ($id === $activeListId || $id === $revokedListId) {
+					$list = new ListEntity();
+					$list->setId($id);
+					$list->setOwner('alice');
+					$list->setName('Groceries');
+					$list->setStatus('new');
+					return $list;
+				}
+				return null;
+			});
+
+		$active = new ListShareEntity();
+		$active->setId('share-active');
+		$active->setListId($activeListId);
+		$active->setOwner('alice');
+		$active->setSharedWith('bob');
+		$active->setMode(ListShareEntity::MODE_READWRITE);
+		$active->setStatus(ListShareEntity::STATUS_ACTIVE);
+
+		$revoked = new ListShareEntity();
+		$revoked->setId('share-revoked');
+		$revoked->setListId($revokedListId);
+		$revoked->setOwner('alice');
+		$revoked->setSharedWith('bob');
+		$revoked->setMode(ListShareEntity::MODE_READONLY);
+		$revoked->setStatus(ListShareEntity::STATUS_REVOKED);
+
+		$this->shareMapper->expects($this->once())
+			->method('findByRecipient')
+			->with('bob')
+			->willReturn([$active, $revoked]);
+		$this->itemMapper->method('sumCheckedByListIds')->willReturn([]);
+		$this->mapper->method('findCategoryIdsByListIds')->willReturn([]);
+
+		$response = $this->controller->index();
+		$lists = $response->getData()['lists'];
+
+		$this->assertCount(2, $lists);
+		$this->assertSame('alice', $lists[0]['sharedBy']);
+		$this->assertSame(ListShareEntity::MODE_READWRITE, $lists[0]['shareMode']);
+		$this->assertFalse($lists[0]['revoked']);
+		$this->assertTrue($lists[1]['revoked']);
 	}
 
 	public function testIndexReturnsUnauthorizedWhenNotLoggedIn(): void {

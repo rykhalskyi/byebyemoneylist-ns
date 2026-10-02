@@ -61,10 +61,24 @@ class ProductMapper extends QBMapper {
 	 * @return ProductEntity[]
 	 */
 	private function findByOwner(string $userId, string $type): array {
+		return $this->findByOwners([$userId], $type);
+	}
+
+	/**
+	 * @param array<array-key, string> $ownerIds
+	 * @param 'normal'|'subscriptions'|'income'|'all' $type
+	 *
+	 * @return ProductEntity[]
+	 */
+	private function findByOwners(array $ownerIds, string $type): array {
+		if ($ownerIds === []) {
+			return [];
+		}
+
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
 			->from($this->tableName)
-			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)));
+			->where($qb->expr()->in('owner', $qb->createNamedParameter($ownerIds, IQueryBuilder::PARAM_STR_ARRAY)));
 
 		if ($type === 'normal') {
 			$qb->andWhere($qb->expr()->eq('is_subscription', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
@@ -76,6 +90,28 @@ class ProductMapper extends QBMapper {
 		}
 
 		$qb->orderBy('name', 'ASC');
+
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Find the given products across the given owners, regardless of type.
+	 *
+	 * @param array<array-key, string> $productIds
+	 * @param array<array-key, string> $ownerIds
+	 *
+	 * @return ProductEntity[]
+	 */
+	public function findByIdsForOwners(array $productIds, array $ownerIds): array {
+		if ($productIds === [] || $ownerIds === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->in('owner', $qb->createNamedParameter($ownerIds, IQueryBuilder::PARAM_STR_ARRAY)))
+			->andWhere($qb->expr()->in('id', $qb->createNamedParameter($productIds, IQueryBuilder::PARAM_STR_ARRAY)));
 
 		return $this->findEntities($qb);
 	}

@@ -13,6 +13,7 @@ use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -33,6 +34,7 @@ class ListItemController extends OCSController {
 	private ListItemMapper $itemMapper;
 	private ListMapper $listMapper;
 	private ProductMapper $productMapper;
+	private ListAccessService $listAccess;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
 
@@ -41,6 +43,7 @@ class ListItemController extends OCSController {
 		ListItemMapper $itemMapper,
 		ListMapper $listMapper,
 		ProductMapper $productMapper,
+		ListAccessService $listAccess,
 		IUserSession $userSession,
 		LoggerInterface $logger,
 	) {
@@ -48,6 +51,7 @@ class ListItemController extends OCSController {
 		$this->itemMapper = $itemMapper;
 		$this->listMapper = $listMapper;
 		$this->productMapper = $productMapper;
+		$this->listAccess = $listAccess;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
 	}
@@ -73,16 +77,17 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$list = $this->listMapper->findByIdAndOwner($id, $userId);
+		$list = $this->listAccess->findReadable($id, $userId);
 		if ($list === null) {
 			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
 		}
 
 		$items = $this->itemMapper->findByListId($id);
+		$visibleOwners = $this->listAccess->visibleCatalogOwners($userId);
 		$productNames = $this->productNamesByProductId(
-			$this->productMapper->findByIds(
+			$this->productMapper->findByIdsForOwners(
 				array_values(array_map(fn (ListItemEntity $item): string => $item->getProductId() ?? '', $items)),
-				$userId,
+				$visibleOwners,
 			),
 		);
 

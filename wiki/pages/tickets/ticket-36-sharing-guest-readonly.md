@@ -1,7 +1,7 @@
 ---
 created: 2026-10-02
 type: ticket
-status: proposed
+status: in-progress
 summary: T36 — Read-only sharing (guest sees marked lists, catalog expanders, copy to own DB)
 ---
 
@@ -35,4 +35,21 @@ Part of [epic](../epics/nextcloud-web-app.md) (T12). Design: [specs/list-sharing
 
 ## Outcome
 
-Not started.
+T36a — backend list read scoping implemented (2026-10-02).
+
+- `ListController::index` now returns owned lists **plus** lists shared with the
+  user, appended with `sharedBy`, `shareMode` and `revoked` (revoked rows are the
+  name-only greyed placeholder). Read path only; rename/delete stay owner-only.
+- `ListItemController::index` authorizes via `ListAccessService::findReadable` and
+  resolves product names through `ProductMapper::findByIdsForOwners` over the
+  visible owner set, so items on a shared list show the owner's product names.
+  Writes still require ownership (read/write lands in [T37](ticket-37-sharing-readwrite.md)).
+- `ProductMapper` gained the owner-set lookup; the earlier catalog-wide visible
+  variants (`Category`/`Store`/`Product` index) were deliberately reverted and
+  deferred to the next step to avoid dead code.
+- Tests: shared/revoked markers in `ListControllerTest`, shared-list read in
+  `ListItemControllerTest`.
+- Verified: `test:unit` (231 tests), `psalm`, `cs:check`, `openapi` (list response
+  gains `sharedBy`/`shareMode`/`revoked`).
+- Still open: catalog visibility (owner products/categories/stores in the guest's
+  expanders), copy-to-own-DB endpoint, and all frontend.

@@ -85,3 +85,4 @@
 ## [2026-10-02] ticket | T38 purchaser attribution for shared lists
 ## [2026-10-02] ticket | T39 family groups (Phase 2)
 ## [2026-10-02] update | T35 sharing foundation implemented; migration 1011 applied, tests/psalm/cs/openapi green
+## [2026-10-02] update | T36a backend list read scoping (shared lists + item reads); catalog visibility/copy/frontend remain

@@ -11,6 +11,7 @@ use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
 use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -23,6 +24,7 @@ final class ListItemControllerTest extends TestCase {
 	private ListItemMapper $itemMapper;
 	private ListMapper $listMapper;
 	private ProductMapper $productMapper;
+	private ListAccessService $listAccess;
 	private IUserSession $userSession;
 
 	protected function setUp(): void {
@@ -30,6 +32,7 @@ final class ListItemControllerTest extends TestCase {
 		$this->itemMapper = $this->createMock(ListItemMapper::class);
 		$this->listMapper = $this->createMock(ListMapper::class);
 		$this->productMapper = $this->createMock(ProductMapper::class);
+		$this->listAccess = $this->createMock(ListAccessService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
 
@@ -38,6 +41,7 @@ final class ListItemControllerTest extends TestCase {
 			$this->itemMapper,
 			$this->listMapper,
 			$this->productMapper,
+			$this->listAccess,
 			$this->userSession,
 			$logger,
 		);
@@ -84,10 +88,11 @@ final class ListItemControllerTest extends TestCase {
 		$listId = '11111111-2222-4333-8444-555555555555';
 		$productId = '22222222-3333-4444-8555-666666666666';
 
-		$this->listMapper->expects($this->once())
-			->method('findByIdAndOwner')
+		$this->listAccess->expects($this->once())
+			->method('findReadable')
 			->with($listId, 'alice')
 			->willReturn($this->list($listId));
+		$this->listAccess->method('visibleCatalogOwners')->willReturn(['alice']);
 
 		$item = $this->item('33333333-4444-4555-8666-777777777777', $listId, $productId);
 		$item->setPrice(1.99);
@@ -99,8 +104,8 @@ final class ListItemControllerTest extends TestCase {
 			->willReturn([$item]);
 
 		$this->productMapper->expects($this->once())
-			->method('findByIds')
-			->with(['22222222-3333-4444-8555-666666666666'], 'alice')
+			->method('findByIdsForOwners')
+			->with(['22222222-3333-4444-8555-666666666666'], ['alice'])
 			->willReturn([$this->product($productId, 'Milk')]);
 
 		$response = $this->controller->index($listId);
@@ -120,10 +125,11 @@ final class ListItemControllerTest extends TestCase {
 		$listId = '11111111-2222-4333-8444-555555555555';
 		$productId = '22222222-3333-4444-8555-666666666666';
 
-		$this->listMapper->expects($this->once())
-			->method('findByIdAndOwner')
+		$this->listAccess->expects($this->once())
+			->method('findReadable')
 			->with($listId, 'alice')
 			->willReturn($this->list($listId));
+		$this->listAccess->method('visibleCatalogOwners')->willReturn(['alice']);
 
 		$item = $this->item('33333333-4444-4555-8666-777777777777', $listId, $productId);
 
@@ -133,14 +139,44 @@ final class ListItemControllerTest extends TestCase {
 			->willReturn([$item]);
 
 		$this->productMapper->expects($this->once())
-			->method('findByIds')
-			->with([$productId], 'alice')
+			->method('findByIdsForOwners')
+			->with([$productId], ['alice'])
 			->willReturn([$this->product($productId, 'Subscription')]);
 
 		$response = $this->controller->index($listId);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('Subscription', $response->getData()['items'][0]['productName']);
+	}
+
+	public function testIndexReadsSharedListWithOwnerProductNames(): void {
+		$this->mockUser('bob');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+
+		$this->listAccess->expects($this->once())
+			->method('findReadable')
+			->with($listId, 'bob')
+			->willReturn($this->list($listId));
+		$this->listAccess->method('visibleCatalogOwners')
+			->with('bob')
+			->willReturn(['bob', 'alice']);
+
+		$this->itemMapper->expects($this->once())
+			->method('findByListId')
+			->with($listId)
+			->willReturn([$this->item('33333333-4444-4555-8666-777777777777', $listId, $productId)]);
+
+		$this->productMapper->expects($this->once())
+			->method('findByIdsForOwners')
+			->with([$productId], ['bob', 'alice'])
+			->willReturn([$this->product($productId, 'Milk')]);
+
+		$response = $this->controller->index($listId);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('Milk', $response->getData()['items'][0]['productName']);
 	}
 
 	public function testIndexReturnsUnauthorizedWhenNotLoggedIn(): void {
@@ -154,8 +190,8 @@ final class ListItemControllerTest extends TestCase {
 	public function testIndexReturnsNotFoundWhenListNotOwned(): void {
 		$this->mockUser('alice');
 
-		$this->listMapper->expects($this->once())
-			->method('findByIdAndOwner')
+		$this->listAccess->expects($this->once())
+			->method('findReadable')
 			->willReturn(null);
 
 		$this->itemMapper->expects($this->never())->method('findByListId');
