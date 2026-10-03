@@ -44,6 +44,8 @@ const categoryName = computed(() => {
 	return props.categories.find((category) => category.id === categoryId)?.name ?? ''
 })
 
+const isShared = computed(() => props.product?.shared === true)
+
 watch(
 	() => props.open,
 	async (open) => {
@@ -57,6 +59,12 @@ watch(
 		confirmPictureDelete.value = false
 		const product = props.product
 		if (product === undefined) {
+			return
+		}
+
+		if (product.shared === true) {
+			loading.value = false
+			pictureLoading.value = false
 			return
 		}
 
@@ -150,7 +158,7 @@ async function onConfirmPictureDelete() {
 		size="normal"
 		@update:open="emit('update:open', $event)">
 		<div v-if="product" :class="$style.content">
-			<div :class="$style.picture">
+			<div v-if="!isShared" :class="$style.picture">
 				<div v-if="pictureLoading" :class="$style.center">
 					<NcLoadingIcon />
 				</div>
@@ -247,28 +255,30 @@ async function onConfirmPictureDelete() {
 				</div>
 			</dl>
 
-			<h5 :class="$style['section-title']">
-				{{ t('Price history') }}
-			</h5>
+			<template v-if="!isShared">
+				<h5 :class="$style['section-title']">
+					{{ t('Price history') }}
+				</h5>
 
-			<div v-if="loading" :class="$style.center">
-				<NcLoadingIcon />
-			</div>
+				<div v-if="loading" :class="$style.center">
+					<NcLoadingIcon />
+				</div>
 
-			<p v-else-if="error" :class="$style.error">
-				{{ error }}
-			</p>
+				<p v-else-if="error" :class="$style.error">
+					{{ error }}
+				</p>
 
-			<p v-else-if="prices.length === 0" :class="$style.empty">
-				{{ t('No price history yet.') }}
-			</p>
+				<p v-else-if="prices.length === 0" :class="$style.empty">
+					{{ t('No price history yet.') }}
+				</p>
 
-			<ul v-else :class="$style.prices">
-				<li v-for="price in prices" :key="price.id" :class="$style.price">
-					<span :class="$style['price-value']">{{ formatTotal(price.value) }}</span>
-					<span :class="$style['price-meta']">{{ priceMeta(price) }}</span>
-				</li>
-			</ul>
+				<ul v-else :class="$style.prices">
+					<li v-for="price in prices" :key="price.id" :class="$style.price">
+						<span :class="$style['price-value']">{{ formatTotal(price.value) }}</span>
+						<span :class="$style['price-meta']">{{ priceMeta(price) }}</span>
+					</li>
+				</ul>
+			</template>
 		</div>
 		<template #actions>
 			<NcButton type="button" variant="secondary" @click="close">

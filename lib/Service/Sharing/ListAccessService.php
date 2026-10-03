@@ -87,9 +87,10 @@ class ListAccessService {
 	}
 
 	/**
-	 * Catalog owner uids whose items are visible to the user: the user plus every
-	 * user who shared a list with them and every user who published a catalog item
-	 * to them.
+	 * Catalog owner uids whose whole catalog is visible to the user: the user plus
+	 * every user who actively shared a list with them. Per-item grants from the
+	 * guest→owner publish direction are intentionally not owners and are resolved
+	 * item-by-item via {@see grantedCatalogItemIds()}.
 	 *
 	 * @return list<string>
 	 * @psalm-suppress PossiblyUnusedMethod
@@ -102,10 +103,20 @@ class ListAccessService {
 				$owners[] = $owner;
 			}
 		}
-		foreach ($this->catalogShareMapper->findActiveOwnerIdsByRecipient($userId) as $owner) {
-			$owners[] = $owner;
-		}
 
 		return array_values(array_unique($owners));
+	}
+
+	/**
+	 * Ids of catalog items explicitly granted to the user by another owner
+	 * (guest → owner publishing).
+	 *
+	 * @param string $itemType Catalog item type constant (product/category/store)
+	 *
+	 * @return list<string>
+	 * @psalm-suppress PossiblyUnusedMethod
+	 */
+	public function grantedCatalogItemIds(string $userId, string $itemType): array {
+		return $this->catalogShareMapper->findActiveItemIdsByRecipient($userId, $itemType);
 	}
 }

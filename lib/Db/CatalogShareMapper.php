@@ -55,23 +55,26 @@ class CatalogShareMapper extends QBMapper {
 	}
 
 	/**
-	 * Distinct owners who published a catalog item of any type to a recipient.
+	 * Distinct item ids of a given type actively granted to a recipient.
+	 *
+	 * @param string $itemType One of CatalogShareEntity::TYPE_*
 	 *
 	 * @return list<string>
 	 */
-	public function findActiveOwnerIdsByRecipient(string $userId): array {
+	public function findActiveItemIdsByRecipient(string $userId, string $itemType): array {
 		$qb = $this->db->getQueryBuilder();
-		$qb->selectDistinct('owner')
+		$qb->selectDistinct('item_id')
 			->from($this->tableName)
 			->where($qb->expr()->eq('shared_with', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->eq('item_type', $qb->createNamedParameter($itemType, IQueryBuilder::PARAM_STR)))
 			->andWhere($qb->expr()->eq('status', $qb->createNamedParameter(CatalogShareEntity::STATUS_ACTIVE, IQueryBuilder::PARAM_STR)));
 
 		$result = $qb->executeQuery();
-		/** @var list<array{owner: string}> $rows */
+		/** @var list<array{item_id: string}> $rows */
 		$rows = $result->fetchAll();
 		$result->closeCursor();
 
-		return array_map(static fn (array $row): string => $row['owner'], $rows);
+		return array_map(static fn (array $row): string => $row['item_id'], $rows);
 	}
 
 	/**

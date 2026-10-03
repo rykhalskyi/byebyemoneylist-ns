@@ -136,4 +136,14 @@ class ListShareMapper extends QBMapper {
 
 		return $this->findEntities($qb);
 	}
+
+	/**
+	 * Delete every share of a list (called when the list itself is deleted).
+	 */
+	public function deleteByListId(string $listId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->tableName)
+			->where($qb->expr()->eq('list_id', $qb->createNamedParameter($listId, IQueryBuilder::PARAM_STR)));
+		$qb->executeStatement();
+	}
 }

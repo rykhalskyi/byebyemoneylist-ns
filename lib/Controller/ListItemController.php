@@ -88,11 +88,9 @@ class ListItemController extends OCSController {
 		}
 
 		$items = $this->itemMapper->findByListId($id);
-		$visibleOwners = $this->listAccess->visibleCatalogOwners($userId);
 		$productNames = $this->productNamesByProductId(
-			$this->productMapper->findByIdsForOwners(
+			$this->productMapper->findByIds(
 				array_values(array_map(fn (ListItemEntity $item): string => $item->getProductId() ?? '', $items)),
-				$visibleOwners,
 			),
 		);
 
@@ -298,7 +296,7 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Failed to update item'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		return new DataResponse(['item' => $this->serializeItem($updated, $this->productName($updated->getProductId() ?? '', $userId))], Http::STATUS_OK);
+		return new DataResponse(['item' => $this->serializeItem($updated, $this->productName($updated->getProductId() ?? ''))], Http::STATUS_OK);
 	}
 
 	/**
@@ -365,10 +363,8 @@ class ListItemController extends OCSController {
 		return $this->userSession->getUser()?->getUID();
 	}
 
-	private function productName(string $productId, string $userId): string {
-		$owners = $this->listAccess->visibleCatalogOwners($userId);
-		$products = $this->productMapper->findByIdsForOwners([$productId], $owners);
-		foreach ($products as $product) {
+	private function productName(string $productId): string {
+		foreach ($this->productMapper->findByIds([$productId]) as $product) {
 			if ($product->getId() === $productId) {
 				return $product->getName() ?? '';
 			}

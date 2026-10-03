@@ -48,9 +48,9 @@ T37a — backend read/write implemented (2026-10-02).
   caller's own); `publishToOwner=true` publishes the caller's own product to the
   list owner via `CatalogSharingService` (the confirmation dialog is the client's
   job).
-- `ListAccessService::visibleCatalogOwners` now also includes users who published
-  catalog items (`bbml_catalog_shares`), so the list owner sees guest-published
-  items in their catalog.
+- `ListAccessService::visibleCatalogOwners` covers whole catalogs shared via list
+  shares; the guest→owner direction exposes only the specific items published via
+  `bbml_catalog_shares` (see [T41](ticket-41-sharing-scope-hardening.md), D-25).
 - Removed the now-unused `ProductMapper::findByIds`.
 - Tests: shared-list create/update/destroy authorization, owner-product use,
   publish flag.
@@ -60,5 +60,6 @@ T37a — backend read/write implemented (2026-10-02).
   shared list shows a confirmation dialog and submits with `publishToOwner: true`.
   Owner products (already shared) and own lists submit directly. Verified: 214
   frontend tests, lint, stylelint, build.
-- T37 complete for the current publish path (list items are products). Still open:
-  wiring `CatalogSharingService::revokeItem` when a published product is deleted.
+- T37 complete for the current publish path (list items are products). Revoking a
+  published product's grant on delete is wired in
+  [T41](ticket-41-sharing-scope-hardening.md).

@@ -171,6 +171,11 @@ final class ListControllerTest extends TestCase {
 					$list->setOwner('alice');
 					$list->setName('Groceries');
 					$list->setStatus('new');
+					if ($id === $revokedListId) {
+						$list->setStoreId('store-1');
+						$list->setCategoryId('cat-1');
+						$list->setIsFinished(true);
+					}
 					return $list;
 				}
 				return null;
@@ -196,8 +201,14 @@ final class ListControllerTest extends TestCase {
 			->method('findByRecipient')
 			->with('bob')
 			->willReturn([$active, $revoked]);
-		$this->itemMapper->method('sumCheckedByListIds')->willReturn([]);
-		$this->mapper->method('findCategoryIdsByListIds')->willReturn([]);
+		$this->itemMapper->expects($this->once())
+			->method('sumCheckedByListIds')
+			->with([$activeListId])
+			->willReturn([$activeListId => 9.99]);
+		$this->mapper->expects($this->once())
+			->method('findCategoryIdsByListIds')
+			->with([$activeListId])
+			->willReturn([$activeListId => ['cat-1']]);
 
 		$response = $this->controller->index();
 		$lists = $response->getData()['lists'];
@@ -206,7 +217,14 @@ final class ListControllerTest extends TestCase {
 		$this->assertSame('alice', $lists[0]['sharedBy']);
 		$this->assertSame(ListShareEntity::MODE_READWRITE, $lists[0]['shareMode']);
 		$this->assertFalse($lists[0]['revoked']);
+		$this->assertSame(['cat-1'], $lists[0]['categoryIds']);
+		$this->assertSame(9.99, $lists[0]['totalPrice']);
 		$this->assertTrue($lists[1]['revoked']);
+		$this->assertNull($lists[1]['storeId']);
+		$this->assertNull($lists[1]['categoryId']);
+		$this->assertFalse($lists[1]['isFinished']);
+		$this->assertSame([], $lists[1]['categoryIds']);
+		$this->assertNull($lists[1]['totalPrice']);
 	}
 
 	public function testCopyReturnsCreatedList(): void {
@@ -512,6 +530,10 @@ final class ListControllerTest extends TestCase {
 
 		$this->mapper->expects($this->once())
 			->method('deleteCategoriesByListId')
+			->with('11111111-2222-4333-8444-555555555555');
+
+		$this->shareMapper->expects($this->once())
+			->method('deleteByListId')
 			->with('11111111-2222-4333-8444-555555555555');
 
 		$this->mapper->expects($this->once())

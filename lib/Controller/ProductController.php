@@ -11,11 +11,13 @@ use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ProductAliasMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Db\ProductPriceMapper;
+use OCA\ByeByeMoneyList\Entity\CatalogShareEntity;
 use OCA\ByeByeMoneyList\Entity\ProductAliasEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
 use OCA\ByeByeMoneyList\Service\ProductMergeService;
 use OCA\ByeByeMoneyList\Service\ProductPictureService;
+use OCA\ByeByeMoneyList\Service\Sharing\CatalogSharingService;
 use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
@@ -41,6 +43,7 @@ class ProductController extends OCSController {
 	private ProductPictureService $pictureService;
 	private ProductMergeService $mergeService;
 	private ListAccessService $listAccess;
+	private CatalogSharingService $catalogSharing;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
@@ -55,6 +58,7 @@ class ProductController extends OCSController {
 		ProductPictureService $pictureService,
 		ProductMergeService $mergeService,
 		ListAccessService $listAccess,
+		CatalogSharingService $catalogSharing,
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
@@ -68,6 +72,7 @@ class ProductController extends OCSController {
 		$this->pictureService = $pictureService;
 		$this->mergeService = $mergeService;
 		$this->listAccess = $listAccess;
+		$this->catalogSharing = $catalogSharing;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -95,12 +100,17 @@ class ProductController extends OCSController {
 
 		$owners = $this->listAccess->visibleCatalogOwners($userId);
 		$type = in_array($type, ['normal', 'subscriptions', 'income', 'all'], true) ? $type : 'normal';
-		$products = $this->mapper->findAllVisibleByOwners($owners, $type);
+		$grantedIds = $this->listAccess->grantedCatalogItemIds($userId, CatalogShareEntity::TYPE_PRODUCT);
+		$products = $this->mapper->findAllVisibleByOwners($owners, $type, $grantedIds);
 		$productIds = array_values(array_map(fn (ProductEntity $product): string => $product->getId(), $products));
+		$productOwners = array_values(array_unique(array_map(
+			static fn (ProductEntity $product): string => $product->getOwner() ?? '',
+			$products,
+		)));
 		$aliasesByProduct = $this->groupAliases(
-			$this->aliasMapper->findByProductIdsForOwners($productIds, $owners),
+			$this->aliasMapper->findByProductIdsForOwners($productIds, $productOwners),
 		);
-		$latestPrices = $this->priceMapper->findLatestByProductIdsForOwners($productIds, $owners);
+		$latestPrices = $this->priceMapper->findLatestByProductIdsForOwners($productIds, $productOwners);
 
 		$serialized = array_map(
 			fn (ProductEntity $product): array => $this->serializeProduct(
@@ -342,6 +352,7 @@ class ProductController extends OCSController {
 			$qb->executeStatement();
 
 			$this->mapper->delete($product);
+			$this->catalogSharing->revokeItem(CatalogShareEntity::TYPE_PRODUCT, $id);
 
 			$this->db->commit();
 		} catch (\Exception $e) {

@@ -29,15 +29,17 @@ class ProductMapper extends QBMapper {
 	}
 
 	/**
-	 * Find all products of the given owners filtered by type.
+	 * Find all products of the given owners filtered by type, plus any explicitly
+	 * granted product ids regardless of owner.
 	 *
 	 * @param array<array-key, string> $ownerIds
 	 * @param 'normal'|'subscriptions'|'income'|'all' $type
+	 * @param array<array-key, string> $grantedItemIds
 	 *
 	 * @return ProductEntity[]
 	 */
-	public function findAllVisibleByOwners(array $ownerIds, string $type = 'all'): array {
-		return $this->findByOwners($ownerIds, $type);
+	public function findAllVisibleByOwners(array $ownerIds, string $type = 'all', array $grantedItemIds = []): array {
+		return $this->findByOwners($ownerIds, $type, $grantedItemIds);
 	}
 
 	/**
@@ -52,18 +54,31 @@ class ProductMapper extends QBMapper {
 	/**
 	 * @param array<array-key, string> $ownerIds
 	 * @param 'normal'|'subscriptions'|'income'|'all' $type
+	 * @param array<array-key, string> $grantedItemIds
 	 *
 	 * @return ProductEntity[]
 	 */
-	private function findByOwners(array $ownerIds, string $type): array {
-		if ($ownerIds === []) {
+	private function findByOwners(array $ownerIds, string $type, array $grantedItemIds = []): array {
+		if ($ownerIds === [] && $grantedItemIds === []) {
 			return [];
 		}
 
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
-			->from($this->tableName)
-			->where($qb->expr()->in('owner', $qb->createNamedParameter($ownerIds, IQueryBuilder::PARAM_STR_ARRAY)));
+			->from($this->tableName);
+
+		$ownerCondition = $ownerIds === []
+			? null
+			: $qb->expr()->in('owner', $qb->createNamedParameter($ownerIds, IQueryBuilder::PARAM_STR_ARRAY));
+		$grantedCondition = $grantedItemIds === []
+			? null
+			: $qb->expr()->in('id', $qb->createNamedParameter($grantedItemIds, IQueryBuilder::PARAM_STR_ARRAY));
+
+		if ($ownerCondition !== null && $grantedCondition !== null) {
+			$qb->where($qb->expr()->orX($ownerCondition, $grantedCondition));
+		} else {
+			$qb->where($ownerCondition ?? $grantedCondition);
+		}
 
 		if ($type === 'normal') {
 			$qb->andWhere($qb->expr()->eq('is_subscription', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
@@ -114,6 +129,27 @@ class ProductMapper extends QBMapper {
 			->from($this->tableName)
 			->where($qb->expr()->in('owner', $qb->createNamedParameter($ownerIds, IQueryBuilder::PARAM_STR_ARRAY)))
 			->andWhere($qb->expr()->in('id', $qb->createNamedParameter($productIds, IQueryBuilder::PARAM_STR_ARRAY)));
+
+		return $this->findEntities($qb);
+	}
+
+	/**
+	 * Find the given products regardless of owner. Product ids are globally
+	 * unique, so callers must already be entitled to the ids they pass.
+	 *
+	 * @param array<array-key, string> $productIds
+	 *
+	 * @return ProductEntity[]
+	 */
+	public function findByIds(array $productIds): array {
+		if ($productIds === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->in('id', $qb->createNamedParameter($productIds, IQueryBuilder::PARAM_STR_ARRAY)));
 
 		return $this->findEntities($qb);
 	}

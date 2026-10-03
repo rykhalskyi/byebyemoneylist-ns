@@ -69,6 +69,7 @@
 - [tickets/ticket-38-sharing-purchaser-attribution](pages/tickets/ticket-38-sharing-purchaser-attribution.md) — T38 — Attribute shared-list expenses to the purchaser (analytics + dashboard)
 - [tickets/ticket-39-sharing-family-groups](pages/tickets/ticket-39-sharing-family-groups.md) — T39 — Family groups (Phase 2: share lists with all group members)
 - [tickets/ticket-40-sharing-owner-mark](pages/tickets/ticket-40-sharing-owner-mark.md) — Owner-side shared-list mark and full share management dialog (add, edit access, revoke)
+- [tickets/ticket-41-sharing-scope-hardening](pages/tickets/ticket-41-sharing-scope-hardening.md) — T41 — List-sharing review fixes: item-scoped catalog grants, shared-list payload, revoked placeholder, share/grant lifecycle
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.

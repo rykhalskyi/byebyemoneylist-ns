@@ -128,11 +128,18 @@ final class ListAccessServiceTest extends TestCase {
 			->method('findByRecipient')
 			->with('bob')
 			->willReturn([$active, $revoked]);
-		$this->catalogShareMapper->expects($this->once())
-			->method('findActiveOwnerIdsByRecipient')
-			->with('bob')
-			->willReturn(['dave']);
+		$this->catalogShareMapper->expects($this->never())
+			->method('findActiveItemIdsByRecipient');
 
-		$this->assertSame(['bob', 'alice', 'dave'], $this->service->visibleCatalogOwners('bob'));
+		$this->assertSame(['bob', 'alice'], $this->service->visibleCatalogOwners('bob'));
+	}
+
+	public function testGrantedCatalogItemIdsDelegatesToMapper(): void {
+		$this->catalogShareMapper->expects($this->once())
+			->method('findActiveItemIdsByRecipient')
+			->with('bob', 'product')
+			->willReturn(['product-1', 'product-2']);
+
+		$this->assertSame(['product-1', 'product-2'], $this->service->grantedCatalogItemIds('bob', 'product'));
 	}
 }

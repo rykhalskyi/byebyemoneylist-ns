@@ -82,12 +82,10 @@ class ListController extends OCSController {
 		}
 
 		$lists = $this->mapper->findAllByOwner($userId);
-		$listIds = array_values(array_map(
+		$ownedListIds = array_values(array_map(
 			fn (ListEntity $list): string => $list->getId(),
 			$lists,
 		));
-		$totals = $this->itemMapper->sumCheckedByListIds($listIds);
-		$categoryIdsByList = $this->mapper->findCategoryIdsByListIds($listIds);
 
 		$sharedListIds = [];
 		foreach ($this->shareMapper->findActiveByOwner($userId) as $share) {
@@ -96,6 +94,27 @@ class ListController extends OCSController {
 				$sharedListIds[$listId] = true;
 			}
 		}
+
+		$incoming = [];
+		$visibleSharedListIds = [];
+		foreach ($this->shareMapper->findByRecipient($userId) as $share) {
+			$listId = $share->getListId();
+			if ($listId === null || $share->getOwner() === $userId) {
+				continue;
+			}
+			$list = $this->mapper->findById($listId);
+			if ($list === null) {
+				continue;
+			}
+			$incoming[] = ['list' => $list, 'share' => $share];
+			if ($share->getStatus() === ListShareEntity::STATUS_ACTIVE) {
+				$visibleSharedListIds[$listId] = true;
+			}
+		}
+
+		$allListIds = array_values(array_unique([...$ownedListIds, ...array_keys($visibleSharedListIds)]));
+		$totals = $this->itemMapper->sumCheckedByListIds($allListIds);
+		$categoryIdsByList = $this->mapper->findCategoryIdsByListIds($allListIds);
 
 		$serialized = array_map(
 			fn (ListEntity $list): array => $this->serializeList(
@@ -110,23 +129,17 @@ class ListController extends OCSController {
 			$lists,
 		);
 
-		foreach ($this->shareMapper->findByRecipient($userId) as $share) {
-			$listId = $share->getListId();
-			if ($listId === null || $share->getOwner() === $userId) {
-				continue;
-			}
-			$list = $this->mapper->findById($listId);
-			if ($list === null) {
-				continue;
-			}
-			$serialized[] = $this->serializeList(
-				$list,
-				null,
-				$categoryIdsByList[$list->getId()] ?? [],
-				$share->getOwner(),
-				$share->getMode(),
-				$share->getStatus() === ListShareEntity::STATUS_REVOKED,
-			);
+		foreach ($incoming as ['list' => $list, 'share' => $share]) {
+			$serialized[] = $share->getStatus() === ListShareEntity::STATUS_REVOKED
+				? $this->serializeRevokedList($list, $share->getOwner(), $share->getMode())
+				: $this->serializeList(
+					$list,
+					$totals[$list->getId()] ?? null,
+					$categoryIdsByList[$list->getId()] ?? [],
+					$share->getOwner(),
+					$share->getMode(),
+					false,
+				);
 		}
 
 		return new DataResponse(['lists' => array_values($serialized)], Http::STATUS_OK);
@@ -386,6 +399,7 @@ class ListController extends OCSController {
 			$this->db->beginTransaction();
 			$transactionStarted = true;
 			$this->itemMapper->deleteByListId($id);
+			$this->shareMapper->deleteByListId($id);
 			$this->mapper->deleteCategoriesByListId($id);
 			$this->mapper->delete($list);
 			$this->db->commit();
@@ -540,6 +554,41 @@ class ListController extends OCSController {
 			'shareMode' => $shareMode,
 			'revoked' => $revoked,
 			'hasShares' => $hasShares,
+		];
+	}
+
+	/**
+	 * Name-only placeholder for a revoked share: the guest keeps the list name and
+	 * the fact that it is revoked, but no other list metadata.
+	 *
+	 * @return array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool, sharedBy: ?string, shareMode: ?string, revoked: bool, hasShares: bool}
+	 */
+	private function serializeRevokedList(ListEntity $list, ?string $sharedBy = null, ?string $shareMode = null): array {
+		return [
+			'id' => $list->getId(),
+			'name' => $list->getName() ?? '',
+			'storeId' => null,
+			'categoryId' => null,
+			'categoryIds' => [],
+			'status' => 'new',
+			'finalTotal' => null,
+			'totalPrice' => null,
+			'createdAt' => null,
+			'createDate' => null,
+			'updatedAt' => null,
+			'purchaseDate' => null,
+			'position' => 0,
+			'isFinished' => false,
+			'isSubscription' => false,
+			'isIncome' => false,
+			'isRecurring' => false,
+			'recurringPeriod' => 'MONTH',
+			'isForwardEmpty' => true,
+			'hasReceipt' => false,
+			'sharedBy' => $sharedBy,
+			'shareMode' => $shareMode,
+			'revoked' => true,
+			'hasShares' => false,
 		];
 	}
 }

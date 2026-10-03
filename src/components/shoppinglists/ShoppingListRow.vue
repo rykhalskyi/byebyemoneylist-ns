@@ -94,7 +94,7 @@ function categoryName(categoryId: string | null): string {
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiDotsVertical" :size="20" />
 					</template>
-					<NcActionButton v-if="isSharedList(props.list)" @click.stop="emit('copy')">
+					<NcActionButton v-if="isSharedList(props.list) && !isRevokedList(props.list)" @click.stop="emit('copy')">
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiContentCopy" :size="20" />
 						</template>

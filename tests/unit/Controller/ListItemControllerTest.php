@@ -97,7 +97,6 @@ final class ListItemControllerTest extends TestCase {
 			->method('findReadable')
 			->with($listId, 'alice')
 			->willReturn($this->list($listId));
-		$this->listAccess->method('visibleCatalogOwners')->willReturn(['alice']);
 
 		$item = $this->item('33333333-4444-4555-8666-777777777777', $listId, $productId);
 		$item->setPrice(1.99);
@@ -109,8 +108,8 @@ final class ListItemControllerTest extends TestCase {
 			->willReturn([$item]);
 
 		$this->productMapper->expects($this->once())
-			->method('findByIdsForOwners')
-			->with(['22222222-3333-4444-8555-666666666666'], ['alice'])
+			->method('findByIds')
+			->with([$productId])
 			->willReturn([$this->product($productId, 'Milk')]);
 
 		$response = $this->controller->index($listId);
@@ -134,7 +133,6 @@ final class ListItemControllerTest extends TestCase {
 			->method('findReadable')
 			->with($listId, 'alice')
 			->willReturn($this->list($listId));
-		$this->listAccess->method('visibleCatalogOwners')->willReturn(['alice']);
 
 		$item = $this->item('33333333-4444-4555-8666-777777777777', $listId, $productId);
 
@@ -144,8 +142,8 @@ final class ListItemControllerTest extends TestCase {
 			->willReturn([$item]);
 
 		$this->productMapper->expects($this->once())
-			->method('findByIdsForOwners')
-			->with([$productId], ['alice'])
+			->method('findByIds')
+			->with([$productId])
 			->willReturn([$this->product($productId, 'Subscription')]);
 
 		$response = $this->controller->index($listId);
@@ -164,9 +162,6 @@ final class ListItemControllerTest extends TestCase {
 			->method('findReadable')
 			->with($listId, 'bob')
 			->willReturn($this->list($listId));
-		$this->listAccess->method('visibleCatalogOwners')
-			->with('bob')
-			->willReturn(['bob', 'alice']);
 
 		$this->itemMapper->expects($this->once())
 			->method('findByListId')
@@ -174,8 +169,8 @@ final class ListItemControllerTest extends TestCase {
 			->willReturn([$this->item('33333333-4444-4555-8666-777777777777', $listId, $productId)]);
 
 		$this->productMapper->expects($this->once())
-			->method('findByIdsForOwners')
-			->with([$productId], ['bob', 'alice'])
+			->method('findByIds')
+			->with([$productId])
 			->willReturn([$this->product($productId, 'Milk')]);
 
 		$response = $this->controller->index($listId);
@@ -459,10 +454,9 @@ final class ListItemControllerTest extends TestCase {
 			->method('update')
 			->willReturnArgument(0);
 
-		$this->listAccess->method('visibleCatalogOwners')->willReturn(['alice']);
 		$this->productMapper->expects($this->once())
-			->method('findByIdsForOwners')
-			->with([$productId], ['alice'])
+			->method('findByIds')
+			->with([$productId])
 			->willReturn([$this->product($productId, 'Milk')]);
 
 		$response = $this->controller->update($listId, $itemId, true);
@@ -667,10 +661,9 @@ final class ListItemControllerTest extends TestCase {
 			->method('update')
 			->willReturnArgument(0);
 
-		$this->listAccess->method('visibleCatalogOwners')->willReturn(['alice']);
 		$this->productMapper->expects($this->once())
-			->method('findByIdsForOwners')
-			->with([$productId], ['alice'])
+			->method('findByIds')
+			->with([$productId])
 			->willReturn([$this->product($productId, 'Milk')]);
 
 		$response = $this->controller->update($listId, $itemId, null, null, null, 5, 0.3, 'Renamed');

@@ -114,8 +114,9 @@ describe('ShoppingListRow', () => {
 		expect(wrapper.text()).not.toContain('Add product')
 	})
 
-	it('greys out revoked lists', async () => {
+	it('greys out revoked lists and hides the copy action', async () => {
 		const wrapper = await render({ list: list({ sharedBy: 'alice', revoked: true }) })
 		expect(wrapper.html()).toContain('revoked')
+		expect(wrapper.findAllComponents(NcActionButton).map((button) => button.text())).not.toContain('Copy to my catalog')
 	})
 })
