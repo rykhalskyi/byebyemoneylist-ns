@@ -10,8 +10,11 @@ use DateTimeZone;
 use OCA\ByeByeMoneyList\AppInfo\Application;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
+use OCA\ByeByeMoneyList\Db\ListShareMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
+use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
+use OCA\ByeByeMoneyList\Service\Sharing\ListCopyService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -31,7 +34,9 @@ class ListController extends OCSController {
 
 	private ListMapper $mapper;
 	private ListItemMapper $itemMapper;
+	private ListShareMapper $shareMapper;
 	private ReceiptPictureService $receiptPictureService;
+	private ListCopyService $listCopyService;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
@@ -40,7 +45,9 @@ class ListController extends OCSController {
 		IRequest $request,
 		ListMapper $mapper,
 		ListItemMapper $itemMapper,
+		ListShareMapper $shareMapper,
 		ReceiptPictureService $receiptPictureService,
+		ListCopyService $listCopyService,
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
@@ -48,7 +55,9 @@ class ListController extends OCSController {
 		parent::__construct(Application::APP_ID, $request);
 		$this->mapper = $mapper;
 		$this->itemMapper = $itemMapper;
+		$this->shareMapper = $shareMapper;
 		$this->receiptPictureService = $receiptPictureService;
+		$this->listCopyService = $listCopyService;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -59,7 +68,7 @@ class ListController extends OCSController {
 	 *
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{lists: list<array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool}>}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED, array{lists: list<array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool, sharedBy: ?string, shareMode: ?string, revoked: bool, hasShares: bool}>}|array{message: string}, array{}>
 	 *
 	 * 200: Lists returned
 	 * 401: Current user is not logged in
@@ -73,23 +82,67 @@ class ListController extends OCSController {
 		}
 
 		$lists = $this->mapper->findAllByOwner($userId);
-		$listIds = array_values(array_map(
+		$ownedListIds = array_values(array_map(
 			fn (ListEntity $list): string => $list->getId(),
 			$lists,
 		));
-		$totals = $this->itemMapper->sumCheckedByListIds($listIds);
-		$categoryIdsByList = $this->mapper->findCategoryIdsByListIds($listIds);
 
-		$serialized = array_values(array_map(
+		$sharedListIds = [];
+		foreach ($this->shareMapper->findActiveByOwner($userId) as $share) {
+			$listId = $share->getListId();
+			if ($listId !== null) {
+				$sharedListIds[$listId] = true;
+			}
+		}
+
+		$incoming = [];
+		$visibleSharedListIds = [];
+		foreach ($this->shareMapper->findByRecipient($userId) as $share) {
+			$listId = $share->getListId();
+			if ($listId === null || $share->getOwner() === $userId) {
+				continue;
+			}
+			$list = $this->mapper->findById($listId);
+			if ($list === null) {
+				continue;
+			}
+			$incoming[] = ['list' => $list, 'share' => $share];
+			if ($share->getStatus() === ListShareEntity::STATUS_ACTIVE) {
+				$visibleSharedListIds[$listId] = true;
+			}
+		}
+
+		$allListIds = array_values(array_unique([...$ownedListIds, ...array_keys($visibleSharedListIds)]));
+		$totals = $this->itemMapper->sumCheckedByListIds($allListIds);
+		$categoryIdsByList = $this->mapper->findCategoryIdsByListIds($allListIds);
+
+		$serialized = array_map(
 			fn (ListEntity $list): array => $this->serializeList(
 				$list,
 				$totals[$list->getId()] ?? null,
 				$categoryIdsByList[$list->getId()] ?? [],
+				null,
+				null,
+				false,
+				isset($sharedListIds[$list->getId()]),
 			),
 			$lists,
-		));
+		);
 
-		return new DataResponse(['lists' => $serialized], Http::STATUS_OK);
+		foreach ($incoming as ['list' => $list, 'share' => $share]) {
+			$serialized[] = $share->getStatus() === ListShareEntity::STATUS_REVOKED
+				? $this->serializeRevokedList($list, $share->getOwner(), $share->getMode())
+				: $this->serializeList(
+					$list,
+					$totals[$list->getId()] ?? null,
+					$categoryIdsByList[$list->getId()] ?? [],
+					$share->getOwner(),
+					$share->getMode(),
+					false,
+				);
+		}
+
+		return new DataResponse(['lists' => array_values($serialized)], Http::STATUS_OK);
 	}
 
 	/**
@@ -112,7 +165,7 @@ class ListController extends OCSController {
 	 * @param bool $isSubscription Whether the list is a subscription
 	 * @param bool $isIncome Whether the list represents income
 	 *
-	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool, sharedBy: ?string, shareMode: ?string, revoked: bool, hasShares: bool}}|array{message: string}, array{}>
 	 *
 	 * 201: List created
 	 * 401: Current user is not logged in
@@ -223,7 +276,7 @@ class ListController extends OCSController {
 	 * @param ?bool $isSubscription Whether the list is a subscription
 	 * @param ?bool $isIncome Whether the list represents income
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool, sharedBy: ?string, shareMode: ?string, revoked: bool, hasShares: bool}}|array{message: string}, array{}>
 	 *
 	 * 200: List updated
 	 * 401: Current user is not logged in
@@ -346,6 +399,7 @@ class ListController extends OCSController {
 			$this->db->beginTransaction();
 			$transactionStarted = true;
 			$this->itemMapper->deleteByListId($id);
+			$this->shareMapper->deleteByListId($id);
 			$this->mapper->deleteCategoriesByListId($id);
 			$this->mapper->delete($list);
 			$this->db->commit();
@@ -366,6 +420,44 @@ class ListController extends OCSController {
 		}
 
 		return new DataResponse([], Http::STATUS_OK);
+	}
+
+	/**
+	 * Copy a readable list (and its catalog items) into the current user's catalog
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 *
+	 * @param string $id List id
+	 *
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_INTERNAL_SERVER_ERROR, array{list: array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool, sharedBy: ?string, shareMode: ?string, revoked: bool, hasShares: bool}}|array{message: string}, array{}>
+	 *
+	 * 201: List copied
+	 * 401: Current user is not logged in
+	 * 404: List not found or not readable by the current user
+	 * 500: Failed to copy the list
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/lists/{id}/copy')]
+	public function copy(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		try {
+			$list = $this->listCopyService->copy($id, $userId);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to copy list', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to copy list'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		if ($list === null) {
+			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$categoryIds = $this->mapper->findCategoryIdsByListIds([$list->getId()])[$list->getId()] ?? [];
+
+		return new DataResponse(['list' => $this->serializeList($list, null, $categoryIds)], Http::STATUS_CREATED);
 	}
 
 	private function getCurrentUserId(): ?string {
@@ -424,9 +516,9 @@ class ListController extends OCSController {
 	/**
 	 * @param list<string> $categoryIds
 	 *
-	 * @return array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool}
+	 * @return array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool, sharedBy: ?string, shareMode: ?string, revoked: bool, hasShares: bool}
 	 */
-	private function serializeList(ListEntity $list, ?float $totalPrice = null, array $categoryIds = []): array {
+	private function serializeList(ListEntity $list, ?float $totalPrice = null, array $categoryIds = [], ?string $sharedBy = null, ?string $shareMode = null, bool $revoked = false, bool $hasShares = false): array {
 		$createdAt = $list->getCreatedAt();
 		$updatedAt = $list->getUpdatedAt();
 		$purchaseDate = $list->getPurchaseDate();
@@ -458,6 +550,45 @@ class ListController extends OCSController {
 			'recurringPeriod' => $list->getRecurringPeriod() ?? 'MONTH',
 			'isForwardEmpty' => (bool)$list->getIsForwardEmpty(),
 			'hasReceipt' => $list->getReceiptPath() !== null,
+			'sharedBy' => $sharedBy,
+			'shareMode' => $shareMode,
+			'revoked' => $revoked,
+			'hasShares' => $hasShares,
+		];
+	}
+
+	/**
+	 * Name-only placeholder for a revoked share: the guest keeps the list name and
+	 * the fact that it is revoked, but no other list metadata.
+	 *
+	 * @return array{id: string, name: string, storeId: ?string, categoryId: ?string, categoryIds: list<string>, status: string, finalTotal: ?float, totalPrice: ?float, createdAt: ?string, createDate: ?string, updatedAt: ?string, purchaseDate: ?string, position: int, isFinished: bool, isSubscription: bool, isIncome: bool, isRecurring: bool, recurringPeriod: string, isForwardEmpty: bool, hasReceipt: bool, sharedBy: ?string, shareMode: ?string, revoked: bool, hasShares: bool}
+	 */
+	private function serializeRevokedList(ListEntity $list, ?string $sharedBy = null, ?string $shareMode = null): array {
+		return [
+			'id' => $list->getId(),
+			'name' => $list->getName() ?? '',
+			'storeId' => null,
+			'categoryId' => null,
+			'categoryIds' => [],
+			'status' => 'new',
+			'finalTotal' => null,
+			'totalPrice' => null,
+			'createdAt' => null,
+			'createDate' => null,
+			'updatedAt' => null,
+			'purchaseDate' => null,
+			'position' => 0,
+			'isFinished' => false,
+			'isSubscription' => false,
+			'isIncome' => false,
+			'isRecurring' => false,
+			'recurringPeriod' => 'MONTH',
+			'isForwardEmpty' => true,
+			'hasReceipt' => false,
+			'sharedBy' => $sharedBy,
+			'shareMode' => $shareMode,
+			'revoked' => true,
+			'hasShares' => false,
 		];
 	}
 }

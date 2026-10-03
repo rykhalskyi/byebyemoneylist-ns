@@ -1,7 +1,7 @@
 import type { Category, ListItem, Product, ShoppingList, Store } from '../types.ts'
 
 import { computed, ref } from 'vue'
-import { deleteList, deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
+import { copyList, deleteList, deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
 import { t } from '../utils/l10n.ts'
 import { groupListsByMonth } from '../utils/listGroups.ts'
 
@@ -197,6 +197,16 @@ export function useShoppingLists() {
 		receiptList.value = list
 	}
 
+	async function onCopyList(list: ShoppingList) {
+		try {
+			const created = await copyList(list.id)
+			lists.value = [created, ...lists.value]
+			expandListGroup(created.createdAt)
+		} catch {
+			error.value = t('Failed to copy the list.')
+		}
+	}
+
 	function onReceiptDeleted(listId: string) {
 		lists.value = lists.value.map((candidate) => (candidate.id === listId ? { ...candidate, hasReceipt: false } : candidate))
 	}
@@ -243,5 +253,6 @@ export function useShoppingLists() {
 		openReceipt,
 		onReceiptDeleted,
 		closeReceipt,
+		onCopyList,
 	}
 }

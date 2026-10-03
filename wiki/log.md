@@ -78,3 +78,21 @@
 ## [2026-09-20] ticket | T34 — Initialize default categories (first-open dialog, localized, backend batch) implemented
 ## [2026-09-20] ticket | T34 hardened: onlyIfEmpty + deterministic UUIDv5 ids prevent duplicate default sets from concurrent initialization
 ## [2026-09-21] fix | Fix Analytics category drilldown: split list totals across item categories and make list primary category deterministic (D-19)
+## [2026-10-02] spec | List sharing Phase 1 — access layer, share tables, catalog visibility, buyer attribution
+## [2026-10-02] ticket | T35 sharing foundation (schema, access layer, share CRUD)
+## [2026-10-02] ticket | T36 read-only sharing guest view + copy to own DB
+## [2026-10-02] ticket | T37 read/write sharing (item ownership, publish confirmation)
+## [2026-10-02] ticket | T38 purchaser attribution for shared lists
+## [2026-10-02] ticket | T39 family groups (Phase 2)
+## [2026-10-02] update | T35 sharing foundation implemented; migration 1011 applied, tests/psalm/cs/openapi green
+## [2026-10-02] update | T36a backend list read scoping (shared lists + item reads); catalog visibility/copy/frontend remain
+## [2026-10-02] update | T36 backend complete: catalog visibility + copy-to-own-DB; frontend remains
+## [2026-10-02] update | T36 frontend: shared-list UI, revoked greying, read-only items, copy action, catalog Shared chips
+## [2026-10-02] update | T36 complete: catalog owner expanders; sharing read-only backend+frontend done
+## [2026-10-02] update | T37 complete: read/write list items + publish confirmation
+## [2026-10-02] update | Add k8s-secrets.sh + secrets/example.env; document local-only secrets
+## [2026-10-03] ticket | T40 — owner-side shared-list mark + share management dialog (add/edit/revoke)
+## [2026-10-03] update | T40 — share dialog loads shares on open; mark opens manage view, menu Share opens add-only
+## [2026-10-03] update | T40 — add-only share dialog closes after a successful add
+## [2026-10-03] update | T40 — validate share recipient exists (IUserManager), localized 422, dialog surfaces error
+## [2026-10-03] update | T41 sharing scope hardening — review fixes (item-scoped catalog grants D-25, revoked placeholder D-26, share/grant lifecycle D-27)

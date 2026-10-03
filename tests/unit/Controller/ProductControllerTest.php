@@ -11,12 +11,15 @@ use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ProductAliasMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Db\ProductPriceMapper;
+use OCA\ByeByeMoneyList\Entity\CatalogShareEntity;
 use OCA\ByeByeMoneyList\Entity\CategoryEntity;
 use OCA\ByeByeMoneyList\Entity\ProductAliasEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
 use OCA\ByeByeMoneyList\Service\ProductMergeService;
 use OCA\ByeByeMoneyList\Service\ProductPictureService;
+use OCA\ByeByeMoneyList\Service\Sharing\CatalogSharingService;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCP\AppFramework\Http;
 use OCP\DB\QueryBuilder\IExpressionBuilder;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -36,6 +39,8 @@ final class ProductControllerTest extends TestCase {
 	private ProductPriceMapper $priceMapper;
 	private ProductPictureService $pictureService;
 	private ProductMergeService $mergeService;
+	private ListAccessService $listAccess;
+	private CatalogSharingService $catalogSharing;
 	private IUserSession $userSession;
 	private IDBConnection $db;
 
@@ -48,6 +53,8 @@ final class ProductControllerTest extends TestCase {
 		$this->priceMapper = $this->createMock(ProductPriceMapper::class);
 		$this->pictureService = $this->createMock(ProductPictureService::class);
 		$this->mergeService = $this->createMock(ProductMergeService::class);
+		$this->listAccess = $this->createMock(ListAccessService::class);
+		$this->catalogSharing = $this->createMock(CatalogSharingService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
@@ -61,9 +68,15 @@ final class ProductControllerTest extends TestCase {
 			$this->priceMapper,
 			$this->pictureService,
 			$this->mergeService,
+			$this->listAccess,
+			$this->catalogSharing,
 			$this->db,
 			$this->userSession,
 			$logger,
+		);
+
+		$this->listAccess->method('visibleCatalogOwners')->willReturnCallback(
+			static fn (string $uid): array => $uid === 'bob' ? ['bob', 'alice'] : [$uid],
 		);
 	}
 
@@ -108,8 +121,8 @@ final class ProductControllerTest extends TestCase {
 		$milk = $this->product('11111111-2222-4333-8444-555555555555', 'Milk');
 
 		$this->mapper->expects($this->once())
-			->method('findAllByOwner')
-			->with('alice')
+			->method('findAllVisibleByOwners')
+			->with(['alice'], 'normal', [])
 			->willReturn([$milk]);
 
 		$alias = new ProductAliasEntity();
@@ -118,8 +131,8 @@ final class ProductControllerTest extends TestCase {
 		$alias->setAliasName('M');
 
 		$this->aliasMapper->expects($this->once())
-			->method('findByProductIds')
-			->with(['11111111-2222-4333-8444-555555555555'], 'alice')
+			->method('findByProductIdsForOwners')
+			->with(['11111111-2222-4333-8444-555555555555'], ['alice'])
 			->willReturn([$alias]);
 
 		$response = $this->controller->index();
@@ -132,6 +145,69 @@ final class ProductControllerTest extends TestCase {
 		$this->assertFalse($products[0]['isFavorite']);
 		$this->assertFalse($products[0]['isSubscription']);
 		$this->assertFalse($products[0]['isIncome']);
+		$this->assertSame('alice', $products[0]['owner']);
+		$this->assertFalse($products[0]['shared']);
+	}
+
+	public function testIndexIncludesSharedProductsFromSharingUsers(): void {
+		$this->mockUser('bob');
+
+		$productId = '11111111-2222-4333-8444-555555555555';
+		$shared = $this->product($productId, 'Milk');
+
+		$this->mapper->expects($this->once())
+			->method('findAllVisibleByOwners')
+			->with(['bob', 'alice'], 'normal', [])
+			->willReturn([$shared]);
+
+		$this->aliasMapper->expects($this->once())
+			->method('findByProductIdsForOwners')
+			->with([$productId], ['alice'])
+			->willReturn([]);
+
+		$this->priceMapper->expects($this->once())
+			->method('findLatestByProductIdsForOwners')
+			->with([$productId], ['alice'])
+			->willReturn([]);
+
+		$response = $this->controller->index();
+		$product = $response->getData()['products'][0];
+
+		$this->assertSame('alice', $product['owner']);
+		$this->assertTrue($product['shared']);
+	}
+
+	public function testIndexScopesOtherOwnersToExplicitlyGrantedProducts(): void {
+		$this->mockUser('alice');
+
+		$grantedId = '11111111-2222-4333-8444-555555555555';
+		$granted = $this->product($grantedId, 'Milk');
+		$granted->setOwner('bob');
+
+		$this->listAccess->method('grantedCatalogItemIds')
+			->with('alice', 'product')
+			->willReturn([$grantedId]);
+
+		$this->mapper->expects($this->once())
+			->method('findAllVisibleByOwners')
+			->with(['alice'], 'normal', [$grantedId])
+			->willReturn([$granted]);
+
+		$this->aliasMapper->expects($this->once())
+			->method('findByProductIdsForOwners')
+			->with([$grantedId], ['bob'])
+			->willReturn([]);
+
+		$this->priceMapper->expects($this->once())
+			->method('findLatestByProductIdsForOwners')
+			->with([$grantedId], ['bob'])
+			->willReturn([]);
+
+		$response = $this->controller->index();
+
+		$product = $response->getData()['products'][0];
+		$this->assertSame('bob', $product['owner']);
+		$this->assertTrue($product['shared']);
 	}
 
 	public function testIndexReturnsSubscriptionsWhenTypeIsSubscriptions(): void {
@@ -140,13 +216,13 @@ final class ProductControllerTest extends TestCase {
 		$subscription = $this->product('11111111-2222-4333-8444-555555555555', 'Netflix', null, true);
 
 		$this->mapper->expects($this->once())
-			->method('findSubscriptionsByOwner')
-			->with('alice')
+			->method('findAllVisibleByOwners')
+			->with(['alice'], 'subscriptions', [])
 			->willReturn([$subscription]);
 
 		$this->aliasMapper->expects($this->once())
-			->method('findByProductIds')
-			->with(['11111111-2222-4333-8444-555555555555'], 'alice')
+			->method('findByProductIdsForOwners')
+			->with(['11111111-2222-4333-8444-555555555555'], ['alice'])
 			->willReturn([]);
 
 		$response = $this->controller->index('subscriptions');
@@ -165,13 +241,13 @@ final class ProductControllerTest extends TestCase {
 		$income = $this->product('11111111-2222-4333-8444-555555555555', 'Salary', null, false, true);
 
 		$this->mapper->expects($this->once())
-			->method('findIncomeByOwner')
-			->with('alice')
+			->method('findAllVisibleByOwners')
+			->with(['alice'], 'income', [])
 			->willReturn([$income]);
 
 		$this->aliasMapper->expects($this->once())
-			->method('findByProductIds')
-			->with(['11111111-2222-4333-8444-555555555555'], 'alice')
+			->method('findByProductIdsForOwners')
+			->with(['11111111-2222-4333-8444-555555555555'], ['alice'])
 			->willReturn([]);
 
 		$response = $this->controller->index('income');
@@ -192,17 +268,17 @@ final class ProductControllerTest extends TestCase {
 		$income = $this->product('11111111-2222-4333-8444-555555555553', 'Salary', null, false, true);
 
 		$this->mapper->expects($this->once())
-			->method('findAllIncludingSpecialByOwner')
-			->with('alice')
+			->method('findAllVisibleByOwners')
+			->with(['alice'], 'all', [])
 			->willReturn([$normal, $subscription, $income]);
 
 		$this->aliasMapper->expects($this->once())
-			->method('findByProductIds')
+			->method('findByProductIdsForOwners')
 			->with([
 				'11111111-2222-4333-8444-555555555551',
 				'11111111-2222-4333-8444-555555555552',
 				'11111111-2222-4333-8444-555555555553',
-			], 'alice')
+			], ['alice'])
 			->willReturn([]);
 
 		$response = $this->controller->index('all');
@@ -226,13 +302,13 @@ final class ProductControllerTest extends TestCase {
 		$milk = $this->product($productId, 'Milk');
 
 		$this->mapper->expects($this->once())
-			->method('findAllByOwner')
-			->with('alice')
+			->method('findAllVisibleByOwners')
+			->with(['alice'], 'normal', [])
 			->willReturn([$milk]);
 
 		$this->aliasMapper->expects($this->once())
-			->method('findByProductIds')
-			->with([$productId], 'alice')
+			->method('findByProductIdsForOwners')
+			->with([$productId], ['alice'])
 			->willReturn([]);
 
 		$price = new ProductPriceEntity();
@@ -244,8 +320,8 @@ final class ProductControllerTest extends TestCase {
 		$price->setCreatedAt(new DateTime('2026-01-02T03:04:05Z'));
 
 		$this->priceMapper->expects($this->once())
-			->method('findLatestByProductIds')
-			->with([$productId], 'alice')
+			->method('findLatestByProductIdsForOwners')
+			->with([$productId], ['alice'])
 			->willReturn([$productId => $price]);
 
 		$response = $this->controller->index();
@@ -263,18 +339,18 @@ final class ProductControllerTest extends TestCase {
 		$milk = $this->product($productId, 'Milk');
 
 		$this->mapper->expects($this->once())
-			->method('findAllByOwner')
-			->with('alice')
+			->method('findAllVisibleByOwners')
+			->with(['alice'], 'normal', [])
 			->willReturn([$milk]);
 
 		$this->aliasMapper->expects($this->once())
-			->method('findByProductIds')
-			->with([$productId], 'alice')
+			->method('findByProductIdsForOwners')
+			->with([$productId], ['alice'])
 			->willReturn([]);
 
 		$this->priceMapper->expects($this->once())
-			->method('findLatestByProductIds')
-			->with([$productId], 'alice')
+			->method('findLatestByProductIdsForOwners')
+			->with([$productId], ['alice'])
 			->willReturn([]);
 
 		$response = $this->controller->index();
@@ -622,6 +698,9 @@ final class ProductControllerTest extends TestCase {
 
 		$this->aliasMapper->expects($this->once())->method('deleteByProductId');
 		$this->mapper->expects($this->once())->method('delete')->with($product);
+		$this->catalogSharing->expects($this->once())
+			->method('revokeItem')
+			->with(CatalogShareEntity::TYPE_PRODUCT, '11111111-2222-4333-8444-555555555555');
 
 		$response = $this->controller->destroy('11111111-2222-4333-8444-555555555555');
 

@@ -109,6 +109,45 @@ export function categoryColor(categoryId: string | null, categories: readonly Ca
 	return categories.find((category) => category.id === categoryId)?.color ?? null
 }
 
+export function isSharedList(list: ShoppingList): boolean {
+	return list.sharedBy !== null && list.sharedBy !== undefined
+}
+
+export function isRevokedList(list: ShoppingList): boolean {
+	return list.revoked === true
+}
+
+/**
+ * An owned list that the current user has shared with other users. Lists shared
+ * with the user are handled separately by {@link isSharedList}.
+ *
+ * @param list the list to inspect
+ */
+export function hasActiveShares(list: ShoppingList): boolean {
+	return list.hasShares === true
+}
+
+/**
+ * A shared list is editable only in read/write mode. Revoked shares are never
+ * editable (they are a name-only placeholder).
+ *
+ * @param list the list to inspect
+ */
+export function isReadOnlyList(list: ShoppingList): boolean {
+	if (isRevokedList(list)) {
+		return true
+	}
+	return isSharedList(list) && list.shareMode !== 'readwrite'
+}
+
+export function sharedByLabel(list: ShoppingList): string {
+	return t('Shared by {user}', { user: list.sharedBy ?? '' })
+}
+
+export function isSharedEntity(entity: { shared?: boolean }): boolean {
+	return entity.shared === true
+}
+
 export function productCategory(item: ListItem, products: readonly Product[], categories: readonly Category[]): Category | null {
 	const product = products.find((candidate) => candidate.id === item.productId)
 	if (!product?.categoryId) {

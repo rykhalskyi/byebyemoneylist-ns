@@ -9,6 +9,7 @@ use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Db\StoreMapper;
 use OCA\ByeByeMoneyList\Entity\CategoryEntity;
 use OCA\ByeByeMoneyList\Entity\StoreEntity;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCP\AppFramework\Http;
 use OCP\DB\QueryBuilder\IExpressionBuilder;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -23,6 +24,7 @@ final class StoreControllerTest extends TestCase {
 	private StoreController $controller;
 	private StoreMapper $mapper;
 	private CategoryMapper $categoryMapper;
+	private ListAccessService $listAccess;
 	private IUserSession $userSession;
 	private IDBConnection $db;
 
@@ -30,11 +32,12 @@ final class StoreControllerTest extends TestCase {
 		$request = $this->createMock(IRequest::class);
 		$this->mapper = $this->createMock(StoreMapper::class);
 		$this->categoryMapper = $this->createMock(CategoryMapper::class);
+		$this->listAccess = $this->createMock(ListAccessService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
 
-		$this->controller = new StoreController($request, $this->mapper, $this->categoryMapper, $this->db, $this->userSession, $logger);
+		$this->controller = new StoreController($request, $this->mapper, $this->categoryMapper, $this->listAccess, $this->db, $this->userSession, $logger);
 	}
 
 	private function mockUser(string $uid): IUser {
@@ -82,9 +85,11 @@ final class StoreControllerTest extends TestCase {
 		$store->setOwner('alice');
 		$store->setName('Market');
 
+		$this->listAccess->method('visibleCatalogOwners')->with('alice')->willReturn(['alice']);
+
 		$this->mapper->expects($this->once())
-			->method('findAllByOwner')
-			->with('alice')
+			->method('findAllByOwners')
+			->with(['alice'])
 			->willReturn([$store]);
 
 		$this->mapper->expects($this->once())
@@ -100,6 +105,30 @@ final class StoreControllerTest extends TestCase {
 		$this->assertSame('Market', $stores[0]['name']);
 		$this->assertNull($stores[0]['address']);
 		$this->assertSame([], $stores[0]['categoryIds']);
+		$this->assertSame('alice', $stores[0]['owner']);
+		$this->assertFalse($stores[0]['shared']);
+	}
+
+	public function testIndexIncludesSharedStoresFromSharingUsers(): void {
+		$this->mockUser('bob');
+		$this->listAccess->method('visibleCatalogOwners')->with('bob')->willReturn(['bob', 'alice']);
+
+		$shared = new StoreEntity();
+		$shared->setId('22222222-3333-4444-8555-666666666666');
+		$shared->setOwner('alice');
+		$shared->setName('Market');
+
+		$this->mapper->expects($this->once())
+			->method('findAllByOwners')
+			->with(['bob', 'alice'])
+			->willReturn([$shared]);
+		$this->mapper->method('findCategoryIdsByStoreIds')->willReturn([]);
+
+		$response = $this->controller->index();
+		$stores = $response->getData()['stores'];
+
+		$this->assertSame('alice', $stores[0]['owner']);
+		$this->assertTrue($stores[0]['shared']);
 	}
 
 	public function testIndexReturnsUnauthorizedWhenNotLoggedIn(): void {

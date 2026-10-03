@@ -62,4 +62,11 @@ describe('CategoryRow', () => {
 		const wrapper = await render({ category: category(), depth: 2 })
 		expect(wrapper.attributes('style')).toContain('padding-left: 48px')
 	})
+
+	it('hides edit and delete for shared categories', async () => {
+		const wrapper = await render({ category: category({ shared: true }) })
+		expect(wrapper.text()).toContain('Shared')
+		expect(wrapper.find('button[aria-label="Edit Dairy"]').exists()).toBe(false)
+		expect(wrapper.find('button[aria-label="Delete Dairy"]').exists()).toBe(false)
+	})
 })

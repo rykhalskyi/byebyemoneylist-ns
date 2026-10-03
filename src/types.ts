@@ -1,5 +1,7 @@
 export type ListStatus = 'new' | 'finished' | 'archived'
 
+export type ShareMode = 'readonly' | 'readwrite'
+
 export interface ShoppingList {
 	id: string
 	name: string
@@ -13,6 +15,10 @@ export interface ShoppingList {
 	isSubscription: boolean
 	isRecurring: boolean
 	hasReceipt: boolean
+	sharedBy?: string | null
+	shareMode?: ShareMode | null
+	revoked?: boolean
+	hasShares?: boolean
 }
 
 export interface ReceiptPicture {
@@ -71,6 +77,8 @@ export interface Store {
 	name: string
 	address: string | null
 	categoryIds: string[]
+	owner?: string
+	shared?: boolean
 }
 
 export interface Category {
@@ -81,6 +89,21 @@ export interface Category {
 	parentId: string | null
 	income: boolean
 	status?: string
+	owner?: string
+	shared?: boolean
+}
+
+export interface ListShare {
+	id: string
+	listId: string
+	owner: string
+	sharedWith: string
+	mode: ShareMode
+	status: string
+	revoked: boolean
+	listName: string | null
+	createdAt: string | null
+	updatedAt: string | null
 }
 
 export interface ListPayload {
@@ -128,6 +151,8 @@ export interface Product {
 	lastPrice: number | null
 	lastPriceDate: string | null
 	hasPicture: boolean
+	owner?: string
+	shared?: boolean
 }
 
 export interface ProductPicture {
@@ -181,6 +206,7 @@ export interface ListItemPayload {
 	productId: string
 	price?: number | null
 	quantity?: number
+	publishToOwner?: boolean
 }
 
 export interface ListItemUpdatePayload {

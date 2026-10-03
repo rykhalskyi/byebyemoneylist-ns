@@ -1,21 +1,49 @@
 ## List Sharing Idea
 
-Here is described sharing to some other user.
+Sharing to other users. Phase 1 is sharing a single list between two users.
+Phase 2 generalizes it to family groups.
 
-### The Sharing of the list can be in next states:
+### Phase 1: Single-list sharing
 
-1. NO_SHARING - List is ton sahred with some other - first
-2. SHARED_READONLY - Other user can see The shopping list and it's product/categories/stores.  Other user can copy the list adn its products/categories/stores to own DB but cannot edit original ones. User cannot use products, stores or Categories of another user. they just are seen. Shared list are marked crealy that they belong to another user.
-3. SHARED_READWRITE - Other user can use shopping list, products, store categories as own. User cannot edit and delete products, categories and stores of another user. User can purchase in the list. add items, change category. If user set own category or product or store to shared list, e must be asked for confirmation of charing own categories, products and stores.
+The sharing unit is the **shopping list**, but a shared list carries the owner's
+catalog with it: the owner's products, categories and stores become visible to
+the guest. Scope is therefore bigger than "one list" — it is effectively a
+per-owner data grant.
 
-- IN shared readwrite mode Categories, Stores and Products of another users are displayed in catalog in own expanders. 
-- During recognition an purchase own items have priority. Newly recognized items are added to own catalog 
-- List is calculated to expenses and analytics of those user who made a purchase.
+#### States
 
-### The Phase 2: Family Groups
+1. `NO_SHARING` — List is not shared.
+2. `SHARED_READONLY` — Guest can see the list and the owner's
+   products/categories/stores, and can copy them into their own DB. Guest cannot
+   edit the originals and cannot use the owner's items directly; they are only
+   shown. The list is clearly marked as belonging to another user.
+3. `SHARED_READWRITE` — Guest can use the list and its products/categories/
+   stores as their own: purchase in the list, add items, change category. Guest
+   cannot edit or delete the owner's products/categories/stores. If the guest
+   adds one of their own products/categories/stores to the shared list, confirm
+   first, because it republishes that item to the list owner.
 
-- Create a group to share Lists with all group members.
-- The same way as described above but with many members.
+#### Visibility
 
+- A guest sees shared lists alongside their own, marked as another user's list.
+- Owner sees guest-added items.
+- In the guest's catalog, own items appear in their own expander; shared items
+  of each sharing user appear in separate expanders.
+- In read/write, adding the guest's own item to the owner's list publishes that
+  item into the owner's catalog (marked as shared). Ownership stays with the
+  guest; if the guest later edits or deletes it, the change is reflected in the
+  owner's catalog.
 
+#### Rules
 
+- During recognition and purchase, own items have priority. Newly recognized
+  items are added to the guest's own catalog.
+- The list is counted toward the expenses and analytics of the user who made the
+  purchase, not the list owner.
+- Revoking a share keeps the list as a name-only, greyed-out placeholder; no list
+  data is retained.
+
+### Phase 2: Family Groups
+
+- Create a group that shares lists with all group members.
+- Same rules as Phase 1, but with many members.

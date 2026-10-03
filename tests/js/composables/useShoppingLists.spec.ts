@@ -13,6 +13,7 @@ vi.mock('../../../src/services/listsApi.ts', () => ({
 	fetchListItems: vi.fn(),
 	deleteListItem: vi.fn(),
 	deleteList: vi.fn(),
+	copyList: vi.fn(),
 }))
 
 function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
@@ -183,5 +184,25 @@ describe('useShoppingLists', () => {
 		store.lists.value = [list({ hasReceipt: true })]
 		store.onReceiptDeleted('l1')
 		expect(store.lists.value[0].hasReceipt).toBe(false)
+	})
+
+	it('copies a shared list to the top of the list', async () => {
+		vi.mocked(api.copyList).mockResolvedValue(list({ id: 'copy-1' }))
+		const store = useShoppingLists()
+		await store.loadData()
+
+		await store.onCopyList(list({ id: 'shared-1', sharedBy: 'alice' }))
+
+		expect(api.copyList).toHaveBeenCalledWith('shared-1')
+		expect(store.lists.value[0].id).toBe('copy-1')
+	})
+
+	it('surfaces a copy failure', async () => {
+		vi.mocked(api.copyList).mockRejectedValue(new Error('nope'))
+		const store = useShoppingLists()
+
+		await store.onCopyList(list({ id: 'shared-1', sharedBy: 'alice' }))
+
+		expect(store.error.value).toBe('Failed to copy the list.')
 	})
 })

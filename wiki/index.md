@@ -15,6 +15,7 @@
 - [specs/catalog-page](pages/specs/catalog-page.md) — T2: Catalog page spec (Categories + Stores tabs)
 - [specs/catalog-search](pages/specs/catalog-search.md) — T14: Catalog per-tab fuzzy search + paged lists spec
 - [specs/dashboard](pages/specs/dashboard.md) — T9 Dashboard — user-managed widgets (spending totals + action + info)
+- [specs/list-sharing](pages/specs/list-sharing.md) — Cross-user shopping-list sharing (Phase 1) — access layer, share tables, catalog visibility, purchaser attribution
 - [specs/localization](pages/specs/localization.md) — Frontend localization (i18n) for en/de/uk
 - [specs/products-tab](pages/specs/products-tab.md) — T6: Products tab spec (display + create)
 - [specs/shopping-list-improvements](pages/specs/shopping-list-improvements.md) — Issue #8: Shopping List Improvements spec
@@ -62,6 +63,13 @@
 - [tickets/ticket-32-analytics-pie](pages/tickets/ticket-32-analytics-pie.md) — T10.2 — Analytics page shell, month picker, account card and drilldown category donut
 - [tickets/ticket-33-analytics-top-bars](pages/tickets/ticket-33-analytics-top-bars.md) — T10.3 — Top 5 stores and top 5 shopping lists bar charts
 - [tickets/ticket-34-initialize-categories](pages/tickets/ticket-34-initialize-categories.md) — T34 — Offer to create a localized default category set when the user has none
+- [tickets/ticket-35-sharing-foundation](pages/tickets/ticket-35-sharing-foundation.md) — T35 — Sharing foundation (share tables, access layer, share CRUD API)
+- [tickets/ticket-36-sharing-guest-readonly](pages/tickets/ticket-36-sharing-guest-readonly.md) — T36 — Read-only sharing (guest sees marked lists, catalog expanders, copy to own DB)
+- [tickets/ticket-37-sharing-readwrite](pages/tickets/ticket-37-sharing-readwrite.md) — T37 — Read/write sharing (guest manages own items, uses owner catalog, publish confirmation)
+- [tickets/ticket-38-sharing-purchaser-attribution](pages/tickets/ticket-38-sharing-purchaser-attribution.md) — T38 — Attribute shared-list expenses to the purchaser (analytics + dashboard)
+- [tickets/ticket-39-sharing-family-groups](pages/tickets/ticket-39-sharing-family-groups.md) — T39 — Family groups (Phase 2: share lists with all group members)
+- [tickets/ticket-40-sharing-owner-mark](pages/tickets/ticket-40-sharing-owner-mark.md) — Owner-side shared-list mark and full share management dialog (add, edit access, revoke)
+- [tickets/ticket-41-sharing-scope-hardening](pages/tickets/ticket-41-sharing-scope-hardening.md) — T41 — List-sharing review fixes: item-scoped catalog grants, shared-list payload, revoked placeholder, share/grant lifecycle
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.

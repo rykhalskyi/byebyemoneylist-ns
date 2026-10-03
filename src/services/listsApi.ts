@@ -1,4 +1,4 @@
-import type { Category, CategoryBatchItem, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, Product, ProductMergePayload, ProductPayload, ProductPicture, ProductPrice, ReceiptPicture, ShoppingList, Store, StorePayload } from '../types.ts'
+import type { Category, CategoryBatchItem, CategoryPayload, ListItem, ListItemPayload, ListItemUpdatePayload, ListPayload, ListShare, Product, ProductMergePayload, ProductPayload, ProductPicture, ProductPrice, ReceiptPicture, ShoppingList, Store, StorePayload } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateOcsUrl } from '@nextcloud/router'
@@ -32,6 +32,29 @@ export async function updateList(id: string, payload: ListPayload): Promise<Shop
 
 export async function deleteList(id: string): Promise<void> {
 	await axios.delete(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}`))
+}
+
+export async function copyList(id: string): Promise<ShoppingList> {
+	const { data } = await axios.post<OcsData<{ list: ShoppingList }>>(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${id}/copy`))
+	return data.ocs.data.list
+}
+
+export async function fetchListShares(listId: string): Promise<ListShare[]> {
+	const { data } = await axios.get<OcsData<{ shares: ListShare[] }>>(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/shares`))
+	return data.ocs.data.shares
+}
+
+export async function shareList(listId: string, sharedWith: string, mode: 'readonly' | 'readwrite'): Promise<ListShare> {
+	const { data } = await axios.post<OcsData<{ share: ListShare }>>(
+		generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/shares`),
+		{ sharedWith, mode },
+	)
+	return data.ocs.data.share
+}
+
+export async function revokeListShare(listId: string, shareId: string): Promise<ListShare> {
+	const { data } = await axios.delete<OcsData<{ share: ListShare }>>(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/shares/${shareId}`))
+	return data.ocs.data.share
 }
 
 export async function uploadListReceipt(id: string, file: File): Promise<ReceiptPicture> {

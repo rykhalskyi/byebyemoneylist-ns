@@ -43,6 +43,11 @@ const emit = defineEmits<{
 				<div :class="$style.subname">
 					<NcHighlight v-if="props.parentName" :text="props.parentName" :search="props.search" />
 					<NcChip
+						v-if="props.category.shared"
+						:text="t('Shared')"
+						variant="tertiary"
+						noClose />
+					<NcChip
 						v-if="props.category.status === 'pending_review'"
 						:text="t('Pending Review')"
 						variant="warning"
@@ -56,7 +61,7 @@ const emit = defineEmits<{
 			</template>
 			<template #extra-actions>
 				<NcButton
-					v-if="props.category.status === 'pending_review'"
+					v-if="!props.category.shared && props.category.status === 'pending_review'"
 					type="button"
 					:aria-label="t('Approve {name}', { name: props.category.name })"
 					@click="emit('confirm', props.category)">
@@ -65,6 +70,7 @@ const emit = defineEmits<{
 					</template>
 				</NcButton>
 				<NcButton
+					v-if="!props.category.shared"
 					type="button"
 					:aria-label="t('Edit {name}', { name: props.category.name })"
 					@click="emit('edit', props.category)">
@@ -73,6 +79,7 @@ const emit = defineEmits<{
 					</template>
 				</NcButton>
 				<NcButton
+					v-if="!props.category.shared"
 					type="button"
 					:aria-label="t('Delete {name}', { name: props.category.name })"
 					@click="emit('delete', props.category)">

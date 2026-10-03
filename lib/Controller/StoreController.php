@@ -8,6 +8,7 @@ use OCA\ByeByeMoneyList\AppInfo\Application;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Db\StoreMapper;
 use OCA\ByeByeMoneyList\Entity\StoreEntity;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -26,14 +27,16 @@ use Psr\Log\LoggerInterface;
 class StoreController extends OCSController {
 	private StoreMapper $mapper;
 	private CategoryMapper $categoryMapper;
+	private ListAccessService $listAccess;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
 
-	public function __construct(IRequest $request, StoreMapper $mapper, CategoryMapper $categoryMapper, IDBConnection $db, IUserSession $userSession, LoggerInterface $logger) {
+	public function __construct(IRequest $request, StoreMapper $mapper, CategoryMapper $categoryMapper, ListAccessService $listAccess, IDBConnection $db, IUserSession $userSession, LoggerInterface $logger) {
 		parent::__construct(Application::APP_ID, $request);
 		$this->mapper = $mapper;
 		$this->categoryMapper = $categoryMapper;
+		$this->listAccess = $listAccess;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -57,7 +60,7 @@ class StoreController extends OCSController {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$stores = $this->mapper->findAllByOwner($userId);
+		$stores = $this->mapper->findAllByOwners($this->listAccess->visibleCatalogOwners($userId));
 		$storeIds = array_values(array_map(
 			fn (StoreEntity $store): string => $store->getId(),
 			$stores,
@@ -68,6 +71,7 @@ class StoreController extends OCSController {
 			fn (StoreEntity $store): array => $this->serializeStore(
 				$store,
 				$categoryIdsByStore[$store->getId()] ?? [],
+				$userId,
 			),
 			$stores,
 		));
@@ -308,14 +312,16 @@ class StoreController extends OCSController {
 	/**
 	 * @param list<string> $categoryIds
 	 *
-	 * @return array{id: string, name: string, address: ?string, categoryIds: list<string>}
+	 * @return array{id: string, name: string, address: ?string, categoryIds: list<string>, owner: string, shared: bool}
 	 */
-	private function serializeStore(StoreEntity $store, array $categoryIds = []): array {
+	private function serializeStore(StoreEntity $store, array $categoryIds = [], ?string $viewerId = null): array {
 		return [
 			'id' => $store->getId(),
 			'name' => $store->getName() ?? '',
 			'address' => $store->getAddress(),
 			'categoryIds' => $categoryIds,
+			'owner' => $store->getOwner() ?? '',
+			'shared' => $viewerId !== null && $store->getOwner() !== $viewerId,
 		];
 	}
 }

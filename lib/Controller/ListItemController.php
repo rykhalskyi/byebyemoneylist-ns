@@ -11,8 +11,11 @@ use OCA\ByeByeMoneyList\AppInfo\Application;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
+use OCA\ByeByeMoneyList\Entity\CatalogShareEntity;
 use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
+use OCA\ByeByeMoneyList\Service\Sharing\CatalogSharingService;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -33,6 +36,8 @@ class ListItemController extends OCSController {
 	private ListItemMapper $itemMapper;
 	private ListMapper $listMapper;
 	private ProductMapper $productMapper;
+	private ListAccessService $listAccess;
+	private CatalogSharingService $catalogSharing;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
 
@@ -41,6 +46,8 @@ class ListItemController extends OCSController {
 		ListItemMapper $itemMapper,
 		ListMapper $listMapper,
 		ProductMapper $productMapper,
+		ListAccessService $listAccess,
+		CatalogSharingService $catalogSharing,
 		IUserSession $userSession,
 		LoggerInterface $logger,
 	) {
@@ -48,6 +55,8 @@ class ListItemController extends OCSController {
 		$this->itemMapper = $itemMapper;
 		$this->listMapper = $listMapper;
 		$this->productMapper = $productMapper;
+		$this->listAccess = $listAccess;
+		$this->catalogSharing = $catalogSharing;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
 	}
@@ -73,7 +82,7 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$list = $this->listMapper->findByIdAndOwner($id, $userId);
+		$list = $this->listAccess->findReadable($id, $userId);
 		if ($list === null) {
 			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
 		}
@@ -82,7 +91,6 @@ class ListItemController extends OCSController {
 		$productNames = $this->productNamesByProductId(
 			$this->productMapper->findByIds(
 				array_values(array_map(fn (ListItemEntity $item): string => $item->getProductId() ?? '', $items)),
-				$userId,
 			),
 		);
 
@@ -100,12 +108,13 @@ class ListItemController extends OCSController {
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
 	 * @param string $id List id
-	 * @param string $productId Product id (required, must belong to the current user)
+	 * @param string $productId Product id (required; owned by the current user or a sharing user)
 	 * @param ?float $price Optional product price (must not be negative)
 	 * @param ?float $quantity Quantity as a float (must be greater than zero)
 	 * @param int $position Sort position within the list
 	 * @param ?float $discount Optional discount amount (must not be negative)
 	 * @param ?string $customName Optional display name override
+	 * @param bool $publishToOwner Publish the current user's own product to the list owner's catalog
 	 *
 	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{item: array{id: string, listId: string, productId: string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}}|array{message: string}, array{}>
 	 *
@@ -117,18 +126,21 @@ class ListItemController extends OCSController {
 	 */
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'POST', url: '/api/lists/{id}/items')]
-	public function create(string $id, string $productId, ?float $price = null, ?float $quantity = 1.0, int $position = 0, ?float $discount = null, ?string $customName = null): DataResponse {
+	public function create(string $id, string $productId, ?float $price = null, ?float $quantity = 1.0, int $position = 0, ?float $discount = null, ?string $customName = null, bool $publishToOwner = false): DataResponse {
 		$userId = $this->getCurrentUserId();
 		if ($userId === null) {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$list = $this->listMapper->findByIdAndOwner($id, $userId);
+		$list = $this->listAccess->findWritable($id, $userId);
 		if ($list === null) {
 			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
 		}
 
 		$product = $this->productMapper->findByIdAndOwner($productId, $userId);
+		if ($product === null) {
+			$product = $this->findVisibleProduct($productId, $userId);
+		}
 		if ($product === null) {
 			return new DataResponse(['message' => 'Product not found'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -186,6 +198,11 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Failed to add item'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
+		$listOwner = $list->getOwner();
+		if ($publishToOwner && $listOwner !== null && $listOwner !== $userId && $product->getOwner() === $userId) {
+			$this->catalogSharing->publish(CatalogShareEntity::TYPE_PRODUCT, $productId, $userId, $listOwner);
+		}
+
 		return new DataResponse(['item' => $this->serializeItem($created, $product->getName() ?? '')], Http::STATUS_CREATED);
 	}
 
@@ -219,13 +236,17 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$list = $this->listMapper->findByIdAndOwner($id, $userId);
+		$list = $this->listAccess->findWritable($id, $userId);
 		if ($list === null) {
 			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
 		}
 
 		$item = $this->itemMapper->findByIdAndListId($itemId, $id);
 		if ($item === null) {
+			return new DataResponse(['message' => 'Item not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if ($item->getOwner() !== $userId && $list->getOwner() !== $userId) {
 			return new DataResponse(['message' => 'Item not found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -275,7 +296,7 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Failed to update item'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		return new DataResponse(['item' => $this->serializeItem($updated, $this->productName($updated->getProductId() ?? '', $userId))], Http::STATUS_OK);
+		return new DataResponse(['item' => $this->serializeItem($updated, $this->productName($updated->getProductId() ?? ''))], Http::STATUS_OK);
 	}
 
 	/**
@@ -301,13 +322,17 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$list = $this->listMapper->findByIdAndOwner($id, $userId);
+		$list = $this->listAccess->findWritable($id, $userId);
 		if ($list === null) {
 			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
 		}
 
 		$item = $this->itemMapper->findByIdAndListId($itemId, $id);
 		if ($item === null) {
+			return new DataResponse(['message' => 'Item not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if ($item->getOwner() !== $userId && $list->getOwner() !== $userId) {
 			return new DataResponse(['message' => 'Item not found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -338,14 +363,27 @@ class ListItemController extends OCSController {
 		return $this->userSession->getUser()?->getUID();
 	}
 
-	private function productName(string $productId, string $userId): string {
-		$products = $this->productMapper->findByIds([$productId], $userId);
-		foreach ($products as $product) {
+	private function productName(string $productId): string {
+		foreach ($this->productMapper->findByIds([$productId]) as $product) {
 			if ($product->getId() === $productId) {
 				return $product->getName() ?? '';
 			}
 		}
 		return '';
+	}
+
+	/**
+	 * Find a product the user may reference: owned by them, or (read/write shared
+	 * list) owned by a sharing user whose catalog is visible.
+	 */
+	private function findVisibleProduct(string $productId, string $userId): ?ProductEntity {
+		$owners = $this->listAccess->visibleCatalogOwners($userId);
+		foreach ($this->productMapper->findByIdsForOwners([$productId], $owners) as $product) {
+			if ($product->getId() === $productId) {
+				return $product;
+			}
+		}
+		return null;
 	}
 
 	/**

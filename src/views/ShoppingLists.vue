@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { ShoppingList } from '../types.ts'
+
 import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiCashPlus, mdiPlus } from '@mdi/js'
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -11,6 +13,7 @@ import NewListDialog from '../components/NewListDialog.vue'
 import PurchaseDialog from '../components/PurchaseDialog.vue'
 import ReceiptViewDialog from '../components/ReceiptViewDialog.vue'
 import ListGroupSection from '../components/shoppinglists/ListGroupSection.vue'
+import ShareListDialog from '../components/shoppinglists/ShareListDialog.vue'
 import { useShoppingLists } from '../composables/useShoppingLists.ts'
 import { t } from '../utils/l10n.ts'
 
@@ -56,12 +59,20 @@ const {
 	openReceipt,
 	onReceiptDeleted,
 	closeReceipt,
+	onCopyList,
 } = useShoppingLists()
 
 const showDialog = ref(false)
 const newListIsIncome = ref(false)
 const showPurchaseDialog = ref(false)
 const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
+const shareList = ref<ShoppingList | null>(null)
+const shareAddOnly = ref(false)
+
+const addProductSharedOwner = computed<string | null>(() => {
+	const list = lists.value.find((candidate) => candidate.id === addProductListId.value)
+	return list?.sharedBy ?? null
+})
 
 onMounted(loadData)
 
@@ -73,6 +84,30 @@ function openListDialog(isIncome: boolean) {
 function openPurchaseDialog(mode: 'manual' | 'scan') {
 	purchaseDialogMode.value = mode
 	showPurchaseDialog.value = true
+}
+
+function openShare(list: ShoppingList) {
+	shareAddOnly.value = true
+	shareList.value = list
+}
+
+function openManageShares(list: ShoppingList) {
+	shareAddOnly.value = false
+	shareList.value = list
+}
+
+function closeShare(open: boolean) {
+	if (!open) {
+		shareList.value = null
+	}
+}
+
+function onSharesChanged(hasShares: boolean) {
+	const target = shareList.value
+	if (target === null) {
+		return
+	}
+	lists.value = lists.value.map((candidate) => (candidate.id === target.id ? { ...candidate, hasShares } : candidate))
 }
 
 watch(
@@ -179,6 +214,9 @@ watch(
 				@toggle="toggleExpand"
 				@delete="askDelete"
 				@receipt="openReceipt"
+				@copy="onCopyList"
+				@share="openShare"
+				@manageShares="openManageShares"
 				@addItem="openAddProduct"
 				@deleteItem="onDeleteItem" />
 		</div>
@@ -206,6 +244,7 @@ watch(
 			:open="addProductListId !== null"
 			:listId="addProductListId ?? ''"
 			:type="addProductType"
+			:sharedOwner="addProductSharedOwner"
 			@update:open="closeAddProduct"
 			@added="onItemAdded" />
 		<ConfirmDialog
@@ -215,6 +254,13 @@ watch(
 			:busy="deleting"
 			@update:open="closeConfirmDialog"
 			@confirm="onConfirmDelete" />
+		<ShareListDialog
+			v-if="shareList !== null"
+			:open="true"
+			:list="shareList"
+			:addOnly="shareAddOnly"
+			@update:open="closeShare"
+			@sharesChanged="onSharesChanged" />
 	</div>
 </template>
 

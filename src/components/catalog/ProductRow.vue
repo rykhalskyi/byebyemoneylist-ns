@@ -51,6 +51,11 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 			<template #subname>
 				<div :class="$style.subname">
 					<NcChip
+						v-if="props.product.shared"
+						:text="t('Shared')"
+						variant="tertiary"
+						noClose />
+					<NcChip
 						v-if="props.product.isSubscription"
 						:text="t('Subscription')"
 						variant="primary"
@@ -84,19 +89,20 @@ const lastPriceText = computed(() => (props.product.lastPrice === null ? null : 
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiDotsVertical" :size="20" />
 					</template>
-					<NcActionButton @click.stop="emit('edit', props.product)">
+					<NcActionButton v-if="!props.product.shared" @click.stop="emit('edit', props.product)">
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiPencil" :size="20" />
 						</template>
 						{{ t('Edit') }}
 					</NcActionButton>
-					<NcActionButton @click.stop="emit('merge', props.product)">
+					<NcActionButton v-if="!props.product.shared" @click.stop="emit('merge', props.product)">
 						<template #icon>
 							<NcIconSvgWrapper :path="mdiCallMerge" :size="20" />
 						</template>
 						{{ t('Merge') }}
 					</NcActionButton>
 					<NcActionButton
+						v-if="!props.product.shared"
 						class="bbml-product-action-delete"
 						@click.stop="emit('delete', props.product)">
 						<template #icon>

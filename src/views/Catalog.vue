@@ -13,6 +13,7 @@ import CatalogSearch from '../components/catalog/CatalogSearch.vue'
 import CategoryRow from '../components/catalog/CategoryRow.vue'
 import ProductMergeDialog from '../components/catalog/ProductMergeDialog.vue'
 import ProductRow from '../components/catalog/ProductRow.vue'
+import SharedOwnerSection from '../components/catalog/SharedOwnerSection.vue'
 import StoreRow from '../components/catalog/StoreRow.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import NewCategoryDialog from '../components/NewCategoryDialog.vue'
@@ -21,6 +22,7 @@ import NewStoreDialog from '../components/NewStoreDialog.vue'
 import ProductInfoDialog from '../components/ProductInfoDialog.vue'
 import { usePagedList } from '../composables/usePagedList.ts'
 import { confirmAllCategories, confirmCategory, deleteCategory, deleteProduct, deleteStore, fetchCategories, fetchProducts, fetchStores } from '../services/listsApi.ts'
+import { groupByOwner } from '../utils/catalogGroups.ts'
 import { getCanonicalLocale, n, t } from '../utils/l10n.ts'
 import { createCategoryFuse, createProductFuse, createStoreFuse, search } from '../utils/search.ts'
 
@@ -56,6 +58,7 @@ const editingStore = ref<Store | null>(null)
 const editingProduct = ref<Product | null>(null)
 const infoProduct = ref<Product | null>(null)
 const mergingProduct = ref<Product | null>(null)
+const expandedOwners = ref<Record<string, boolean>>({})
 
 interface DeleteTargetCategory {
 	type: 'category'
@@ -213,6 +216,12 @@ const {
 	reset: resetProducts,
 } = usePagedList(filteredProducts, PAGE_SIZE)
 
+const ownFlattenedCategories = computed(() => flattenedCategories.value.filter((node) => node.category.shared !== true))
+const sharedCategoryGroups = computed(() => groupByOwner(flattenedCategories.value.map((node) => node.category)).shared)
+const searchCategoryGroups = computed(() => groupByOwner(visibleCategories.value))
+const storeGroups = computed(() => groupByOwner(visibleStores.value))
+const productGroups = computed(() => groupByOwner(visibleProducts.value))
+
 const searchPlaceholder = computed(() => {
 	switch (activeTab.value) {
 		case 'categories':
@@ -324,6 +333,10 @@ async function loadData() {
 
 function compareByName(a: { name: string }, b: { name: string }): number {
 	return a.name.localeCompare(b.name, getCanonicalLocale())
+}
+
+function toggleOwner(owner: string) {
+	expandedOwners.value = { ...expandedOwners.value, [owner]: !(expandedOwners.value[owner] ?? true) }
 }
 
 function parentName(category: Category): string {
@@ -600,7 +613,7 @@ function closeInfoDialog() {
 
 				<template v-if="!hasSearch">
 					<CategoryRow
-						v-for="node in flattenedCategories"
+						v-for="node in ownFlattenedCategories"
 						:key="node.category.id"
 						:category="node.category"
 						:parentName="parentName(node.category)"
@@ -608,10 +621,24 @@ function closeInfoDialog() {
 						@edit="editingCategory = $event"
 						@delete="askDelete({ type: 'category', entity: $event })"
 						@confirm="onConfirmCategory" />
+					<SharedOwnerSection
+						v-for="group in sharedCategoryGroups"
+						:key="group.owner"
+						:owner="group.owner"
+						:expanded="expandedOwners[group.owner] ?? true"
+						@toggle="toggleOwner(group.owner)">
+						<CategoryRow
+							v-for="category in group.items"
+							:key="category.id"
+							:category="category"
+							:parentName="parentName(category)"
+							@edit="editingCategory = $event"
+							@delete="askDelete({ type: 'category', entity: $event })" />
+					</SharedOwnerSection>
 				</template>
 				<template v-else>
 					<CategoryRow
-						v-for="category in visibleCategories"
+						v-for="category in searchCategoryGroups.mine"
 						:key="category.id"
 						:category="category"
 						:parentName="category.parentName"
@@ -619,6 +646,21 @@ function closeInfoDialog() {
 						@edit="editingCategory = $event"
 						@delete="askDelete({ type: 'category', entity: $event })"
 						@confirm="onConfirmCategory" />
+					<SharedOwnerSection
+						v-for="group in searchCategoryGroups.shared"
+						:key="group.owner"
+						:owner="group.owner"
+						:expanded="expandedOwners[group.owner] ?? true"
+						@toggle="toggleOwner(group.owner)">
+						<CategoryRow
+							v-for="category in group.items"
+							:key="category.id"
+							:category="category"
+							:parentName="category.parentName"
+							:search="query"
+							@edit="editingCategory = $event"
+							@delete="askDelete({ type: 'category', entity: $event })" />
+					</SharedOwnerSection>
 				</template>
 
 				<div v-if="hasMoreCategories" :class="$style['load-more']">
@@ -660,13 +702,26 @@ function closeInfoDialog() {
 
 			<div v-else :class="$style.list">
 				<StoreRow
-					v-for="store in visibleStores"
+					v-for="store in storeGroups.mine"
 					:key="store.id"
 					:store="store"
 					:accentColor="storeAccentColor(store)"
 					:search="query"
 					@edit="editingStore = $event"
 					@delete="askDelete({ type: 'store', entity: $event })" />
+				<SharedOwnerSection
+					v-for="group in storeGroups.shared"
+					:key="group.owner"
+					:owner="group.owner"
+					:expanded="expandedOwners[group.owner] ?? true"
+					@toggle="toggleOwner(group.owner)">
+					<StoreRow
+						v-for="store in group.items"
+						:key="store.id"
+						:store="store"
+						:accentColor="storeAccentColor(store)"
+						:search="query" />
+				</SharedOwnerSection>
 
 				<div v-if="hasMoreStores" :class="$style['load-more']">
 					<NcButton type="button" @click="loadMoreStores">
@@ -707,7 +762,7 @@ function closeInfoDialog() {
 
 			<div v-else :class="$style.list">
 				<ProductRow
-					v-for="product in visibleProducts"
+					v-for="product in productGroups.mine"
 					:key="product.id"
 					:product="product"
 					:category="categoryForProduct(product)"
@@ -716,6 +771,20 @@ function closeInfoDialog() {
 					@edit="editingProduct = $event"
 					@merge="mergingProduct = $event"
 					@delete="askDelete({ type: 'product', entity: $event })" />
+				<SharedOwnerSection
+					v-for="group in productGroups.shared"
+					:key="group.owner"
+					:owner="group.owner"
+					:expanded="expandedOwners[group.owner] ?? true"
+					@toggle="toggleOwner(group.owner)">
+					<ProductRow
+						v-for="product in group.items"
+						:key="product.id"
+						:product="product"
+						:category="categoryForProduct(product)"
+						:search="query"
+						@open="infoProduct = $event" />
+				</SharedOwnerSection>
 
 				<div v-if="hasMoreProducts" :class="$style['load-more']">
 					<NcButton type="button" @click="loadMoreProducts">

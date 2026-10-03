@@ -33,6 +33,19 @@ class ListMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	public function findById(string $id): ?ListEntity {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($id, IQueryBuilder::PARAM_STR)));
+
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException) {
+			return null;
+		}
+	}
+
 	public function findByIdAndOwner(string $id, string $userId): ?ListEntity {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')

@@ -7,6 +7,7 @@ namespace OCA\ByeByeMoneyList\Controller;
 use OCA\ByeByeMoneyList\AppInfo\Application;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Entity\CategoryEntity;
+use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -24,13 +25,15 @@ use Psr\Log\LoggerInterface;
  */
 class CategoryController extends OCSController {
 	private CategoryMapper $mapper;
+	private ListAccessService $listAccess;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
 
-	public function __construct(IRequest $request, CategoryMapper $mapper, IDBConnection $db, IUserSession $userSession, LoggerInterface $logger) {
+	public function __construct(IRequest $request, CategoryMapper $mapper, ListAccessService $listAccess, IDBConnection $db, IUserSession $userSession, LoggerInterface $logger) {
 		parent::__construct(Application::APP_ID, $request);
 		$this->mapper = $mapper;
+		$this->listAccess = $listAccess;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -55,8 +58,8 @@ class CategoryController extends OCSController {
 		}
 
 		$categories = array_values(array_map(
-			fn (CategoryEntity $category): array => $this->serializeCategory($category),
-			$this->mapper->findAllByOwner($userId),
+			fn (CategoryEntity $category): array => $this->serializeCategory($category, $userId),
+			$this->mapper->findAllByOwners($this->listAccess->visibleCatalogOwners($userId)),
 		));
 
 		return new DataResponse(['categories' => $categories], Http::STATUS_OK);
@@ -599,9 +602,9 @@ class CategoryController extends OCSController {
 	}
 
 	/**
-	 * @return array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool, status: string}
+	 * @return array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool, status: string, owner: string, shared: bool}
 	 */
-	private function serializeCategory(CategoryEntity $category): array {
+	private function serializeCategory(CategoryEntity $category, ?string $viewerId = null): array {
 		return [
 			'id' => $category->getId(),
 			'name' => $category->getName() ?? '',
@@ -610,12 +613,14 @@ class CategoryController extends OCSController {
 			'parentId' => $category->getParentId(),
 			'income' => $category->getIncome() ?? false,
 			'status' => $category->getStatus() ?? 'confirmed',
+			'owner' => $category->getOwner() ?? '',
+			'shared' => $viewerId !== null && $category->getOwner() !== $viewerId,
 		];
 	}
 
 	/**
 	 * @param CategoryEntity[] $categories
-	 * @return list<array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool, status: string}>
+	 * @return list<array{id: string, name: string, color: ?string, emoji: ?string, parentId: ?string, income: bool, status: string, owner: string, shared: bool}>
 	 */
 	private function serializeCategories(array $categories): array {
 		return array_values(array_map(

@@ -33,6 +33,39 @@ class StoreMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * @param array<array-key, string> $ownerIds
+	 *
+	 * @return StoreEntity[]
+	 */
+	public function findAllByOwners(array $ownerIds): array {
+		if ($ownerIds === []) {
+			return [];
+		}
+
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->in('owner', $qb->createNamedParameter($ownerIds, IQueryBuilder::PARAM_STR_ARRAY)))
+			->orderBy('name', 'ASC');
+
+		return $this->findEntities($qb);
+	}
+
+	public function findByNameAndOwner(string $name, string $userId): ?StoreEntity {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->eq('name', $qb->createNamedParameter($name, IQueryBuilder::PARAM_STR)));
+
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException) {
+			return null;
+		}
+	}
+
 	public function findByIdAndOwner(string $id, string $userId): ?StoreEntity {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
