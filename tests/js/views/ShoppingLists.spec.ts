@@ -67,7 +67,9 @@ async function openListMenu(wrapper: Awaited<ReturnType<typeof render>>, index =
 }
 
 async function clickDeleteMenuItem(wrapper: Awaited<ReturnType<typeof render>>) {
-	await wrapper.findComponent(NcActionButton).find('button').trigger('click')
+	const remove = wrapper.findAllComponents(NcActionButton).find((button) => button.text() === 'Delete')
+	expect(remove, 'delete action').toBeDefined()
+	await remove!.find('button').trigger('click')
 	await flushPromises()
 	await nextTick()
 }
@@ -91,7 +93,7 @@ describe('ShoppingLists', () => {
 		expect(wrapper.find('.action-item__menutoggle').findComponent(NcIconSvgWrapper).props('path')).toBe(mdiDotsVertical)
 
 		await openListMenu(wrapper)
-		expect(wrapper.findComponent(NcActionButton).text()).toBe('Delete')
+		expect(wrapper.findAllComponents(NcActionButton).map((button) => button.text())).toContain('Delete')
 	})
 
 	it('asks for confirmation before deleting', async () => {

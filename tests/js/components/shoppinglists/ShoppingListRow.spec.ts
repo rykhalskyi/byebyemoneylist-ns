@@ -78,6 +78,16 @@ describe('ShoppingListRow', () => {
 		expect(names).not.toContain('Copy to my catalog')
 	})
 
+	it('offers a share action for owned lists but not for shared ones', async () => {
+		const owned = await render({ list: list() })
+		await openMenu(owned)
+		expect(owned.findAllComponents(NcActionButton).map((button) => button.text())).toContain('Share')
+
+		const shared = await render({ list: list({ sharedBy: 'alice' }) })
+		await openMenu(shared)
+		expect(shared.findAllComponents(NcActionButton).map((button) => button.text())).not.toContain('Share')
+	})
+
 	it('renders shared read-only lists with a read-only hint when expanded', async () => {
 		const wrapper = await render({ list: list({ sharedBy: 'alice', shareMode: 'readonly' }), expanded: true })
 		expect(wrapper.text()).toContain('This list is shared with you and is read-only.')

@@ -89,3 +89,5 @@
 ## [2026-10-02] update | T36 backend complete: catalog visibility + copy-to-own-DB; frontend remains
 ## [2026-10-02] update | T36 frontend: shared-list UI, revoked greying, read-only items, copy action, catalog Shared chips
 ## [2026-10-02] update | T36 complete: catalog owner expanders; sharing read-only backend+frontend done
+## [2026-10-02] update | T37 complete: read/write list items + publish confirmation
+## [2026-10-02] update | Add k8s-secrets.sh + secrets/example.env; document local-only secrets

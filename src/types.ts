@@ -92,6 +92,19 @@ export interface Category {
 	shared?: boolean
 }
 
+export interface ListShare {
+	id: string
+	listId: string
+	owner: string
+	sharedWith: string
+	mode: ShareMode
+	status: string
+	revoked: boolean
+	listName: string | null
+	createdAt: string | null
+	updatedAt: string | null
+}
+
 export interface ListPayload {
 	name: string
 	storeId?: string | null

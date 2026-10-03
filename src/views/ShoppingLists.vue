@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ShoppingList } from '../types.ts'
+
 import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiCashPlus, mdiPlus } from '@mdi/js'
 import { computed, onMounted, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -11,6 +13,7 @@ import NewListDialog from '../components/NewListDialog.vue'
 import PurchaseDialog from '../components/PurchaseDialog.vue'
 import ReceiptViewDialog from '../components/ReceiptViewDialog.vue'
 import ListGroupSection from '../components/shoppinglists/ListGroupSection.vue'
+import ShareListDialog from '../components/shoppinglists/ShareListDialog.vue'
 import { useShoppingLists } from '../composables/useShoppingLists.ts'
 import { t } from '../utils/l10n.ts'
 
@@ -63,6 +66,7 @@ const showDialog = ref(false)
 const newListIsIncome = ref(false)
 const showPurchaseDialog = ref(false)
 const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
+const shareList = ref<ShoppingList | null>(null)
 
 const addProductSharedOwner = computed<string | null>(() => {
 	const list = lists.value.find((candidate) => candidate.id === addProductListId.value)
@@ -79,6 +83,16 @@ function openListDialog(isIncome: boolean) {
 function openPurchaseDialog(mode: 'manual' | 'scan') {
 	purchaseDialogMode.value = mode
 	showPurchaseDialog.value = true
+}
+
+function openShare(list: ShoppingList) {
+	shareList.value = list
+}
+
+function closeShare(open: boolean) {
+	if (!open) {
+		shareList.value = null
+	}
 }
 
 watch(
@@ -186,6 +200,7 @@ watch(
 				@delete="askDelete"
 				@receipt="openReceipt"
 				@copy="onCopyList"
+				@share="openShare"
 				@addItem="openAddProduct"
 				@deleteItem="onDeleteItem" />
 		</div>
@@ -223,6 +238,11 @@ watch(
 			:busy="deleting"
 			@update:open="closeConfirmDialog"
 			@confirm="onConfirmDelete" />
+		<ShareListDialog
+			v-if="shareList !== null"
+			:open="true"
+			:list="shareList"
+			@update:open="closeShare" />
 	</div>
 </template>
 

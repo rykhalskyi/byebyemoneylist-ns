@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Category, ListItem, Product, ShoppingList, Store } from '../../types.ts'
 
-import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiDotsVertical, mdiReceiptText } from '@mdi/js'
+import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiDotsVertical, mdiReceiptText, mdiShareVariant } from '@mdi/js'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcChip from '@nextcloud/vue/components/NcChip'
@@ -27,6 +27,7 @@ const emit = defineEmits<{
 	delete: []
 	receipt: []
 	copy: []
+	share: []
 	addItem: []
 	deleteItem: [item: ListItem]
 }>()
@@ -89,6 +90,12 @@ function categoryName(categoryId: string | null): string {
 							<NcIconSvgWrapper :path="mdiContentCopy" :size="20" />
 						</template>
 						{{ t('Copy to my catalog') }}
+					</NcActionButton>
+					<NcActionButton v-if="!isSharedList(props.list)" @click.stop="emit('share')">
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiShareVariant" :size="20" />
+						</template>
+						{{ t('Share') }}
 					</NcActionButton>
 					<NcActionButton v-if="!isSharedList(props.list) && props.list.hasReceipt" @click.stop="emit('receipt')">
 						<template #icon>

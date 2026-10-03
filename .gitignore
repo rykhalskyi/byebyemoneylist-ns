@@ -9,6 +9,12 @@
 
 /.env
 
+# Local secrets applied to a cluster via scripts/k8s-secrets.sh (never commit)
+/secrets/*
+!/secrets/example.env
+*.age
+*.age.key
+
 /node_modules/
 /js/
 /css/
