@@ -125,7 +125,6 @@ class ListShareMapper extends QBMapper {
 	 * Active shares created by a user.
 	 *
 	 * @return ListShareEntity[]
-	 * @psalm-suppress PossiblyUnusedMethod
 	 */
 	public function findActiveByOwner(string $userId): array {
 		$qb = $this->db->getQueryBuilder();

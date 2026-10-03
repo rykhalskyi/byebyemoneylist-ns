@@ -91,3 +91,7 @@
 ## [2026-10-02] update | T36 complete: catalog owner expanders; sharing read-only backend+frontend done
 ## [2026-10-02] update | T37 complete: read/write list items + publish confirmation
 ## [2026-10-02] update | Add k8s-secrets.sh + secrets/example.env; document local-only secrets
+## [2026-10-03] ticket | T40 — owner-side shared-list mark + share management dialog (add/edit/revoke)
+## [2026-10-03] update | T40 — share dialog loads shares on open; mark opens manage view, menu Share opens add-only
+## [2026-10-03] update | T40 — add-only share dialog closes after a successful add
+## [2026-10-03] update | T40 — validate share recipient exists (IUserManager), localized 422, dialog surfaces error

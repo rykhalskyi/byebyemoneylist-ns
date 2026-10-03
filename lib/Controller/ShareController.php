@@ -18,7 +18,9 @@ use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
+use OCP\IL10N;
 use OCP\IRequest;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -29,23 +31,29 @@ class ShareController extends OCSController {
 	private ListMapper $listMapper;
 	private ListShareMapper $shareMapper;
 	private ListAccessService $listAccess;
+	private IUserManager $userManager;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
+	private IL10N $l10n;
 
 	public function __construct(
 		IRequest $request,
 		ListMapper $listMapper,
 		ListShareMapper $shareMapper,
 		ListAccessService $listAccess,
+		IUserManager $userManager,
 		IUserSession $userSession,
 		LoggerInterface $logger,
+		IL10N $l10n,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 		$this->listMapper = $listMapper;
 		$this->shareMapper = $shareMapper;
 		$this->listAccess = $listAccess;
+		$this->userManager = $userManager;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
+		$this->l10n = $l10n;
 	}
 
 	/**
@@ -128,7 +136,7 @@ class ShareController extends OCSController {
 	 * 200: Share updated
 	 * 401: Current user is not logged in
 	 * 404: List not found or not owned by the current user
-	 * 422: Missing/blank recipient or invalid mode
+	 * 422: Missing/blank recipient, invalid mode, or recipient does not exist
 	 * 500: Failed to create the share
 	 */
 	#[NoAdminRequired]
@@ -153,6 +161,9 @@ class ShareController extends OCSController {
 		}
 		if (!in_array($mode, [ListShareEntity::MODE_READONLY, ListShareEntity::MODE_READWRITE], true)) {
 			return new DataResponse(['message' => 'Invalid share mode'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		if (!$this->userManager->userExists($sharedWith)) {
+			return new DataResponse(['message' => $this->l10n->t('User not found')], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
 		$now = new DateTime('now', new DateTimeZone('UTC'));

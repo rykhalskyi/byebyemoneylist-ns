@@ -118,6 +118,16 @@ export function isRevokedList(list: ShoppingList): boolean {
 }
 
 /**
+ * An owned list that the current user has shared with other users. Lists shared
+ * with the user are handled separately by {@link isSharedList}.
+ *
+ * @param list the list to inspect
+ */
+export function hasActiveShares(list: ShoppingList): boolean {
+	return list.hasShares === true
+}
+
+/**
  * A shared list is editable only in read/write mode. Revoked shares are never
  * editable (they are a name-only placeholder).
  *

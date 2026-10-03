@@ -67,6 +67,7 @@ const newListIsIncome = ref(false)
 const showPurchaseDialog = ref(false)
 const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
 const shareList = ref<ShoppingList | null>(null)
+const shareAddOnly = ref(false)
 
 const addProductSharedOwner = computed<string | null>(() => {
 	const list = lists.value.find((candidate) => candidate.id === addProductListId.value)
@@ -86,6 +87,12 @@ function openPurchaseDialog(mode: 'manual' | 'scan') {
 }
 
 function openShare(list: ShoppingList) {
+	shareAddOnly.value = true
+	shareList.value = list
+}
+
+function openManageShares(list: ShoppingList) {
+	shareAddOnly.value = false
 	shareList.value = list
 }
 
@@ -93,6 +100,14 @@ function closeShare(open: boolean) {
 	if (!open) {
 		shareList.value = null
 	}
+}
+
+function onSharesChanged(hasShares: boolean) {
+	const target = shareList.value
+	if (target === null) {
+		return
+	}
+	lists.value = lists.value.map((candidate) => (candidate.id === target.id ? { ...candidate, hasShares } : candidate))
 }
 
 watch(
@@ -201,6 +216,7 @@ watch(
 				@receipt="openReceipt"
 				@copy="onCopyList"
 				@share="openShare"
+				@manageShares="openManageShares"
 				@addItem="openAddProduct"
 				@deleteItem="onDeleteItem" />
 		</div>
@@ -242,7 +258,9 @@ watch(
 			v-if="shareList !== null"
 			:open="true"
 			:list="shareList"
-			@update:open="closeShare" />
+			:addOnly="shareAddOnly"
+			@update:open="closeShare"
+			@sharesChanged="onSharesChanged" />
 	</div>
 </template>
 

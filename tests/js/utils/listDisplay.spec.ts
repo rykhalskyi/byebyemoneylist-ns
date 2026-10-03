@@ -3,7 +3,7 @@ import type { Category, ListItem, Product, ShoppingList } from '../../../src/typ
 import { mdiAutorenew, mdiCart, mdiCashPlus } from '@mdi/js'
 import { describe, expect, it } from 'vitest'
 import { formatDate, formatTotal } from '../../../src/utils/format.ts'
-import { addItemLabel, categoryColor, checkedSum, isReadOnlyList, isRevokedList, isSharedList, itemDetails, itemSubname, listIcon, listMarkStyle, listSubname, listTotal, priceText, productCategory, productCategoryColor, sharedByLabel, statusLabel, statusVariant } from '../../../src/utils/listDisplay.ts'
+import { addItemLabel, categoryColor, checkedSum, hasActiveShares, isReadOnlyList, isRevokedList, isSharedList, itemDetails, itemSubname, listIcon, listMarkStyle, listSubname, listTotal, priceText, productCategory, productCategoryColor, sharedByLabel, statusLabel, statusVariant } from '../../../src/utils/listDisplay.ts'
 
 function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 	return {
@@ -138,6 +138,12 @@ describe('sharing helpers', () => {
 
 	it('labels who shared the list', () => {
 		expect(sharedByLabel(list({ sharedBy: 'alice' }))).toContain('alice')
+	})
+
+	it('detects owned lists that have active shares', () => {
+		expect(hasActiveShares(list())).toBe(false)
+		expect(hasActiveShares(list({ hasShares: true }))).toBe(true)
+		expect(hasActiveShares(list({ hasShares: false }))).toBe(false)
 	})
 })
 

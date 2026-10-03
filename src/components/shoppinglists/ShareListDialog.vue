@@ -11,10 +11,11 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { fetchListShares, revokeListShare, shareList } from '../../services/listsApi.ts'
 import { t } from '../../utils/l10n.ts'
 
-const props = defineProps<{ open: boolean, list: ShoppingList }>()
+const props = defineProps<{ open: boolean, list: ShoppingList, addOnly?: boolean }>()
 
 const emit = defineEmits<{
 	'update:open': [open: boolean]
+	sharesChanged: [hasActiveShares: boolean]
 }>()
 
 interface ModeOption {
@@ -35,6 +36,7 @@ const submitting = ref(false)
 const error = ref<string | null>(null)
 
 const canSubmit = computed(() => user.value.trim() !== '' && !submitting.value)
+const showSharesList = computed(() => !props.addOnly)
 
 watch(
 	() => props.open,
@@ -44,15 +46,29 @@ watch(
 			mode.value = modeOptions[0]
 			error.value = null
 			submitting.value = false
-			loadShares()
+			shares.value = []
+			if (showSharesList.value) {
+				loadShares()
+			}
 		}
 	},
+	{ immediate: true },
 )
+
+function notifySharesChanged() {
+	emit('sharesChanged', shares.value.some((share) => !share.revoked))
+}
+
+function serverErrorMessage(err: unknown): string | null {
+	const data = (err as { response?: { data?: { message?: string, ocs?: { data?: { message?: string } } } } })?.response?.data
+	return data?.ocs?.data?.message ?? data?.message ?? null
+}
 
 async function loadShares() {
 	loading.value = true
 	try {
 		shares.value = await fetchListShares(props.list.id)
+		notifySharesChanged()
 	} catch {
 		error.value = t('Failed to load the shares.')
 	} finally {
@@ -69,9 +85,13 @@ async function onSubmit() {
 	try {
 		const share = await shareList(props.list.id, user.value.trim(), mode.value.id)
 		shares.value = [...shares.value.filter((candidate) => candidate.sharedWith !== share.sharedWith), share]
+		notifySharesChanged()
 		user.value = ''
-	} catch {
-		error.value = t('Failed to share the list. Please try again.')
+		if (props.addOnly) {
+			emit('update:open', false)
+		}
+	} catch (err: unknown) {
+		error.value = serverErrorMessage(err) ?? t('Failed to share the list. Please try again.')
 	} finally {
 		submitting.value = false
 	}
@@ -83,8 +103,30 @@ async function revoke(share: ListShare) {
 	try {
 		const updated = await revokeListShare(props.list.id, share.id)
 		shares.value = shares.value.map((candidate) => (candidate.id === updated.id ? updated : candidate))
+		notifySharesChanged()
 	} catch {
 		error.value = t('Failed to revoke the share.')
+	} finally {
+		submitting.value = false
+	}
+}
+
+function modeOptionFor(share: ListShare): ModeOption {
+	return modeOptions.find((option) => option.id === share.mode) ?? modeOptions[0]
+}
+
+async function updateMode(share: ListShare, option: ModeOption | null) {
+	if (option === null || option.id === share.mode) {
+		return
+	}
+	submitting.value = true
+	error.value = null
+	try {
+		const updated = await shareList(props.list.id, share.sharedWith, option.id)
+		shares.value = shares.value.map((candidate) => (candidate.id === updated.id ? updated : candidate))
+		notifySharesChanged()
+	} catch {
+		error.value = t('Failed to update the share.')
 	} finally {
 		submitting.value = false
 	}
@@ -129,14 +171,24 @@ function onCancel() {
 				{{ error }}
 			</p>
 
-			<div v-if="shares.length > 0" :class="$style.shares">
+			<div v-if="showSharesList && shares.length > 0" :class="$style.shares">
 				<p :class="$style['shares-title']">
 					{{ t('Shared with') }}
 				</p>
 				<ul :class="$style['share-list']">
 					<li v-for="share in shares" :key="share.id" :class="$style['share-row']">
 						<span :class="[$style['share-user'], { [$style.muted]: share.revoked }]">{{ share.sharedWith }}</span>
-						<NcChip :text="modeLabel(share.mode)" noClose />
+						<NcSelect
+							v-if="!share.revoked"
+							:modelValue="modeOptionFor(share)"
+							label="label"
+							:inputLabel="t('Access')"
+							:options="modeOptions"
+							:clearable="false"
+							:disabled="submitting"
+							:class="$style['share-mode']"
+							@update:modelValue="updateMode(share, $event)" />
+						<NcChip v-else :text="modeLabel(share.mode)" noClose />
 						<NcButton
 							v-if="!share.revoked"
 							type="button"
@@ -221,6 +273,11 @@ function onCancel() {
 .share-user {
 	flex: 1;
 	min-width: 0;
+}
+
+.share-mode {
+	flex: 0 0 auto;
+	width: 170px;
 }
 
 .muted {

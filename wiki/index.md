@@ -68,6 +68,7 @@
 - [tickets/ticket-37-sharing-readwrite](pages/tickets/ticket-37-sharing-readwrite.md) — T37 — Read/write sharing (guest manages own items, uses owner catalog, publish confirmation)
 - [tickets/ticket-38-sharing-purchaser-attribution](pages/tickets/ticket-38-sharing-purchaser-attribution.md) — T38 — Attribute shared-list expenses to the purchaser (analytics + dashboard)
 - [tickets/ticket-39-sharing-family-groups](pages/tickets/ticket-39-sharing-family-groups.md) — T39 — Family groups (Phase 2: share lists with all group members)
+- [tickets/ticket-40-sharing-owner-mark](pages/tickets/ticket-40-sharing-owner-mark.md) — Owner-side shared-list mark and full share management dialog (add, edit access, revoke)
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.

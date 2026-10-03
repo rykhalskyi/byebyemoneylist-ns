@@ -11,8 +11,10 @@ use OCA\ByeByeMoneyList\Entity\ListEntity;
 use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\Sharing\ListAccessService;
 use OCP\AppFramework\Http;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
+use OCP\IUserManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -22,6 +24,7 @@ final class ShareControllerTest extends TestCase {
 	private ListMapper $listMapper;
 	private ListShareMapper $shareMapper;
 	private ListAccessService $listAccess;
+	private IUserManager $userManager;
 	private IUserSession $userSession;
 
 	protected function setUp(): void {
@@ -29,16 +32,24 @@ final class ShareControllerTest extends TestCase {
 		$this->listMapper = $this->createMock(ListMapper::class);
 		$this->shareMapper = $this->createMock(ListShareMapper::class);
 		$this->listAccess = $this->createMock(ListAccessService::class);
+		$this->userManager = $this->createMock(IUserManager::class);
+		$this->userManager->method('userExists')->willReturnCallback(
+			static fn (string $uid): bool => $uid !== 'nobody',
+		);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
 
 		$this->controller = new ShareController(
 			$request,
 			$this->listMapper,
 			$this->shareMapper,
 			$this->listAccess,
+			$this->userManager,
 			$this->userSession,
 			$logger,
+			$l10n,
 		);
 	}
 
@@ -128,6 +139,21 @@ final class ShareControllerTest extends TestCase {
 		$response = $this->controller->create('list-1', 'bob', 'writeonly');
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testCreateRejectsUnknownUser(): void {
+		$this->mockUser('alice');
+		$this->listMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with('list-1', 'alice')
+			->willReturn($this->makeList());
+		$this->shareMapper->expects($this->never())->method('findByListAndUser');
+		$this->shareMapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create('list-1', 'nobody');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		$this->assertSame('User not found', $response->getData()['message']);
 	}
 
 	public function testCreateReturnsNotFoundForForeignList(): void {

@@ -18,6 +18,7 @@ export interface ShoppingList {
 	sharedBy?: string | null
 	shareMode?: ShareMode | null
 	revoked?: boolean
+	hasShares?: boolean
 }
 
 export interface ReceiptPicture {

@@ -4,6 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcChip from '@nextcloud/vue/components/NcChip'
 import ShoppingListRow from '../../../../src/components/shoppinglists/ShoppingListRow.vue'
 
 vi.mock('../../../../src/services/listsApi.ts', () => ({
@@ -69,6 +70,21 @@ describe('ShoppingListRow', () => {
 		expect(names).not.toContain('Delete')
 	})
 
+	it('marks an owned shared list and opens the share management dialog from the mark', async () => {
+		const wrapper = await render({ list: list({ hasShares: true }) })
+		const marks = wrapper.findAllComponents(NcChip).filter((chip) => chip.text().includes('Shared'))
+		expect(marks).toHaveLength(1)
+
+		await marks[0]!.trigger('click')
+		expect(wrapper.emitted('manageShares')).toHaveLength(1)
+		expect(wrapper.emitted('share')).toBeUndefined()
+	})
+
+	it('shows no shared mark on owned lists without shares', async () => {
+		const wrapper = await render({ list: list() })
+		expect(wrapper.findAllComponents(NcChip).some((chip) => chip.text().includes('Shared'))).toBe(false)
+	})
+
 	it('offers delete for owned lists and no copy action', async () => {
 		const wrapper = await render({ list: list({ hasReceipt: true }) })
 
@@ -81,7 +97,11 @@ describe('ShoppingListRow', () => {
 	it('offers a share action for owned lists but not for shared ones', async () => {
 		const owned = await render({ list: list() })
 		await openMenu(owned)
-		expect(owned.findAllComponents(NcActionButton).map((button) => button.text())).toContain('Share')
+		const shareAction = owned.findAllComponents(NcActionButton).find((button) => button.text() === 'Share')
+		expect(shareAction).toBeDefined()
+		await shareAction!.find('button').trigger('click')
+		expect(owned.emitted('share')).toHaveLength(1)
+		expect(owned.emitted('manageShares')).toBeUndefined()
 
 		const shared = await render({ list: list({ sharedBy: 'alice' }) })
 		await openMenu(shared)

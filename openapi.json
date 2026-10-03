@@ -3474,7 +3474,8 @@
                                                                             "hasReceipt",
                                                                             "sharedBy",
                                                                             "shareMode",
-                                                                            "revoked"
+                                                                            "revoked",
+                                                                            "hasShares"
                                                                         ],
                                                                         "properties": {
                                                                             "id": {
@@ -3561,6 +3562,9 @@
                                                                             },
                                                                             "revoked": {
                                                                                 "type": "boolean"
+                                                                            },
+                                                                            "hasShares": {
+                                                                                "type": "boolean"
                                                                             }
                                                                         }
                                                                     }
@@ -3644,7 +3648,8 @@
                                                                                     "hasReceipt",
                                                                                     "sharedBy",
                                                                                     "shareMode",
-                                                                                    "revoked"
+                                                                                    "revoked",
+                                                                                    "hasShares"
                                                                                 ],
                                                                                 "properties": {
                                                                                     "id": {
@@ -3730,6 +3735,9 @@
                                                                                         "nullable": true
                                                                                     },
                                                                                     "revoked": {
+                                                                                        "type": "boolean"
+                                                                                    },
+                                                                                    "hasShares": {
                                                                                         "type": "boolean"
                                                                                     }
                                                                                 }
@@ -3956,7 +3964,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4043,6 +4052,9 @@
                                                                         },
                                                                         "revoked": {
                                                                             "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -4123,7 +4135,8 @@
                                                                                 "hasReceipt",
                                                                                 "sharedBy",
                                                                                 "shareMode",
-                                                                                "revoked"
+                                                                                "revoked",
+                                                                                "hasShares"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -4209,6 +4222,9 @@
                                                                                     "nullable": true
                                                                                 },
                                                                                 "revoked": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "hasShares": {
                                                                                     "type": "boolean"
                                                                                 }
                                                                             }
@@ -4311,7 +4327,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4397,6 +4414,9 @@
                                                                             "nullable": true
                                                                         },
                                                                         "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -4476,7 +4496,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4562,6 +4583,9 @@
                                                                             "nullable": true
                                                                         },
                                                                         "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -4777,7 +4801,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -4864,6 +4889,9 @@
                                                                         },
                                                                         "revoked": {
                                                                             "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -4944,7 +4972,8 @@
                                                                                 "hasReceipt",
                                                                                 "sharedBy",
                                                                                 "shareMode",
-                                                                                "revoked"
+                                                                                "revoked",
+                                                                                "hasShares"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -5030,6 +5059,9 @@
                                                                                     "nullable": true
                                                                                 },
                                                                                 "revoked": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "hasShares": {
                                                                                     "type": "boolean"
                                                                                 }
                                                                             }
@@ -5132,7 +5164,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -5218,6 +5251,9 @@
                                                                             "nullable": true
                                                                         },
                                                                         "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -5297,7 +5333,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -5383,6 +5420,9 @@
                                                                             "nullable": true
                                                                         },
                                                                         "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -5462,7 +5502,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -5548,6 +5589,9 @@
                                                                             "nullable": true
                                                                         },
                                                                         "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -5910,7 +5954,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -5997,6 +6042,9 @@
                                                                         },
                                                                         "revoked": {
                                                                             "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
+                                                                            "type": "boolean"
                                                                         }
                                                                     }
                                                                 }
@@ -6077,7 +6125,8 @@
                                                                                 "hasReceipt",
                                                                                 "sharedBy",
                                                                                 "shareMode",
-                                                                                "revoked"
+                                                                                "revoked",
+                                                                                "hasShares"
                                                                             ],
                                                                             "properties": {
                                                                                 "id": {
@@ -6163,6 +6212,9 @@
                                                                                     "nullable": true
                                                                                 },
                                                                                 "revoked": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "hasShares": {
                                                                                     "type": "boolean"
                                                                                 }
                                                                             }
@@ -6265,7 +6317,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -6351,6 +6404,9 @@
                                                                             "nullable": true
                                                                         },
                                                                         "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -6430,7 +6486,8 @@
                                                                         "hasReceipt",
                                                                         "sharedBy",
                                                                         "shareMode",
-                                                                        "revoked"
+                                                                        "revoked",
+                                                                        "hasShares"
                                                                     ],
                                                                     "properties": {
                                                                         "id": {
@@ -6516,6 +6573,9 @@
                                                                             "nullable": true
                                                                         },
                                                                         "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
                                                                             "type": "boolean"
                                                                         }
                                                                     }
@@ -18845,7 +18905,7 @@
                         }
                     },
                     "422": {
-                        "description": "Missing/blank recipient or invalid mode",
+                        "description": "Missing/blank recipient, invalid mode, or recipient does not exist",
                         "content": {
                             "application/json": {
                                 "schema": {

@@ -9,7 +9,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import ShoppingListItems from './ShoppingListItems.vue'
 import { t } from '../../utils/l10n.ts'
-import { addItemLabel, categoryColor, isReadOnlyList, isRevokedList, isSharedList, listIcon, listMarkStyle, listSubname, priceText, sharedByLabel, statusLabel, statusVariant } from '../../utils/listDisplay.ts'
+import { addItemLabel, categoryColor, hasActiveShares, isReadOnlyList, isRevokedList, isSharedList, listIcon, listMarkStyle, listSubname, priceText, sharedByLabel, statusLabel, statusVariant } from '../../utils/listDisplay.ts'
 
 const props = defineProps<{
 	list: ShoppingList
@@ -28,6 +28,7 @@ const emit = defineEmits<{
 	receipt: []
 	copy: []
 	share: []
+	manageShares: []
 	addItem: []
 	deleteItem: [item: ListItem]
 }>()
@@ -61,6 +62,14 @@ function categoryName(categoryId: string | null): string {
 			<template #subname>
 				<div :class="$style.subname">
 					<span>{{ listSubname(props.list, storeName(props.list.storeId), categoryName(props.list.categoryId)) }}</span>
+					<NcChip
+						v-if="hasActiveShares(props.list)"
+						:text="t('Shared')"
+						:iconPath="mdiShareVariant"
+						variant="tertiary"
+						noClose
+						:class="$style['share-mark']"
+						@click.stop="emit('manageShares')" />
 					<NcChip
 						v-if="isSharedList(props.list)"
 						:text="sharedByLabel(props.list)"
@@ -147,6 +156,10 @@ function categoryName(categoryId: string | null): string {
 	gap: 8px;
 	margin-inline-start: auto;
 	min-width: 0;
+}
+
+.share-mark {
+	cursor: pointer;
 }
 
 .chevron {

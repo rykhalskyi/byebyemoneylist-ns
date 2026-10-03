@@ -119,6 +119,38 @@ final class ListControllerTest extends TestCase {
 		$this->assertNull($lists[0]['sharedBy']);
 		$this->assertNull($lists[0]['shareMode']);
 		$this->assertFalse($lists[0]['revoked']);
+		$this->assertFalse($lists[0]['hasShares']);
+	}
+
+	public function testIndexMarksOwnedListsWithActiveShares(): void {
+		$this->mockUser('alice');
+
+		$list = $this->makeList('list-1', 'Groceries');
+		$list->setCreatedAt(new \DateTime('2026-08-26T10:00:00+00:00'));
+
+		$this->mapper->method('findAllByOwner')->with('alice')->willReturn([$list]);
+		$this->itemMapper->method('sumCheckedByListIds')->willReturn([]);
+		$this->mapper->method('findCategoryIdsByListIds')->willReturn([]);
+
+		$share = new ListShareEntity();
+		$share->setId('share-1');
+		$share->setListId('list-1');
+		$share->setOwner('alice');
+		$share->setSharedWith('bob');
+		$share->setMode(ListShareEntity::MODE_READONLY);
+		$share->setStatus(ListShareEntity::STATUS_ACTIVE);
+
+		$this->shareMapper->expects($this->once())
+			->method('findActiveByOwner')
+			->with('alice')
+			->willReturn([$share]);
+		$this->shareMapper->method('findByRecipient')->willReturn([]);
+
+		$response = $this->controller->index();
+		$lists = $response->getData()['lists'];
+
+		$this->assertCount(1, $lists);
+		$this->assertTrue($lists[0]['hasShares']);
 	}
 
 	public function testIndexIncludesSharedAndRevokedLists(): void {
