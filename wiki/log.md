@@ -96,3 +96,6 @@
 ## [2026-10-03] update | T40 — add-only share dialog closes after a successful add
 ## [2026-10-03] update | T40 — validate share recipient exists (IUserManager), localized 422, dialog surfaces error
 ## [2026-10-03] update | T41 sharing scope hardening — review fixes (item-scoped catalog grants D-25, revoked placeholder D-26, share/grant lifecycle D-27)
+## [2026-10-13] spec | To Buy list redesign parity spec (Android NEED_TO_BUY model)
+## [2026-10-13] plan | To Buy list redesign implementation plan (T42–T48)
+## [2026-10-13] ticket | Created T42–T48 for the To Buy list redesign epic

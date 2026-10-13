@@ -53,6 +53,7 @@ Implementation order is tracked by numbered tickets (e.g. [ticket-01-shopping-li
 | T11 | Settings — currency, actual-price rule, dashboard toggle, LLM/AI profiles, CSV export, share identity, version/privacy | §6 | open |
 | T12 | Multi-user, sharing & ownership — user/group sharing, permissions, owner-only ops, group budget view | §1 | in progress — Phase 1 ([spec](../specs/list-sharing.md)) split into [T12.1 foundation](../tickets/ticket-35-sharing-foundation.md), [T12.2 read-only guest view](../tickets/ticket-36-sharing-guest-readonly.md), [T12.3 read/write](../tickets/ticket-37-sharing-readwrite.md), [T12.4 purchaser attribution](../tickets/ticket-38-sharing-purchaser-attribution.md); [T12.5 family groups](../tickets/ticket-39-sharing-family-groups.md) open |
 | T13 | Server sync API — real API/DAV endpoint replacing folder sync, conflict resolution, access control, product matching | §7 | open |
+| T14 | To Buy list redesign — plain-text planning list, active list, dedicated card/screen/widget, LLM auto-check | §2 | proposed — [spec](../specs/to-buy-list-redesign.md), [plan](../plans/to-buy-list-redesign.md); tickets [T42](../tickets/ticket-42-to-buy-data-model.md)–[T48](../tickets/ticket-48-to-buy-auto-check.md) |
 
 ## Out of scope / open questions
 

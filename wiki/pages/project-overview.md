@@ -46,8 +46,9 @@ tests/js/                   # Vitest tests
 
 ## Key concepts (domain model to mirror)
 
-- **Shopping lists** — name, create/purchase dates, store, `finalTotal`, categories (cross-ref), status (new/finished/archived), recurrence, subscription/income flags, share state, `syncId`.
-- **List items** — reference a product, quantity, checked state, per-item price, discount, custom name; `productId == 0` for coupons/unknown products.
+- **Shopping lists** — name, create/purchase dates, store, `finalTotal`, categories (cross-ref), status (new/finished/archived), recurrence, subscription/income flags, share state, `syncId`; plus a `kind` (NEED_TO_BUY / PURCHASE / INCOME / SUBSCRIPTION) and `isActive` for the active To Buy list (see [specs/to-buy-list-redesign](specs/to-buy-list-redesign.md)).
+- **To Buy list** — the `NEED_TO_BUY` kind: an auto-named planning list with exactly one active per user, plain-text items (no product/price/store/category) and no contribution to expense totals.
+- **List items** — reference a product, quantity, checked state, per-item price, discount, custom name; `productId` is null for plain-text To Buy items and `productId == 0` for coupons/unknown products.
 - **Products** — name, barcode, picture, one category, status (added/reviewed/barcode), aliases, analog links, price history, flags.
 - **Categories** — hierarchical (`parentId`), color, emoji, income flag.
 - **Stores** — name, address, logo, receipt name, associated categories.

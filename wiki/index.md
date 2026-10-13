@@ -20,6 +20,7 @@
 - [specs/products-tab](pages/specs/products-tab.md) — T6: Products tab spec (display + create)
 - [specs/shopping-list-improvements](pages/specs/shopping-list-improvements.md) — Issue #8: Shopping List Improvements spec
 - [specs/shopping-lists-page](pages/specs/shopping-lists-page.md) — T1: Shopping Lists page spec (view lists + add a new list)
+- [specs/to-buy-list-redesign](pages/specs/to-buy-list-redesign.md) — To Buy list redesign — parity spec for the Android NEED_TO_BUY model (plain-text planning lists, active list, dedicated card/screen/widget, LLM auto-check)
 
 ## Plans
 - [plans/add-product-to-list](pages/plans/add-product-to-list.md) — T2 partial: Add products to a shopping list plan
@@ -30,6 +31,7 @@
 - [plans/products-tab](pages/plans/products-tab.md) — T6: Products tab implementation plan
 - [plans/shopping-list-improvements](pages/plans/shopping-list-improvements.md) — Issue #8: Shopping List Improvements plan
 - [plans/shopping-lists-page](pages/plans/shopping-lists-page.md) — T1: Shopping Lists page implementation plan
+- [plans/to-buy-list-redesign](pages/plans/to-buy-list-redesign.md) — To Buy list redesign implementation plan — seven tickets from data model/migration to LLM auto-check
 
 ## Tickets
 - [tickets/ticket-01-shopping-lists-page](pages/tickets/ticket-01-shopping-lists-page.md) — T1: Shopping Lists page (view lists + add a new list)
@@ -70,6 +72,13 @@
 - [tickets/ticket-39-sharing-family-groups](pages/tickets/ticket-39-sharing-family-groups.md) — T39 — Family groups (Phase 2: share lists with all group members)
 - [tickets/ticket-40-sharing-owner-mark](pages/tickets/ticket-40-sharing-owner-mark.md) — Owner-side shared-list mark and full share management dialog (add, edit access, revoke)
 - [tickets/ticket-41-sharing-scope-hardening](pages/tickets/ticket-41-sharing-scope-hardening.md) — T41 — List-sharing review fixes: item-scoped catalog grants, shared-list payload, revoked placeholder, share/grant lifecycle
+- [tickets/ticket-42-to-buy-data-model](pages/tickets/ticket-42-to-buy-data-model.md) — T42 — To Buy data model: kind + is_active columns and nullable product_id (migration 1012)
+- [tickets/ticket-43-to-buy-api](pages/tickets/ticket-43-to-buy-api.md) — T43 — To Buy list & item API: atomic active-list create, plain-text items, purchase guard
+- [tickets/ticket-44-add-list-dialog-to-buy-card](pages/tickets/ticket-44-add-list-dialog-to-buy-card.md) — T44 — Add list dialog, dedicated To Buy card and item check/rename/delete UI
+- [tickets/ticket-45-to-buy-filters-totals](pages/tickets/ticket-45-to-buy-filters-totals.md) — T45 — To Buy status filters and exclusion from totals and the purchase picker
+- [tickets/ticket-46-to-buy-screen](pages/tickets/ticket-46-to-buy-screen.md) — T46 — Dedicated To Buy screen (paper surface, check/add/rename/delete with undo)
+- [tickets/ticket-47-to-buy-widget](pages/tickets/ticket-47-to-buy-widget.md) — T47 — To Buy dashboard widget (title, checked/total, pending preview, create CTA)
+- [tickets/ticket-48-to-buy-auto-check](pages/tickets/ticket-48-to-buy-auto-check.md) — T48 — Server-side LLM auto-check of pending To Buy items after a purchase
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.
