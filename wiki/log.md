@@ -99,3 +99,5 @@
 ## [2026-10-13] spec | To Buy list redesign parity spec (Android NEED_TO_BUY model)
 ## [2026-10-13] plan | To Buy list redesign implementation plan (T42–T48)
 ## [2026-10-13] ticket | Created T42–T48 for the To Buy list redesign epic
+## [2026-11-09] plan | Purchase import inbox — one-way phone upload, server-side category/store/product mapping with optional AI suggestions, review and atomic approval (client list UUID preserved).
+## [2026-11-09] update | Purchase import slice A implemented: migration 1012 (bbml_purchase_imports/items/categories), entities + mappers, POST /api/purchase-imports (create/replace, UUID dedupe), GET list/detail, exact store/category/product/barcode/alias suggestions, PHPUnit (13) + full suite (261), psalm/cs/lint green, openapi regenerated. Applied to the local Nextcloud and verified via OCS: create 201, replace 200, show 200, invalid status/schema 422.
