@@ -175,6 +175,8 @@ function isReviewable(status: ImportStatus): boolean {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+	box-sizing: border-box;
+	padding: 16px;
 	width: 100%;
 }
 
