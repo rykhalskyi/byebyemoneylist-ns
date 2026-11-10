@@ -188,10 +188,6 @@ function isReviewable(status: ImportStatus): boolean {
 	flex-wrap: wrap;
 }
 
-.header h2 {
-	margin: 0 0 4px;
-}
-
 .subtitle {
 	margin: 0;
 	opacity: 0.7;
