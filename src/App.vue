@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { mdiCart, mdiChartPie, mdiCog, mdiPackageVariant, mdiViewDashboard } from '@mdi/js'
+import { mdiCart, mdiChartPie, mdiCog, mdiInbox, mdiPackageVariant, mdiViewDashboard } from '@mdi/js'
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcContent from '@nextcloud/vue/components/NcContent'
@@ -7,6 +7,7 @@ import InitializeCategoriesDialog from './components/InitializeCategoriesDialog.
 import Menu from './components/Menu.vue'
 import Catalog from './views/Catalog.vue'
 import Dashboard from './views/Dashboard.vue'
+import Imports from './views/Imports.vue'
 import Settings from './views/Settings.vue'
 import ShoppingLists from './views/ShoppingLists.vue'
 import { useCategoryInitialization } from './composables/useCategoryInitialization.ts'
@@ -17,6 +18,7 @@ const Analytics = defineAsyncComponent(() => import('./views/Analytics.vue'))
 const items = [
 	{ id: 'dashboard', label: t('Dashboard'), icon: mdiViewDashboard },
 	{ id: 'lists', label: t('Shopping Lists'), icon: mdiCart },
+	{ id: 'imports', label: t('Inbox'), icon: mdiInbox },
 	{ id: 'analytics', label: t('Analytics'), icon: mdiChartPie },
 	{ id: 'catalog', label: t('Catalog'), icon: mdiPackageVariant },
 	{ id: 'settings', label: t('Settings'), icon: mdiCog },
@@ -63,6 +65,7 @@ function openPurchase(mode: 'manual' | 'scan') {
 				v-else-if="currentView === 'lists'"
 				:purchaseMode="purchaseIntent"
 				@purchaseOpened="purchaseIntent = null" />
+			<Imports v-else-if="currentView === 'imports'" />
 			<Analytics v-else-if="currentView === 'analytics'" />
 			<Catalog v-else-if="currentView === 'catalog'" />
 			<Settings v-else-if="currentView === 'settings'" />

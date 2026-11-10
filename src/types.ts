@@ -275,3 +275,124 @@ export interface LlmProfilePayload {
 	maxTokens?: number
 	isActive?: boolean
 }
+
+export type ImportStatus = 'pending' | 'in_review' | 'approved' | 'discarded'
+
+export type ImportAction = 'pending' | 'map_existing' | 'create_new' | 'skip'
+
+export type ImportMatchSource = 'barcode' | 'exact' | 'alias' | 'fuzzy' | 'ai'
+
+export interface ImportSuggestion {
+	productId?: string | null
+	productName?: string | null
+	categoryId?: string | null
+	source?: ImportMatchSource | null
+	confidence?: number | null
+}
+
+export interface ImportStoreMapping {
+	mappedStoreId: string | null
+	action: ImportAction
+	suggestedStoreId: string | null
+	suggestedStoreName: string | null
+	source: ImportMatchSource | null
+	confidence: number | null
+}
+
+export interface PurchaseImportItem {
+	id: string
+	position: number
+	lineId: string | null
+	rawName: string
+	quantity: number | null
+	unitPrice: number | null
+	discount: number | null
+	isCoupon: boolean
+	barcode: string | null
+	categoryHint: string | null
+	action: ImportAction
+	mappedProductId: string | null
+	mappedCategoryId: string | null
+	newProductName: string | null
+	suggestion: ImportSuggestion
+}
+
+export interface PurchaseImportCategory {
+	id: string
+	rawName: string
+	isIncome: boolean
+	action: ImportAction
+	mappedCategoryId: string | null
+	suggestion: {
+		categoryId?: string | null
+		source?: ImportMatchSource | null
+		confidence?: number | null
+	}
+}
+
+export interface PurchaseImport {
+	id: string
+	clientListId: string
+	clientId: string | null
+	schemaVersion: string
+	name: string
+	status: ImportStatus
+	storeName: string | null
+	storeAddress: string | null
+	storeReceiptName: string | null
+	currency: string | null
+	finalTotal: number | null
+	listCreatedAt: string | null
+	purchaseDate: string | null
+	createdAt: string | null
+	updatedAt: string | null
+	approvedListId: string | null
+	approvedAt: string | null
+	storeMapping: ImportStoreMapping
+	items: PurchaseImportItem[]
+	categories: PurchaseImportCategory[]
+}
+
+export interface PurchaseImportSummary {
+	id: string
+	clientListId: string
+	clientId: string | null
+	name: string
+	status: ImportStatus
+	storeName: string | null
+	currency: string | null
+	finalTotal: number | null
+	purchaseDate: string | null
+	createdAt: string | null
+	updatedAt: string | null
+	approvedListId: string | null
+	approvedAt: string | null
+	itemCount: number
+	categoryCount: number
+}
+
+export interface ImportStorePayload {
+	action: ImportAction
+	mappedStoreId?: string | null
+	name?: string | null
+}
+
+export interface ImportCategoryPayload {
+	id: string
+	action: ImportAction
+	mappedCategoryId?: string | null
+}
+
+export interface ImportItemPayload {
+	id: string
+	action: ImportAction
+	mappedProductId?: string | null
+	mappedCategoryId?: string | null
+	newProductName?: string | null
+}
+
+export interface ImportMappingPayload {
+	store?: ImportStorePayload
+	categories?: ImportCategoryPayload[]
+	items?: ImportItemPayload[]
+}

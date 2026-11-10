@@ -83,6 +83,63 @@ class OpenAiCompatibleScanner {
 			$body['thinking'] = ['type' => 'disabled'];
 		}
 
+		return $this->request($url, $body, $apiKey, $connectTimeout, $readTimeout, $provider, 'scan receipt');
+	}
+
+	/**
+	 * Send a text-only completion prompt to an OpenAI-compatible chat-completions
+	 * endpoint and return the assistant's raw content.
+	 */
+	public function complete(
+		string $provider,
+		string $apiKey,
+		string $model,
+		string $prompt,
+		int $connectTimeout,
+		int $readTimeout,
+		int $maxTokens,
+	): string {
+		$url = self::ENDPOINTS[$provider] ?? null;
+		if ($url === null) {
+			throw new RuntimeException('Unsupported provider');
+		}
+
+		$resolvedModel = trim($model) === '' ? (self::DEFAULT_MODELS[$provider] ?? '') : trim($model);
+		if ($resolvedModel === '') {
+			throw new RuntimeException('No model configured for provider');
+		}
+
+		$body = [
+			'model' => $resolvedModel,
+			'messages' => [
+				[
+					'role' => 'user',
+					'content' => $prompt,
+				],
+			],
+			'response_format' => ['type' => 'json_object'],
+			'max_tokens' => max(1, $maxTokens),
+		];
+
+		if ($provider === 'deepseek') {
+			$body['thinking'] = ['type' => 'disabled'];
+		}
+
+		return $this->request($url, $body, $apiKey, $connectTimeout, $readTimeout, $provider, 'complete prompt');
+	}
+
+	/**
+	 * @param array<string, mixed> $body
+	 */
+	private function request(
+		string $url,
+		array $body,
+		string $apiKey,
+		int $connectTimeout,
+		int $readTimeout,
+		string $provider,
+		string $action,
+	): string {
 		try {
 			$client = $this->clientService->newClient();
 			$response = $client->post($url, [
@@ -118,7 +175,7 @@ class OpenAiCompatibleScanner {
 		} catch (RuntimeException $e) {
 			throw $e;
 		} catch (\Exception $e) {
-			$this->logger->error('Failed to scan receipt with LLM', ['exception' => $e, 'provider' => $provider]);
+			$this->logger->error('Failed to ' . $action . ' with LLM', ['exception' => $e, 'provider' => $provider]);
 			throw new RuntimeException('Failed to reach the LLM provider', 0, $e);
 		}
 	}

@@ -29,6 +29,7 @@
 - [plans/dashboard](pages/plans/dashboard.md) — T9 Dashboard implementation plan (layout, spending API, widgets, version)
 - [plans/localization](pages/plans/localization.md) — Frontend localization implementation plan (T15–T21)
 - [plans/products-tab](pages/plans/products-tab.md) — T6: Products tab implementation plan
+- [plans/purchase-import](pages/plans/purchase-import.md) — Purchase import inbox — one-way phone upload, server-side category/store/product mapping with optional AI suggestions, review and approval into a normal list.
 - [plans/shopping-list-improvements](pages/plans/shopping-list-improvements.md) — Issue #8: Shopping List Improvements plan
 - [plans/shopping-lists-page](pages/plans/shopping-lists-page.md) — T1: Shopping Lists page implementation plan
 - [plans/to-buy-list-redesign](pages/plans/to-buy-list-redesign.md) — To Buy list redesign implementation plan — seven tickets from data model/migration to LLM auto-check

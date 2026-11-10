@@ -1,0 +1,1213 @@
+<?php
+
+declare(strict_types=1);
+
+namespace OCA\ByeByeMoneyList\Controller;
+
+use DateTime;
+use DateTimeInterface;
+use DateTimeZone;
+use OCA\ByeByeMoneyList\AppInfo\Application;
+use OCA\ByeByeMoneyList\Db\CategoryMapper;
+use OCA\ByeByeMoneyList\Db\ProductMapper;
+use OCA\ByeByeMoneyList\Db\PurchaseImportCategoryMapper;
+use OCA\ByeByeMoneyList\Db\PurchaseImportItemMapper;
+use OCA\ByeByeMoneyList\Db\PurchaseImportMapper;
+use OCA\ByeByeMoneyList\Db\StoreMapper;
+use OCA\ByeByeMoneyList\Entity\PurchaseImportCategoryEntity;
+use OCA\ByeByeMoneyList\Entity\PurchaseImportEntity;
+use OCA\ByeByeMoneyList\Entity\PurchaseImportItemEntity;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportAiService;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportApproveService;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportDuplicateException;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportMatcher;
+use OCA\ByeByeMoneyList\Service\Receipt\NoActiveLlmProfileException;
+use OCA\ByeByeMoneyList\Util\Uuid;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\ApiRoute;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\DataResponse;
+use OCP\AppFramework\OCSController;
+use OCP\IDBConnection;
+use OCP\IRequest;
+use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
+
+/**
+ * One-way purchase import inbox.
+ *
+ * Accept/replace an uploaded purchase list, list/show imports, compute
+ * deterministic and AI mapping suggestions, save user mappings, approve into a
+ * real list and discard pending imports.
+ *
+ * @psalm-suppress UnusedClass
+ */
+class PurchaseImportController extends OCSController {
+	private const SCHEMA_VERSION = 'bbml.purchase-upload/1';
+	private const MAX_ITEMS = 1000;
+	private const MAX_DECIMAL = 9999999999.99;
+	private const STATUSES = [
+		PurchaseImportEntity::STATUS_PENDING,
+		PurchaseImportEntity::STATUS_IN_REVIEW,
+		PurchaseImportEntity::STATUS_APPROVED,
+		PurchaseImportEntity::STATUS_DISCARDED,
+	];
+
+	private PurchaseImportMapper $importMapper;
+	private PurchaseImportItemMapper $itemMapper;
+	private PurchaseImportCategoryMapper $categoryMapper;
+	private PurchaseImportMatcher $matcher;
+	private PurchaseImportAiService $aiService;
+	private PurchaseImportApproveService $approveService;
+	private StoreMapper $storeMapper;
+	private CategoryMapper $categoryMapperCatalog;
+	private ProductMapper $productMapper;
+	private IDBConnection $db;
+	private IUserSession $userSession;
+	private LoggerInterface $logger;
+
+	public function __construct(
+		IRequest $request,
+		PurchaseImportMapper $importMapper,
+		PurchaseImportItemMapper $itemMapper,
+		PurchaseImportCategoryMapper $categoryMapper,
+		PurchaseImportMatcher $matcher,
+		PurchaseImportAiService $aiService,
+		PurchaseImportApproveService $approveService,
+		StoreMapper $storeMapper,
+		CategoryMapper $categoryMapperCatalog,
+		ProductMapper $productMapper,
+		IDBConnection $db,
+		IUserSession $userSession,
+		LoggerInterface $logger,
+	) {
+		parent::__construct(Application::APP_ID, $request);
+		$this->importMapper = $importMapper;
+		$this->itemMapper = $itemMapper;
+		$this->categoryMapper = $categoryMapper;
+		$this->matcher = $matcher;
+		$this->aiService = $aiService;
+		$this->approveService = $approveService;
+		$this->storeMapper = $storeMapper;
+		$this->categoryMapperCatalog = $categoryMapperCatalog;
+		$this->productMapper = $productMapper;
+		$this->db = $db;
+		$this->userSession = $userSession;
+		$this->logger = $logger;
+	}
+
+	/**
+	 * Accept a purchase list from the Android client
+	 *
+	 * The request is idempotent by `(owner, listId)`: a resend while the import is
+	 * pending/reviewing replaces its content; once approved/discarded it is
+	 * returned as a duplicate without changes.
+	 *
+	 * @param string $schema Contract version (must be `bbml.purchase-upload/1`)
+	 * @param string $listId Client-generated UUID v4 (becomes the final list id)
+	 * @param array<string, mixed> $list List metadata
+	 * @param ?string $clientId Optional client install id
+	 * @param list<array<string, mixed>> $items Raw line items
+	 *
+	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 201: Import created
+	 * 200: Import replaced, or already approved (duplicate)
+	 * 401: Current user is not logged in
+	 * 422: Invalid payload
+	 * 500: Failed to store the import
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/purchase-imports')]
+	public function create(
+		string $schema = '',
+		string $listId = '',
+		array $list = [],
+		?string $clientId = null,
+		array $items = [],
+	): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$validated = $this->validatePayload($schema, $listId, $list, $clientId, $items);
+		if ($validated instanceof DataResponse) {
+			return $validated;
+		}
+
+		$existing = $this->importMapper->findByOwnerAndClientListId($userId, $listId);
+		if ($existing !== null && in_array($existing->getStatus(), [
+			PurchaseImportEntity::STATUS_APPROVED,
+			PurchaseImportEntity::STATUS_DISCARDED,
+		], true)) {
+			return new DataResponse([
+				'import' => $this->serializeImport(
+					$existing,
+					$this->itemMapper->findByImportId($existing->getId()),
+					$this->categoryMapper->findByImportId($existing->getId()),
+				),
+				'duplicate' => true,
+			], Http::STATUS_OK);
+		}
+
+		$now = new DateTime('now', new DateTimeZone('UTC'));
+		$import = $existing ?? new PurchaseImportEntity();
+		$isNew = $existing === null;
+
+		if ($isNew) {
+			$import->setId(Uuid::v4());
+			$import->setOwner($userId);
+			$import->setClientListId($listId);
+			$import->setCreatedAt($now);
+		}
+
+		$import->setClientId($clientId === null ? null : trim($clientId));
+		$import->setSchemaVersion(self::SCHEMA_VERSION);
+		$import->setName($validated['name']);
+		$import->setStatus(PurchaseImportEntity::STATUS_PENDING);
+		$import->setStoreName($validated['storeName']);
+		$import->setStoreAddress($validated['storeAddress']);
+		$import->setStoreReceiptName($validated['storeReceiptName']);
+		$import->setCurrency($validated['currency']);
+		$import->setFinalTotal($validated['finalTotal']);
+		$import->setListCreatedAt($validated['listCreatedAt']);
+		$import->setPurchaseDate($validated['purchaseDate']);
+		$import->setRawJson($validated['rawJson']);
+		$import->setMappedStoreId(null);
+		$import->setStoreAction(PurchaseImportEntity::ACTION_PENDING);
+		$import->setSuggestedStoreId(null);
+		$import->setSuggestedStoreName(null);
+		$import->setStoreMatchSource(null);
+		$import->setStoreConfidence(null);
+		$import->setApprovedListId(null);
+		$import->setApprovedAt(null);
+		$import->setUpdatedAt($now);
+
+		$itemEntities = $this->buildItemEntities($validated['items'], $import->getId(), $userId, $now);
+		$categoryEntities = $this->buildCategoryEntities($validated['categories'], $import->getId(), $userId, $now);
+
+		$started = false;
+		try {
+			$this->db->beginTransaction();
+			$started = true;
+
+			if ($isNew) {
+				$import = $this->importMapper->insert($import);
+				foreach ($itemEntities as $item) {
+					$item->setImportId($import->getId());
+				}
+				foreach ($categoryEntities as $category) {
+					$category->setImportId($import->getId());
+				}
+			} else {
+				$this->itemMapper->deleteByImportId($import->getId());
+				$this->categoryMapper->deleteByImportId($import->getId());
+				$import = $this->importMapper->update($import);
+			}
+
+			foreach ($itemEntities as $item) {
+				$this->itemMapper->insert($item);
+			}
+			foreach ($categoryEntities as $category) {
+				$this->categoryMapper->insert($category);
+			}
+
+			try {
+				$this->matcher->suggestForImport($import, $itemEntities, $categoryEntities, $userId);
+				$this->importMapper->update($import);
+				foreach ($itemEntities as $item) {
+					$this->itemMapper->update($item);
+				}
+				foreach ($categoryEntities as $category) {
+					$this->categoryMapper->update($category);
+				}
+			} catch (\Throwable $e) {
+				// Suggestions are best-effort; never fail an upload because matching failed.
+				$this->logger->warning('Failed to compute purchase import suggestions', ['exception' => $e]);
+			}
+
+			$this->db->commit();
+		} catch (\Throwable $e) {
+			if ($started) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to store purchase import', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to store the import'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse([
+			'import' => $this->serializeImport($import, $itemEntities, $categoryEntities),
+			'duplicate' => false,
+		], $isNew ? Http::STATUS_CREATED : Http::STATUS_OK);
+	}
+
+	/**
+	 * List purchase imports for the current user.
+	 *
+	 * @param ?string $status Optional status filter (`pending`, `in_review`, `approved`, `discarded`)
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_UNPROCESSABLE_ENTITY, array<string, mixed>, array{}>
+	 *
+	 * 200: Imports returned
+	 * 401: Current user is not logged in
+	 * 422: Invalid status filter
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'GET', url: '/api/purchase-imports')]
+	public function index(?string $status = null): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+		if ($status !== null && $status !== '' && !in_array($status, self::STATUSES, true)) {
+			return new DataResponse(['message' => 'Invalid status'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$imports = $this->importMapper->findAllByOwner($userId, $status);
+		$serialized = array_map(function (PurchaseImportEntity $import): array {
+			$id = $import->getId();
+			return $this->serializeImportSummary(
+				$import,
+				$this->itemMapper->countByImportId($id),
+				$this->categoryMapper->countByImportId($id),
+			);
+		}, $imports);
+
+		return new DataResponse(['imports' => array_values($serialized)], Http::STATUS_OK);
+	}
+
+	/**
+	 * Show one purchase import with its items and current suggestions.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND, array<string, mixed>, array{}>
+	 *
+	 * 200: Import returned
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'GET', url: '/api/purchase-imports/{id}')]
+	public function show(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return new DataResponse([
+			'import' => $this->serializeImport(
+				$import,
+				$this->itemMapper->findByImportId($id),
+				$this->categoryMapper->findByImportId($id),
+			),
+		], Http::STATUS_OK);
+	}
+
+	/**
+	 * Recompute deterministic mapping suggestions for a pending import.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 200: Suggestions updated
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import is already approved or discarded
+	 * 500: Failed to compute suggestions
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/purchase-imports/{id}/suggest')]
+	public function suggest(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		if (!$this->isReviewable($import)) {
+			return new DataResponse(['message' => 'Import is already imported'], Http::STATUS_CONFLICT);
+		}
+
+		$items = $this->itemMapper->findByImportId($id);
+		$categories = $this->categoryMapper->findByImportId($id);
+		$now = new DateTime('now', new DateTimeZone('UTC'));
+
+		$started = false;
+		try {
+			$this->db->beginTransaction();
+			$started = true;
+
+			$this->resetSuggestions($import, $items, $categories);
+			$this->matcher->suggestForImport($import, $items, $categories, $userId);
+			$this->persistSuggestionState($import, $items, $categories, $now);
+
+			$this->db->commit();
+		} catch (\Throwable $e) {
+			if ($started) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to compute purchase import suggestions', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to compute suggestions'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['import' => $this->serializeImport($import, $items, $categories)], Http::STATUS_OK);
+	}
+
+	/**
+	 * Ask the active LLM profile for mapping suggestions on unresolved rows.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 200: Suggestions updated
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import is already imported, or no active LLM profile exists
+	 * 500: Failed to compute AI suggestions
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/purchase-imports/{id}/suggest-ai')]
+	public function suggestAi(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		if (!$this->isReviewable($import)) {
+			return new DataResponse(['message' => 'Import is already imported'], Http::STATUS_CONFLICT);
+		}
+
+		$items = $this->itemMapper->findByImportId($id);
+		$categories = $this->categoryMapper->findByImportId($id);
+		$now = new DateTime('now', new DateTimeZone('UTC'));
+
+		try {
+			$this->aiService->suggest($import, $items, $categories, $userId);
+		} catch (NoActiveLlmProfileException) {
+			return new DataResponse(['message' => 'No active LLM profile'], Http::STATUS_CONFLICT);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to compute AI purchase import suggestions', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to compute AI suggestions'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		$started = false;
+		try {
+			$this->db->beginTransaction();
+			$started = true;
+			$this->persistSuggestionState($import, $items, $categories, $now);
+			$this->db->commit();
+		} catch (\Throwable $e) {
+			if ($started) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to store AI purchase import suggestions', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to store AI suggestions'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['import' => $this->serializeImport($import, $items, $categories)], Http::STATUS_OK);
+	}
+
+	/**
+	 * Save the user's mapping choices without approving the import.
+	 *
+	 * @param string $id Import id
+	 * @param array<string, mixed> $store Store mapping
+	 * @param list<array<string, mixed>> $categories Category mappings
+	 * @param list<array<string, mixed>> $items Item mappings
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 200: Mapping saved
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import is already imported
+	 * 422: Invalid mapping
+	 * 500: Failed to save the mapping
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'PUT', url: '/api/purchase-imports/{id}/mapping')]
+	public function saveMapping(string $id, array $store = [], array $categories = [], array $items = []): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		if (!$this->isReviewable($import)) {
+			return new DataResponse(['message' => 'Import is already imported'], Http::STATUS_CONFLICT);
+		}
+
+		$itemRows = $this->itemMapper->findByImportId($id);
+		$categoryRows = $this->categoryMapper->findByImportId($id);
+		$itemById = [];
+		foreach ($itemRows as $row) {
+			$itemById[$row->getId()] = $row;
+		}
+		$categoryById = [];
+		foreach ($categoryRows as $row) {
+			$categoryById[$row->getId()] = $row;
+		}
+
+		$now = new DateTime('now', new DateTimeZone('UTC'));
+
+		if ($store !== []) {
+			$invalid = $this->applyStoreMapping($import, $store, $userId);
+			if ($invalid !== null) {
+				return new DataResponse(['message' => $invalid], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		foreach ($categories as $mapping) {
+			$rowId = isset($mapping['id']) && is_string($mapping['id']) ? $mapping['id'] : '';
+			$row = $categoryById[$rowId] ?? null;
+			if ($row === null) {
+				return new DataResponse(['message' => 'Unknown category mapping'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$invalid = $this->applyCategoryMapping($row, $mapping, $userId);
+			if ($invalid !== null) {
+				return new DataResponse(['message' => $invalid], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		foreach ($items as $mapping) {
+			$rowId = isset($mapping['id']) && is_string($mapping['id']) ? $mapping['id'] : '';
+			$row = $itemById[$rowId] ?? null;
+			if ($row === null) {
+				return new DataResponse(['message' => 'Unknown item mapping'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$invalid = $this->applyItemMapping($row, $mapping, $userId);
+			if ($invalid !== null) {
+				return new DataResponse(['message' => $invalid], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		$started = false;
+		try {
+			$this->db->beginTransaction();
+			$started = true;
+
+			$import->setStatus(PurchaseImportEntity::STATUS_IN_REVIEW);
+			$import->setUpdatedAt($now);
+			$this->importMapper->update($import);
+			foreach ($itemRows as $row) {
+				$row->setUpdatedAt($now);
+				$this->itemMapper->update($row);
+			}
+			foreach ($categoryRows as $row) {
+				$row->setUpdatedAt($now);
+				$this->categoryMapper->update($row);
+			}
+
+			$this->db->commit();
+		} catch (\Throwable $e) {
+			if ($started) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to save purchase import mapping', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to save the mapping'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['import' => $this->serializeImport($import, $itemRows, $categoryRows)], Http::STATUS_OK);
+	}
+
+	/**
+	 * Approve an import into a normal finished list.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 200: List created
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import or its client list id is already imported
+	 * 500: Failed to approve the import
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/purchase-imports/{id}/approve')]
+	public function approve(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		$items = $this->itemMapper->findByImportId($id);
+		$categories = $this->categoryMapper->findByImportId($id);
+
+		if ($import->getStatus() === PurchaseImportEntity::STATUS_APPROVED) {
+			return new DataResponse([
+				'message' => 'Already imported',
+				'duplicate' => true,
+				'import' => $this->serializeImport($import, $items, $categories),
+			], Http::STATUS_CONFLICT);
+		}
+		if (!$this->isReviewable($import)) {
+			return new DataResponse(['message' => 'Import was discarded'], Http::STATUS_CONFLICT);
+		}
+
+		try {
+			$list = $this->approveService->approve($import, $items, $categories);
+		} catch (PurchaseImportDuplicateException) {
+			return new DataResponse([
+				'message' => 'Already imported',
+				'duplicate' => true,
+				'import' => $this->serializeImport($import, $items, $categories),
+			], Http::STATUS_CONFLICT);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to approve purchase import', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to approve the import'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse([
+			'import' => $this->serializeImport($import, $items, $categories),
+			'list' => [
+				'id' => $list->getId(),
+				'name' => $list->getName(),
+				'storeId' => $list->getStoreId(),
+				'categoryId' => $list->getCategoryId(),
+				'status' => $list->getStatus(),
+				'finalTotal' => $this->numberOrNull($list->getFinalTotal()),
+				'purchaseDate' => $this->dateOrNull($list->getPurchaseDate()),
+				'isFinished' => (bool)$list->getIsFinished(),
+			],
+		], Http::STATUS_OK);
+	}
+
+	/**
+	 * Discard a pending import.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT, array<string, mixed>, array{}>
+	 *
+	 * 200: Import discarded
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import was already approved
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'DELETE', url: '/api/purchase-imports/{id}')]
+	public function discard(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		if ($import->getStatus() === PurchaseImportEntity::STATUS_APPROVED) {
+			return new DataResponse(['message' => 'Already imported'], Http::STATUS_CONFLICT);
+		}
+
+		$import->setStatus(PurchaseImportEntity::STATUS_DISCARDED);
+		$import->setUpdatedAt(new DateTime('now', new DateTimeZone('UTC')));
+		$this->importMapper->update($import);
+
+		return new DataResponse([
+			'import' => $this->serializeImport(
+				$import,
+				$this->itemMapper->findByImportId($id),
+				$this->categoryMapper->findByImportId($id),
+			),
+		], Http::STATUS_OK);
+	}
+
+	private function isReviewable(PurchaseImportEntity $import): bool {
+		return in_array($import->getStatus(), [
+			PurchaseImportEntity::STATUS_PENDING,
+			PurchaseImportEntity::STATUS_IN_REVIEW,
+		], true);
+	}
+
+	/**
+	 * @param PurchaseImportItemEntity[] $items
+	 * @param PurchaseImportCategoryEntity[] $categories
+	 */
+	private function resetSuggestions(PurchaseImportEntity $import, array $items, array $categories): void {
+		if ($import->getStoreAction() === PurchaseImportEntity::ACTION_PENDING) {
+			$import->setSuggestedStoreId(null);
+			$import->setSuggestedStoreName(null);
+			$import->setStoreMatchSource(null);
+			$import->setStoreConfidence(null);
+		}
+		foreach ($items as $item) {
+			if ($item->getAction() !== PurchaseImportEntity::ACTION_PENDING) {
+				continue;
+			}
+			$item->setSuggestedProductId(null);
+			$item->setSuggestedProductName(null);
+			$item->setSuggestedCategoryId(null);
+			$item->setMatchSource(null);
+			$item->setConfidence(null);
+		}
+		foreach ($categories as $category) {
+			if ($category->getAction() !== PurchaseImportEntity::ACTION_PENDING) {
+				continue;
+			}
+			$category->setSuggestedCategoryId(null);
+			$category->setMatchSource(null);
+			$category->setConfidence(null);
+		}
+	}
+
+	/**
+	 * @param PurchaseImportItemEntity[] $items
+	 * @param PurchaseImportCategoryEntity[] $categories
+	 */
+	private function persistSuggestionState(
+		PurchaseImportEntity $import,
+		array $items,
+		array $categories,
+		DateTime $now,
+	): void {
+		$import->setStatus(PurchaseImportEntity::STATUS_IN_REVIEW);
+		$import->setUpdatedAt($now);
+		$this->importMapper->update($import);
+		foreach ($items as $item) {
+			$item->setUpdatedAt($now);
+			$this->itemMapper->update($item);
+		}
+		foreach ($categories as $category) {
+			$category->setUpdatedAt($now);
+			$this->categoryMapper->update($category);
+		}
+	}
+
+	/**
+	 * @param array<string, mixed> $mapping
+	 *
+	 * @return string|null error message, null on success
+	 */
+	private function applyStoreMapping(PurchaseImportEntity $import, array $mapping, string $userId): ?string {
+		$action = $mapping['action'] ?? null;
+		if (!is_string($action) || !$this->isValidAction($action)) {
+			return 'Invalid store action';
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_MAP_EXISTING) {
+			$mappedId = isset($mapping['mappedStoreId']) && is_string($mapping['mappedStoreId']) ? $mapping['mappedStoreId'] : '';
+			if ($mappedId === '' || $this->storeMapper->findByIdAndOwner($mappedId, $userId) === null) {
+				return 'Unknown store';
+			}
+			$import->setMappedStoreId($mappedId);
+		} else {
+			$import->setMappedStoreId(null);
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_CREATE_NEW) {
+			$name = isset($mapping['name']) && is_string($mapping['name']) ? trim($mapping['name']) : '';
+			if ($name === '' || mb_strlen($name) > 255) {
+				return 'Store name is required';
+			}
+			$import->setSuggestedStoreName($name);
+		}
+
+		$import->setStoreAction($action);
+
+		return null;
+	}
+
+	/**
+	 * @param array<string, mixed> $mapping
+	 *
+	 * @return string|null error message, null on success
+	 */
+	private function applyCategoryMapping(PurchaseImportCategoryEntity $row, array $mapping, string $userId): ?string {
+		$action = $mapping['action'] ?? null;
+		if (!is_string($action) || !$this->isValidAction($action)) {
+			return 'Invalid category action';
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_MAP_EXISTING) {
+			$mappedId = isset($mapping['mappedCategoryId']) && is_string($mapping['mappedCategoryId']) ? $mapping['mappedCategoryId'] : '';
+			if ($mappedId === '' || $this->categoryMapperCatalog->findByIdAndOwner($mappedId, $userId) === null) {
+				return 'Unknown category';
+			}
+			$row->setMappedCategoryId($mappedId);
+		} else {
+			$row->setMappedCategoryId(null);
+		}
+
+		$row->setAction($action);
+
+		return null;
+	}
+
+	/**
+	 * @param array<string, mixed> $mapping
+	 *
+	 * @return string|null error message, null on success
+	 */
+	private function applyItemMapping(PurchaseImportItemEntity $row, array $mapping, string $userId): ?string {
+		$action = $mapping['action'] ?? null;
+		if (!is_string($action) || !$this->isValidAction($action)) {
+			return 'Invalid item action';
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_MAP_EXISTING) {
+			$mappedId = isset($mapping['mappedProductId']) && is_string($mapping['mappedProductId']) ? $mapping['mappedProductId'] : '';
+			if ($mappedId === '' || $this->productMapper->findByIdAndOwner($mappedId, $userId) === null) {
+				return 'Unknown product';
+			}
+			$row->setMappedProductId($mappedId);
+		} else {
+			$row->setMappedProductId(null);
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_CREATE_NEW) {
+			$name = isset($mapping['newProductName']) && is_string($mapping['newProductName']) ? trim($mapping['newProductName']) : '';
+			if ($name === '' || mb_strlen($name) > 255) {
+				return 'Product name is required';
+			}
+			$row->setNewProductName($name);
+		}
+
+		if (isset($mapping['mappedCategoryId']) && is_string($mapping['mappedCategoryId']) && $mapping['mappedCategoryId'] !== '') {
+			if ($this->categoryMapperCatalog->findByIdAndOwner($mapping['mappedCategoryId'], $userId) === null) {
+				return 'Unknown category';
+			}
+			$row->setMappedCategoryId($mapping['mappedCategoryId']);
+		} else {
+			$row->setMappedCategoryId(null);
+		}
+
+		$row->setAction($action);
+
+		return null;
+	}
+
+	private function isValidAction(string $action): bool {
+		return in_array($action, [
+			PurchaseImportEntity::ACTION_PENDING,
+			PurchaseImportEntity::ACTION_MAP_EXISTING,
+			PurchaseImportEntity::ACTION_CREATE_NEW,
+			PurchaseImportEntity::ACTION_SKIP,
+		], true);
+	}
+
+	private function getCurrentUserId(): ?string {
+		return $this->userSession->getUser()?->getUID();
+	}
+
+	/**
+	 * @param array<string, mixed> $list
+	 * @param array<array-key, mixed> $items
+	 *
+	 * @return array{
+	 *   name: string,
+	 *   storeName: ?string,
+	 *   storeAddress: ?string,
+	 *   storeReceiptName: ?string,
+	 *   currency: ?string,
+	 *   finalTotal: ?float,
+	 *   listCreatedAt: ?DateTime,
+	 *   purchaseDate: ?DateTime,
+	 *   rawJson: string,
+	 *   items: list<array{position: int, lineId: ?string, name: string, quantity: float, unitPrice: ?float, discount: ?float, isCoupon: bool, barcode: ?string, categoryHint: ?string}>,
+	 *   categories: list<array{name: string, isIncome: bool}>
+	 * }|DataResponse
+	 */
+	private function validatePayload(
+		string $schema,
+		string $listId,
+		array $list,
+		?string $clientId,
+		array $items,
+	): array|DataResponse {
+		if (trim($schema) !== self::SCHEMA_VERSION) {
+			return new DataResponse(['message' => 'Unsupported schema'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		if (!$this->isUuidV4($listId)) {
+			return new DataResponse(['message' => 'listId must be a UUID v4'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		if ($clientId !== null && mb_strlen($clientId) > 64) {
+			return new DataResponse(['message' => 'clientId is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$name = isset($list['name']) && is_string($list['name']) ? trim($list['name']) : '';
+		if ($name === '' || mb_strlen($name) > 255) {
+			return new DataResponse(['message' => 'List name is required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$finalTotal = $list['finalTotal'] ?? null;
+		if ($finalTotal !== null) {
+			if (!is_numeric($finalTotal)) {
+				return new DataResponse(['message' => 'finalTotal must be a number'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$finalTotal = (float)$finalTotal;
+			if (!is_finite($finalTotal) || $finalTotal < 0 || $finalTotal > self::MAX_DECIMAL) {
+				return new DataResponse(['message' => 'finalTotal is out of range'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		$listCreatedAt = $this->parseDate($list['createdAt'] ?? null);
+		if ($listCreatedAt === false) {
+			return new DataResponse(['message' => 'createdAt must be a valid date'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		$purchaseDate = $this->parseDate($list['purchaseDate'] ?? null);
+		if ($purchaseDate === false) {
+			return new DataResponse(['message' => 'purchaseDate must be a valid date'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$store = $list['store'] ?? null;
+		if ($store !== null && !is_array($store)) {
+			return new DataResponse(['message' => 'store must be an object'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		$storeName = is_array($store) ? $this->trimmedString($store['name'] ?? null, 255) : null;
+		$storeAddress = is_array($store) ? $this->trimmedString($store['address'] ?? null, 512) : null;
+		$storeReceiptName = is_array($store) ? $this->trimmedString($store['receiptName'] ?? null, 255) : null;
+		if (($storeName === false) || ($storeAddress === false) || ($storeReceiptName === false)) {
+			return new DataResponse(['message' => 'Store fields are too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$currency = $this->trimmedString($list['currency'] ?? null, 8);
+		if ($currency === false) {
+			return new DataResponse(['message' => 'currency is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		if (count($items) > self::MAX_ITEMS) {
+			return new DataResponse(['message' => 'Too many items'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		$itemRows = [];
+		foreach ($items as $index => $item) {
+			if (!is_array($item)) {
+				return new DataResponse(['message' => 'Each item must be an object'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$rawName = isset($item['name']) && is_string($item['name']) ? trim($item['name']) : '';
+			if ($rawName === '' || mb_strlen($rawName) > 255) {
+				return new DataResponse(['message' => 'Item name is required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$quantity = $item['quantity'] ?? 1;
+			if (!is_numeric($quantity)) {
+				return new DataResponse(['message' => 'Item quantity must be a number'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$quantity = (float)$quantity;
+			if (!is_finite($quantity) || $quantity <= 0 || $quantity > self::MAX_DECIMAL) {
+				return new DataResponse(['message' => 'Item quantity is out of range'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+
+			$unitPrice = $this->nullableAmount($item['unitPrice'] ?? null);
+			$discount = $this->nullableAmount($item['discount'] ?? null);
+			if ($unitPrice === false || $discount === false) {
+				return new DataResponse(['message' => 'Item amount is out of range'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+
+			$lineId = $this->trimmedString($item['lineId'] ?? null, 64);
+			$barcode = $this->trimmedString($item['barcode'] ?? null, 64);
+			$categoryHint = $this->trimmedString($item['categoryHint'] ?? null, 255);
+			if ($lineId === false || $barcode === false || $categoryHint === false) {
+				return new DataResponse(['message' => 'Item field is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+
+			$itemRows[] = [
+				'position' => is_int($index) ? $index : count($itemRows),
+				'lineId' => $lineId,
+				'name' => $rawName,
+				'quantity' => $quantity,
+				'unitPrice' => $unitPrice,
+				'discount' => $discount,
+				'isCoupon' => (bool)($item['isCoupon'] ?? false),
+				'barcode' => $barcode,
+				'categoryHint' => $categoryHint,
+			];
+		}
+
+		$categoryInput = $list['categories'] ?? [];
+		if (!is_array($categoryInput)) {
+			return new DataResponse(['message' => 'categories must be a list'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		$categoryRows = [];
+		foreach ($categoryInput as $category) {
+			if (!is_array($category)) {
+				return new DataResponse(['message' => 'Each category must be an object'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$rawName = isset($category['name']) && is_string($category['name']) ? trim($category['name']) : '';
+			if ($rawName === '' || mb_strlen($rawName) > 255) {
+				return new DataResponse(['message' => 'Category name is required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$categoryRows[] = [
+				'name' => $rawName,
+				'isIncome' => (bool)($category['isIncome'] ?? false),
+			];
+		}
+
+		$rawJson = json_encode([
+			'schema' => self::SCHEMA_VERSION,
+			'clientId' => $clientId,
+			'listId' => $listId,
+			'list' => $list,
+			'items' => $items,
+		], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		if ($rawJson === false) {
+			return new DataResponse(['message' => 'Invalid payload'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		if (strlen($rawJson) > 1024 * 1024) {
+			return new DataResponse(['message' => 'Payload is too large'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
+		return [
+			'name' => $name,
+			'storeName' => $storeName,
+			'storeAddress' => $storeAddress,
+			'storeReceiptName' => $storeReceiptName,
+			'currency' => $currency,
+			'finalTotal' => $finalTotal,
+			'listCreatedAt' => $listCreatedAt,
+			'purchaseDate' => $purchaseDate,
+			'rawJson' => $rawJson,
+			'items' => $itemRows,
+			'categories' => $categoryRows,
+		];
+	}
+
+	/**
+	 * @param list<array{position: int, lineId: ?string, name: string, quantity: float, unitPrice: ?float, discount: ?float, isCoupon: bool, barcode: ?string, categoryHint: ?string}> $rows
+	 *
+	 * @return PurchaseImportItemEntity[]
+	 */
+	private function buildItemEntities(array $rows, string $importId, string $owner, DateTime $now): array {
+		$entities = [];
+		foreach ($rows as $row) {
+			$item = new PurchaseImportItemEntity();
+			$item->setId(Uuid::v4());
+			$item->setImportId($importId);
+			$item->setOwner($owner);
+			$item->setPosition($row['position']);
+			$item->setLineId($row['lineId']);
+			$item->setRawName($row['name']);
+			$item->setQuantity($row['quantity']);
+			$item->setUnitPrice($row['unitPrice']);
+			$item->setDiscount($row['discount']);
+			$item->setIsCoupon($row['isCoupon']);
+			$item->setBarcode($row['barcode']);
+			$item->setCategoryHint($row['categoryHint']);
+			$item->setAction(PurchaseImportEntity::ACTION_PENDING);
+			$item->setCreatedAt($now);
+			$item->setUpdatedAt($now);
+			$entities[] = $item;
+		}
+		return $entities;
+	}
+
+	/**
+	 * @param list<array{name: string, isIncome: bool}> $rows
+	 *
+	 * @return PurchaseImportCategoryEntity[]
+	 */
+	private function buildCategoryEntities(array $rows, string $importId, string $owner, DateTime $now): array {
+		$entities = [];
+		foreach ($rows as $row) {
+			$category = new PurchaseImportCategoryEntity();
+			$category->setId(Uuid::v4());
+			$category->setImportId($importId);
+			$category->setOwner($owner);
+			$category->setRawName($row['name']);
+			$category->setIsIncome($row['isIncome']);
+			$category->setAction(PurchaseImportEntity::ACTION_PENDING);
+			$category->setCreatedAt($now);
+			$category->setUpdatedAt($now);
+			$entities[] = $category;
+		}
+		return $entities;
+	}
+
+	/**
+	 * @param PurchaseImportItemEntity[] $items
+	 * @param PurchaseImportCategoryEntity[] $categories
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function serializeImport(PurchaseImportEntity $import, array $items, array $categories): array {
+		return [
+			'id' => $import->getId(),
+			'clientListId' => $import->getClientListId(),
+			'clientId' => $import->getClientId(),
+			'schemaVersion' => $import->getSchemaVersion(),
+			'name' => $import->getName(),
+			'status' => $import->getStatus(),
+			'storeName' => $import->getStoreName(),
+			'storeAddress' => $import->getStoreAddress(),
+			'storeReceiptName' => $import->getStoreReceiptName(),
+			'currency' => $import->getCurrency(),
+			'finalTotal' => $this->numberOrNull($import->getFinalTotal()),
+			'listCreatedAt' => $this->dateOrNull($import->getListCreatedAt()),
+			'purchaseDate' => $this->dateOrNull($import->getPurchaseDate()),
+			'createdAt' => $this->dateOrNull($import->getCreatedAt()),
+			'updatedAt' => $this->dateOrNull($import->getUpdatedAt()),
+			'approvedListId' => $import->getApprovedListId(),
+			'approvedAt' => $this->dateOrNull($import->getApprovedAt()),
+			'storeMapping' => [
+				'mappedStoreId' => $import->getMappedStoreId(),
+				'action' => $import->getStoreAction(),
+				'suggestedStoreId' => $import->getSuggestedStoreId(),
+				'suggestedStoreName' => $import->getSuggestedStoreName(),
+				'source' => $import->getStoreMatchSource(),
+				'confidence' => $this->numberOrNull($import->getStoreConfidence()),
+			],
+			'items' => array_map($this->serializeItem(...), $items),
+			'categories' => array_map($this->serializeCategory(...), $categories),
+		];
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function serializeImportSummary(PurchaseImportEntity $import, int $itemCount, int $categoryCount): array {
+		return [
+			'id' => $import->getId(),
+			'clientListId' => $import->getClientListId(),
+			'clientId' => $import->getClientId(),
+			'name' => $import->getName(),
+			'status' => $import->getStatus(),
+			'storeName' => $import->getStoreName(),
+			'currency' => $import->getCurrency(),
+			'finalTotal' => $this->numberOrNull($import->getFinalTotal()),
+			'purchaseDate' => $this->dateOrNull($import->getPurchaseDate()),
+			'createdAt' => $this->dateOrNull($import->getCreatedAt()),
+			'updatedAt' => $this->dateOrNull($import->getUpdatedAt()),
+			'approvedListId' => $import->getApprovedListId(),
+			'approvedAt' => $this->dateOrNull($import->getApprovedAt()),
+			'itemCount' => $itemCount,
+			'categoryCount' => $categoryCount,
+		];
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function serializeItem(PurchaseImportItemEntity $item): array {
+		return [
+			'id' => $item->getId(),
+			'position' => $item->getPosition(),
+			'lineId' => $item->getLineId(),
+			'rawName' => $item->getRawName(),
+			'quantity' => $this->numberOrNull($item->getQuantity()),
+			'unitPrice' => $this->numberOrNull($item->getUnitPrice()),
+			'discount' => $this->numberOrNull($item->getDiscount()),
+			'isCoupon' => (bool)$item->getIsCoupon(),
+			'barcode' => $item->getBarcode(),
+			'categoryHint' => $item->getCategoryHint(),
+			'action' => $item->getAction(),
+			'mappedProductId' => $item->getMappedProductId(),
+			'mappedCategoryId' => $item->getMappedCategoryId(),
+			'newProductName' => $item->getNewProductName(),
+			'suggestion' => [
+				'productId' => $item->getSuggestedProductId(),
+				'productName' => $item->getSuggestedProductName(),
+				'categoryId' => $item->getSuggestedCategoryId(),
+				'source' => $item->getMatchSource(),
+				'confidence' => $this->numberOrNull($item->getConfidence()),
+			],
+		];
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function serializeCategory(PurchaseImportCategoryEntity $category): array {
+		return [
+			'id' => $category->getId(),
+			'rawName' => $category->getRawName(),
+			'isIncome' => (bool)$category->getIsIncome(),
+			'action' => $category->getAction(),
+			'mappedCategoryId' => $category->getMappedCategoryId(),
+			'suggestion' => [
+				'categoryId' => $category->getSuggestedCategoryId(),
+				'source' => $category->getMatchSource(),
+				'confidence' => $this->numberOrNull($category->getConfidence()),
+			],
+		];
+	}
+
+	private function isUuidV4(string $value): bool {
+		return preg_match(
+			'/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
+			$value,
+		) === 1;
+	}
+
+	private function trimmedString(mixed $value, int $maxLength): string|null|false {
+		if ($value === null || $value === '') {
+			return null;
+		}
+		if (!is_string($value)) {
+			return false;
+		}
+		$trimmed = trim($value);
+		if ($trimmed === '') {
+			return null;
+		}
+		if (mb_strlen($trimmed) > $maxLength) {
+			return false;
+		}
+		return $trimmed;
+	}
+
+	private function nullableAmount(mixed $value): float|null|false {
+		if ($value === null || $value === '') {
+			return null;
+		}
+		if (!is_numeric($value)) {
+			return false;
+		}
+		$amount = (float)$value;
+		if (!is_finite($amount) || $amount < 0 || $amount > self::MAX_DECIMAL) {
+			return false;
+		}
+		return $amount;
+	}
+
+	private function parseDate(mixed $value): DateTime|null|false {
+		if ($value === null) {
+			return null;
+		}
+		if (!is_string($value) || trim($value) === '') {
+			return null;
+		}
+		$value = trim($value);
+		if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})$/', $value) !== 1) {
+			return false;
+		}
+		try {
+			$date = new DateTime($value);
+		} catch (\Exception) {
+			return false;
+		}
+		return $date->setTimezone(new DateTimeZone('UTC'));
+	}
+
+	private function numberOrNull(mixed $value): ?float {
+		return $value === null ? null : (float)$value;
+	}
+
+	private function dateOrNull(?DateTime $value): ?string {
+		return $value?->format(DateTimeInterface::ATOM);
+	}
+}
