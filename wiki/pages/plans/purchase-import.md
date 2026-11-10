@@ -1,7 +1,7 @@
 ---
 created: 2026-11-09
 type: plan
-status: proposed
+status: in_progress
 summary: Purchase import inbox — one-way phone upload, server-side category/store/product mapping with optional AI suggestions, review and approval into a normal list.
 ---
 
@@ -449,3 +449,17 @@ Manual end-to-end (with the Android branch):
 3. **Coupon handling.** Default skip. If item-level coupon analytics is required,
    add a dedicated "Coupon" product mapping.
 4. **Inbox notifications.** A badge/count is optional; no push or email in v1.
+
+## Updates
+
+- [2026-11-10]: **Slice B implemented.** Added fuzzy store/category/product matching
+  (`ReceiptProductMatcher::findFuzzyName`), text-only `OpenAiCompatibleScanner::complete`,
+  `PurchaseImportAiService`, `PurchaseImportApproveService` (client UUID preserved,
+  atomic list/items/category/store/product/alias creation, coupon skip, `final_total`
+  fallback), controller endpoints `POST /{id}/suggest`, `POST /{id}/suggest-ai`,
+  `PUT /{id}/mapping`, `POST /{id}/approve`, `DELETE /{id}` (soft discard), a web
+  **Inbox** with review/mapping UI, l10n en/de/uk, and openapi regeneration.
+  Verification: PHPUnit 275/275 (new matcher fuzzy, AI, approval and controller
+  tests), psalm, php-cs-fixer, PHP lint, eslint, stylelint, Vitest 230/230 and the
+  Vite build all green. `composer openapi` output matched the previous spec except
+  the new routes and the updated `purchase_import` tag description.

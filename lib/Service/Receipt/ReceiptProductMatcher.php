@@ -45,8 +45,29 @@ class ReceiptProductMatcher {
 			return $byExactAlias[$lower];
 		}
 
-		$targetNorm = $this->normalize($trimmed);
-		if ($targetNorm === '') {
+		$byName = [];
+		foreach ($products as $product) {
+			$candidateName = (string)$product->getName();
+			if (!isset($byName[$candidateName])) {
+				$byName[$candidateName] = $product;
+			}
+		}
+		$matchedName = $this->findFuzzyName($trimmed, array_keys($byName));
+
+		return $matchedName === null ? null : $byName[$matchedName];
+	}
+
+	/**
+	 * Find the best fuzzy match for a name among candidate display names.
+	 *
+	 * Exact (compact) matches win immediately; otherwise the same character-ratio
+	 * and token-Jaccard thresholds used by {@see match()} decide.
+	 *
+	 * @param list<string> $candidateNames
+	 */
+	public function findFuzzyName(string $name, array $candidateNames): ?string {
+		$targetNorm = $this->normalize($name);
+		if ($targetNorm === '' || $candidateNames === []) {
 			return null;
 		}
 		$targetTokens = $this->significantTokens($targetNorm);
@@ -55,15 +76,15 @@ class ReceiptProductMatcher {
 		$best = null;
 		$bestCharRatio = 0.0;
 		$bestJaccard = 0.0;
-		foreach ($products as $product) {
-			$candidateNorm = $this->normalize((string)$product->getName());
+		foreach ($candidateNames as $candidateName) {
+			$candidateNorm = $this->normalize($candidateName);
 			if ($candidateNorm === '') {
 				continue;
 			}
 			$candidateCompact = str_replace(' ', '', $candidateNorm);
 
 			if ($targetCompact !== '' && $candidateCompact !== '' && $targetCompact === $candidateCompact) {
-				return $product;
+				return $candidateName;
 			}
 			if (!$this->passesPreFilter($targetNorm, $targetTokens, $targetCompact, $candidateNorm, $candidateCompact)) {
 				continue;
@@ -79,7 +100,7 @@ class ReceiptProductMatcher {
 			if ($charRatio > $bestCharRatio || ($charRatio === $bestCharRatio && $jaccard > $bestJaccard)) {
 				$bestCharRatio = $charRatio;
 				$bestJaccard = $jaccard;
-				$best = $product;
+				$best = $candidateName;
 			}
 		}
 

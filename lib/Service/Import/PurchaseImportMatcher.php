@@ -14,23 +14,27 @@ use OCA\ByeByeMoneyList\Entity\PurchaseImportCategoryEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportItemEntity;
 use OCA\ByeByeMoneyList\Entity\StoreEntity;
+use OCA\ByeByeMoneyList\Service\Receipt\ReceiptProductMatcher;
 
 /**
  * Deterministic matching for an incoming purchase import: exact
  * (case-insensitive) store/category/product names, product barcodes and product
- * aliases. Fuzzy matching and AI suggestions are a later slice.
+ * aliases first, then the same fuzzy matching used for receipt products.
  *
  * The matcher only fills suggestion fields; it never mutates catalog rows.
  *
  * @psalm-suppress UnusedClass
  */
 class PurchaseImportMatcher {
+	private const FUZZY_CONFIDENCE = 0.75;
+
 	/** @psalm-suppress PossiblyUnusedMethod */
 	public function __construct(
 		private StoreMapper $storeMapper,
 		private CategoryMapper $categoryMapper,
 		private ProductMapper $productMapper,
 		private ProductAliasMapper $productAliasMapper,
+		private ReceiptProductMatcher $receiptMatcher,
 	) {
 	}
 
@@ -52,9 +56,12 @@ class PurchaseImportMatcher {
 			$owner,
 		);
 
-		$storeByName = $this->indexStores($stores);
-		$categoryByName = $this->indexCategories($ownCategories);
-		$productByName = $this->indexProducts($products);
+		$storeByName = $this->indexByNormalizedName($stores);
+		$storeByDisplayName = $this->indexByDisplayName($stores);
+		$categoryByName = $this->indexByNormalizedName($ownCategories);
+		$categoryByDisplayName = $this->indexByDisplayName($ownCategories);
+		$productByName = $this->indexByNormalizedName($products);
+		$productByDisplayName = $this->indexByDisplayName($products);
 		$productByBarcode = [];
 		foreach ($products as $product) {
 			$barcode = trim((string)$product->getBarcode());
@@ -75,64 +82,54 @@ class PurchaseImportMatcher {
 			$productById[$product->getId()] = $product;
 		}
 
-		$this->suggestStore($import, $storeByName);
-		$this->suggestCategories($categories, $categoryByName);
+		$this->suggestStore($import, $storeByName, $storeByDisplayName);
+		$this->suggestCategories($categories, $categoryByName, $categoryByDisplayName);
 
 		foreach ($items as $item) {
 			$this->suggestItem(
 				$item,
 				$productByName,
+				$productByDisplayName,
 				$productByAlias,
 				$productByBarcode,
 				$productById,
 				$categoryByName,
+				$categoryByDisplayName,
 			);
 		}
 	}
 
 	/**
-	 * @param StoreEntity[] $stores
+	 * @template T of StoreEntity|CategoryEntity|ProductEntity
 	 *
-	 * @return array<string, StoreEntity>
+	 * @param T[] $entities
+	 *
+	 * @return array<string, T>
 	 */
-	private function indexStores(array $stores): array {
+	private function indexByNormalizedName(array $entities): array {
 		$map = [];
-		foreach ($stores as $store) {
-			$key = $this->normalize((string)$store->getName());
+		foreach ($entities as $entity) {
+			$key = $this->normalize((string)$entity->getName());
 			if ($key !== '' && !isset($map[$key])) {
-				$map[$key] = $store;
+				$map[$key] = $entity;
 			}
 		}
 		return $map;
 	}
 
 	/**
-	 * @param CategoryEntity[] $categories
+	 * @template T of StoreEntity|CategoryEntity|ProductEntity
 	 *
-	 * @return array<string, CategoryEntity>
-	 */
-	private function indexCategories(array $categories): array {
-		$map = [];
-		foreach ($categories as $category) {
-			$key = $this->normalize((string)$category->getName());
-			if ($key !== '' && !isset($map[$key])) {
-				$map[$key] = $category;
-			}
-		}
-		return $map;
-	}
-
-	/**
-	 * @param ProductEntity[] $products
+	 * @param T[] $entities
 	 *
-	 * @return array<string, ProductEntity>
+	 * @return array<string, T>
 	 */
-	private function indexProducts(array $products): array {
+	private function indexByDisplayName(array $entities): array {
 		$map = [];
-		foreach ($products as $product) {
-			$key = $this->normalize((string)$product->getName());
-			if ($key !== '' && !isset($map[$key])) {
-				$map[$key] = $product;
+		foreach ($entities as $entity) {
+			$name = (string)$entity->getName();
+			if ($name !== '' && !isset($map[$name])) {
+				$map[$name] = $entity;
 			}
 		}
 		return $map;
@@ -140,8 +137,9 @@ class PurchaseImportMatcher {
 
 	/**
 	 * @param array<string, StoreEntity> $storeByName
+	 * @param array<string, StoreEntity> $storeByDisplayName
 	 */
-	private function suggestStore(PurchaseImportEntity $import, array $storeByName): void {
+	private function suggestStore(PurchaseImportEntity $import, array $storeByName, array $storeByDisplayName): void {
 		$rawName = trim((string)$import->getStoreName());
 		if ($rawName === '') {
 			return;
@@ -162,39 +160,61 @@ class PurchaseImportMatcher {
 			return;
 		}
 
+		$matchedName = $this->receiptMatcher->findFuzzyName($rawName, array_keys($storeByDisplayName));
+		if ($matchedName !== null) {
+			$import->setSuggestedStoreId($storeByDisplayName[$matchedName]->getId());
+			$import->setStoreMatchSource('fuzzy');
+			$import->setStoreConfidence(self::FUZZY_CONFIDENCE);
+			return;
+		}
+
 		$import->setSuggestedStoreName($rawName);
 	}
 
 	/**
 	 * @param PurchaseImportCategoryEntity[] $categories
 	 * @param array<string, CategoryEntity> $categoryByName
+	 * @param array<string, CategoryEntity> $categoryByDisplayName
 	 */
-	private function suggestCategories(array $categories, array $categoryByName): void {
+	private function suggestCategories(array $categories, array $categoryByName, array $categoryByDisplayName): void {
 		foreach ($categories as $category) {
-			$key = $this->normalize((string)$category->getRawName());
+			$rawName = (string)$category->getRawName();
+			$key = $this->normalize($rawName);
 			$match = $key === '' ? null : ($categoryByName[$key] ?? null);
 			if ($match !== null) {
 				$category->setSuggestedCategoryId($match->getId());
 				$category->setMatchSource('exact');
 				$category->setConfidence(1.0);
+				continue;
+			}
+
+			$matchedName = $this->receiptMatcher->findFuzzyName($rawName, array_keys($categoryByDisplayName));
+			if ($matchedName !== null) {
+				$category->setSuggestedCategoryId($categoryByDisplayName[$matchedName]->getId());
+				$category->setMatchSource('fuzzy');
+				$category->setConfidence(self::FUZZY_CONFIDENCE);
 			}
 		}
 	}
 
 	/**
 	 * @param array<string, ProductEntity> $productByName
+	 * @param array<string, ProductEntity> $productByDisplayName
 	 * @param array<string, string> $productByAlias alias name => product id
 	 * @param array<string, ProductEntity> $productByBarcode
 	 * @param array<string, ProductEntity> $productById
 	 * @param array<string, CategoryEntity> $categoryByName
+	 * @param array<string, CategoryEntity> $categoryByDisplayName
 	 */
 	private function suggestItem(
 		PurchaseImportItemEntity $item,
 		array $productByName,
+		array $productByDisplayName,
 		array $productByAlias,
 		array $productByBarcode,
 		array $productById,
 		array $categoryByName,
+		array $categoryByDisplayName,
 	): void {
 		$product = null;
 		$source = null;
@@ -222,10 +242,19 @@ class PurchaseImportMatcher {
 			}
 		}
 
+		if ($product === null) {
+			$rawName = (string)$item->getRawName();
+			$matchedName = $this->receiptMatcher->findFuzzyName($rawName, array_keys($productByDisplayName));
+			if ($matchedName !== null) {
+				$product = $productByDisplayName[$matchedName];
+				$source = 'fuzzy';
+			}
+		}
+
 		if ($product !== null) {
 			$item->setSuggestedProductId($product->getId());
 			$item->setMatchSource($source);
-			$item->setConfidence(1.0);
+			$item->setConfidence($source === 'fuzzy' ? self::FUZZY_CONFIDENCE : 1.0);
 		} else {
 			$item->setSuggestedProductName(trim((string)$item->getRawName()));
 		}
@@ -233,6 +262,12 @@ class PurchaseImportMatcher {
 		$hint = trim((string)$item->getCategoryHint());
 		$hintKey = $this->normalize($hint);
 		$category = $hintKey === '' ? null : ($categoryByName[$hintKey] ?? null);
+		if ($category === null && $hint !== '') {
+			$matchedName = $this->receiptMatcher->findFuzzyName($hint, array_keys($categoryByDisplayName));
+			if ($matchedName !== null) {
+				$category = $categoryByDisplayName[$matchedName];
+			}
+		}
 		if ($category === null && $product !== null) {
 			$categoryId = (string)$product->getCategoryId();
 			$category = $categoryId === '' ? null : $this->findCategory($categoryId, $categoryByName);
@@ -256,12 +291,6 @@ class PurchaseImportMatcher {
 	}
 
 	private function normalize(string $raw): string {
-		$value = mb_strtolower(trim($raw));
-		$ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
-		if ($ascii !== false) {
-			$value = $ascii;
-		}
-		$value = (string)preg_replace('/[^a-z0-9]+/', ' ', $value);
-		return trim((string)preg_replace('/\s+/', ' ', $value));
+		return $this->receiptMatcher->normalize($raw);
 	}
 }

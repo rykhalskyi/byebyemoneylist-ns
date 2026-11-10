@@ -16,6 +16,7 @@ use OCA\ByeByeMoneyList\Entity\PurchaseImportEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportItemEntity;
 use OCA\ByeByeMoneyList\Entity\StoreEntity;
 use OCA\ByeByeMoneyList\Service\Import\PurchaseImportMatcher;
+use OCA\ByeByeMoneyList\Service\Receipt\ReceiptProductMatcher;
 use PHPUnit\Framework\TestCase;
 
 final class PurchaseImportMatcherTest extends TestCase {
@@ -31,7 +32,12 @@ final class PurchaseImportMatcherTest extends TestCase {
 		$store->setId('store-1');
 		$store->setOwner('alice');
 		$store->setName('Lidl');
-		$storeMapper->method('findAllByOwner')->willReturn([$store]);
+
+		$fuzzyStore = new StoreEntity();
+		$fuzzyStore->setId('store-2');
+		$fuzzyStore->setOwner('alice');
+		$fuzzyStore->setName('Lidl Market');
+		$storeMapper->method('findAllByOwner')->willReturn([$store, $fuzzyStore]);
 
 		$groceries = new CategoryEntity();
 		$groceries->setId('cat-groceries');
@@ -51,7 +57,14 @@ final class PurchaseImportMatcherTest extends TestCase {
 		$milk->setBarcode('4001234567890');
 		$milk->setCategoryId('cat-dairy');
 		$milk->setStatus('reviewed');
-		$productMapper->method('findAllIncludingSpecialByOwner')->willReturn([$milk]);
+
+		$chocolate = new ProductEntity();
+		$chocolate->setId('product-chocolate');
+		$chocolate->setOwner('alice');
+		$chocolate->setName('Chocolate Bar');
+		$chocolate->setCategoryId('cat-groceries');
+		$chocolate->setStatus('reviewed');
+		$productMapper->method('findAllIncludingSpecialByOwner')->willReturn([$milk, $chocolate]);
 
 		$alias = new ProductAliasEntity();
 		$alias->setId('alias-1');
@@ -60,7 +73,13 @@ final class PurchaseImportMatcherTest extends TestCase {
 		$alias->setAliasName('Milch');
 		$aliasMapper->method('findByProductIds')->willReturn([$alias]);
 
-		$this->matcher = new PurchaseImportMatcher($storeMapper, $categoryMapper, $productMapper, $aliasMapper);
+		$this->matcher = new PurchaseImportMatcher(
+			$storeMapper,
+			$categoryMapper,
+			$productMapper,
+			$aliasMapper,
+			new ReceiptProductMatcher(),
+		);
 	}
 
 	private function import(): PurchaseImportEntity {
@@ -123,5 +142,25 @@ final class PurchaseImportMatcherTest extends TestCase {
 
 		$this->assertNull($import->getSuggestedStoreId());
 		$this->assertSame('Unknown market', $import->getSuggestedStoreName());
+	}
+
+	public function testSuggestsFuzzyStoreCategoryAndProduct(): void {
+		$import = $this->import();
+		$import->setStoreName('Lidl Markets');
+		$category = $this->category('Groceriess');
+		$item = $this->item('Chocolate Bars');
+
+		$this->matcher->suggestForImport($import, [$item], [$category], 'alice');
+
+		$this->assertSame('store-2', $import->getSuggestedStoreId());
+		$this->assertSame('fuzzy', $import->getStoreMatchSource());
+		$this->assertSame(0.75, $import->getStoreConfidence());
+
+		$this->assertSame('cat-groceries', $category->getSuggestedCategoryId());
+		$this->assertSame('fuzzy', $category->getMatchSource());
+
+		$this->assertSame('product-chocolate', $item->getSuggestedProductId());
+		$this->assertSame('fuzzy', $item->getMatchSource());
+		$this->assertSame(0.75, $item->getConfidence());
 	}
 }

@@ -8,13 +8,20 @@ use DateTime;
 use DateTimeInterface;
 use DateTimeZone;
 use OCA\ByeByeMoneyList\AppInfo\Application;
+use OCA\ByeByeMoneyList\Db\CategoryMapper;
+use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Db\PurchaseImportCategoryMapper;
 use OCA\ByeByeMoneyList\Db\PurchaseImportItemMapper;
 use OCA\ByeByeMoneyList\Db\PurchaseImportMapper;
+use OCA\ByeByeMoneyList\Db\StoreMapper;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportCategoryEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportItemEntity;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportAiService;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportApproveService;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportDuplicateException;
 use OCA\ByeByeMoneyList\Service\Import\PurchaseImportMatcher;
+use OCA\ByeByeMoneyList\Service\Receipt\NoActiveLlmProfileException;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -29,9 +36,9 @@ use Psr\Log\LoggerInterface;
 /**
  * One-way purchase import inbox.
  *
- * Slice A: accept/replace an uploaded purchase list, list imports, show an import
- * with deterministic (exact) mapping suggestions. Approval, fuzzy matching, AI
- * suggestions and the web UI are later slices.
+ * Accept/replace an uploaded purchase list, list/show imports, compute
+ * deterministic and AI mapping suggestions, save user mappings, approve into a
+ * real list and discard pending imports.
  *
  * @psalm-suppress UnusedClass
  */
@@ -50,6 +57,11 @@ class PurchaseImportController extends OCSController {
 	private PurchaseImportItemMapper $itemMapper;
 	private PurchaseImportCategoryMapper $categoryMapper;
 	private PurchaseImportMatcher $matcher;
+	private PurchaseImportAiService $aiService;
+	private PurchaseImportApproveService $approveService;
+	private StoreMapper $storeMapper;
+	private CategoryMapper $categoryMapperCatalog;
+	private ProductMapper $productMapper;
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
@@ -60,6 +72,11 @@ class PurchaseImportController extends OCSController {
 		PurchaseImportItemMapper $itemMapper,
 		PurchaseImportCategoryMapper $categoryMapper,
 		PurchaseImportMatcher $matcher,
+		PurchaseImportAiService $aiService,
+		PurchaseImportApproveService $approveService,
+		StoreMapper $storeMapper,
+		CategoryMapper $categoryMapperCatalog,
+		ProductMapper $productMapper,
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
@@ -69,6 +86,11 @@ class PurchaseImportController extends OCSController {
 		$this->itemMapper = $itemMapper;
 		$this->categoryMapper = $categoryMapper;
 		$this->matcher = $matcher;
+		$this->aiService = $aiService;
+		$this->approveService = $approveService;
+		$this->storeMapper = $storeMapper;
+		$this->categoryMapperCatalog = $categoryMapperCatalog;
+		$this->productMapper = $productMapper;
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
@@ -287,6 +309,506 @@ class PurchaseImportController extends OCSController {
 				$this->categoryMapper->findByImportId($id),
 			),
 		], Http::STATUS_OK);
+	}
+
+	/**
+	 * Recompute deterministic mapping suggestions for a pending import.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 200: Suggestions updated
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import is already approved or discarded
+	 * 500: Failed to compute suggestions
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/purchase-imports/{id}/suggest')]
+	public function suggest(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		if (!$this->isReviewable($import)) {
+			return new DataResponse(['message' => 'Import is already imported'], Http::STATUS_CONFLICT);
+		}
+
+		$items = $this->itemMapper->findByImportId($id);
+		$categories = $this->categoryMapper->findByImportId($id);
+		$now = new DateTime('now', new DateTimeZone('UTC'));
+
+		$started = false;
+		try {
+			$this->db->beginTransaction();
+			$started = true;
+
+			$this->resetSuggestions($import, $items, $categories);
+			$this->matcher->suggestForImport($import, $items, $categories, $userId);
+			$this->persistSuggestionState($import, $items, $categories, $now);
+
+			$this->db->commit();
+		} catch (\Throwable $e) {
+			if ($started) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to compute purchase import suggestions', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to compute suggestions'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['import' => $this->serializeImport($import, $items, $categories)], Http::STATUS_OK);
+	}
+
+	/**
+	 * Ask the active LLM profile for mapping suggestions on unresolved rows.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 200: Suggestions updated
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import is already imported, or no active LLM profile exists
+	 * 500: Failed to compute AI suggestions
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/purchase-imports/{id}/suggest-ai')]
+	public function suggestAi(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		if (!$this->isReviewable($import)) {
+			return new DataResponse(['message' => 'Import is already imported'], Http::STATUS_CONFLICT);
+		}
+
+		$items = $this->itemMapper->findByImportId($id);
+		$categories = $this->categoryMapper->findByImportId($id);
+		$now = new DateTime('now', new DateTimeZone('UTC'));
+
+		try {
+			$this->aiService->suggest($import, $items, $categories, $userId);
+		} catch (NoActiveLlmProfileException) {
+			return new DataResponse(['message' => 'No active LLM profile'], Http::STATUS_CONFLICT);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to compute AI purchase import suggestions', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to compute AI suggestions'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		$started = false;
+		try {
+			$this->db->beginTransaction();
+			$started = true;
+			$this->persistSuggestionState($import, $items, $categories, $now);
+			$this->db->commit();
+		} catch (\Throwable $e) {
+			if ($started) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to store AI purchase import suggestions', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to store AI suggestions'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['import' => $this->serializeImport($import, $items, $categories)], Http::STATUS_OK);
+	}
+
+	/**
+	 * Save the user's mapping choices without approving the import.
+	 *
+	 * @param string $id Import id
+	 * @param array<string, mixed> $store Store mapping
+	 * @param list<array<string, mixed>> $categories Category mappings
+	 * @param list<array<string, mixed>> $items Item mappings
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 200: Mapping saved
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import is already imported
+	 * 422: Invalid mapping
+	 * 500: Failed to save the mapping
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'PUT', url: '/api/purchase-imports/{id}/mapping')]
+	public function saveMapping(string $id, array $store = [], array $categories = [], array $items = []): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		if (!$this->isReviewable($import)) {
+			return new DataResponse(['message' => 'Import is already imported'], Http::STATUS_CONFLICT);
+		}
+
+		$itemRows = $this->itemMapper->findByImportId($id);
+		$categoryRows = $this->categoryMapper->findByImportId($id);
+		$itemById = [];
+		foreach ($itemRows as $row) {
+			$itemById[$row->getId()] = $row;
+		}
+		$categoryById = [];
+		foreach ($categoryRows as $row) {
+			$categoryById[$row->getId()] = $row;
+		}
+
+		$now = new DateTime('now', new DateTimeZone('UTC'));
+
+		if ($store !== []) {
+			$invalid = $this->applyStoreMapping($import, $store, $userId);
+			if ($invalid !== null) {
+				return new DataResponse(['message' => $invalid], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		foreach ($categories as $mapping) {
+			$rowId = isset($mapping['id']) && is_string($mapping['id']) ? $mapping['id'] : '';
+			$row = $categoryById[$rowId] ?? null;
+			if ($row === null) {
+				return new DataResponse(['message' => 'Unknown category mapping'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$invalid = $this->applyCategoryMapping($row, $mapping, $userId);
+			if ($invalid !== null) {
+				return new DataResponse(['message' => $invalid], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		foreach ($items as $mapping) {
+			$rowId = isset($mapping['id']) && is_string($mapping['id']) ? $mapping['id'] : '';
+			$row = $itemById[$rowId] ?? null;
+			if ($row === null) {
+				return new DataResponse(['message' => 'Unknown item mapping'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$invalid = $this->applyItemMapping($row, $mapping, $userId);
+			if ($invalid !== null) {
+				return new DataResponse(['message' => $invalid], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		$started = false;
+		try {
+			$this->db->beginTransaction();
+			$started = true;
+
+			$import->setStatus(PurchaseImportEntity::STATUS_IN_REVIEW);
+			$import->setUpdatedAt($now);
+			$this->importMapper->update($import);
+			foreach ($itemRows as $row) {
+				$row->setUpdatedAt($now);
+				$this->itemMapper->update($row);
+			}
+			foreach ($categoryRows as $row) {
+				$row->setUpdatedAt($now);
+				$this->categoryMapper->update($row);
+			}
+
+			$this->db->commit();
+		} catch (\Throwable $e) {
+			if ($started) {
+				$this->db->rollBack();
+			}
+			$this->logger->error('Failed to save purchase import mapping', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to save the mapping'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse(['import' => $this->serializeImport($import, $itemRows, $categoryRows)], Http::STATUS_OK);
+	}
+
+	/**
+	 * Approve an import into a normal finished list.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT|Http::STATUS_INTERNAL_SERVER_ERROR, array<string, mixed>, array{}>
+	 *
+	 * 200: List created
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import or its client list id is already imported
+	 * 500: Failed to approve the import
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'POST', url: '/api/purchase-imports/{id}/approve')]
+	public function approve(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		$items = $this->itemMapper->findByImportId($id);
+		$categories = $this->categoryMapper->findByImportId($id);
+
+		if ($import->getStatus() === PurchaseImportEntity::STATUS_APPROVED) {
+			return new DataResponse([
+				'message' => 'Already imported',
+				'duplicate' => true,
+				'import' => $this->serializeImport($import, $items, $categories),
+			], Http::STATUS_CONFLICT);
+		}
+		if (!$this->isReviewable($import)) {
+			return new DataResponse(['message' => 'Import was discarded'], Http::STATUS_CONFLICT);
+		}
+
+		try {
+			$list = $this->approveService->approve($import, $items, $categories);
+		} catch (PurchaseImportDuplicateException) {
+			return new DataResponse([
+				'message' => 'Already imported',
+				'duplicate' => true,
+				'import' => $this->serializeImport($import, $items, $categories),
+			], Http::STATUS_CONFLICT);
+		} catch (\Throwable $e) {
+			$this->logger->error('Failed to approve purchase import', ['exception' => $e]);
+			return new DataResponse(['message' => 'Failed to approve the import'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return new DataResponse([
+			'import' => $this->serializeImport($import, $items, $categories),
+			'list' => [
+				'id' => $list->getId(),
+				'name' => $list->getName(),
+				'storeId' => $list->getStoreId(),
+				'categoryId' => $list->getCategoryId(),
+				'status' => $list->getStatus(),
+				'finalTotal' => $this->numberOrNull($list->getFinalTotal()),
+				'purchaseDate' => $this->dateOrNull($list->getPurchaseDate()),
+				'isFinished' => (bool)$list->getIsFinished(),
+			],
+		], Http::STATUS_OK);
+	}
+
+	/**
+	 * Discard a pending import.
+	 *
+	 * @param string $id Import id
+	 *
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_CONFLICT, array<string, mixed>, array{}>
+	 *
+	 * 200: Import discarded
+	 * 401: Current user is not logged in
+	 * 404: Import not found
+	 * 409: Import was already approved
+	 */
+	#[NoAdminRequired]
+	#[ApiRoute(verb: 'DELETE', url: '/api/purchase-imports/{id}')]
+	public function discard(string $id): DataResponse {
+		$userId = $this->getCurrentUserId();
+		if ($userId === null) {
+			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$import = $this->importMapper->findByIdAndOwner($id, $userId);
+		if ($import === null) {
+			return new DataResponse(['message' => 'Import not found'], Http::STATUS_NOT_FOUND);
+		}
+		if ($import->getStatus() === PurchaseImportEntity::STATUS_APPROVED) {
+			return new DataResponse(['message' => 'Already imported'], Http::STATUS_CONFLICT);
+		}
+
+		$import->setStatus(PurchaseImportEntity::STATUS_DISCARDED);
+		$import->setUpdatedAt(new DateTime('now', new DateTimeZone('UTC')));
+		$this->importMapper->update($import);
+
+		return new DataResponse([
+			'import' => $this->serializeImport(
+				$import,
+				$this->itemMapper->findByImportId($id),
+				$this->categoryMapper->findByImportId($id),
+			),
+		], Http::STATUS_OK);
+	}
+
+	private function isReviewable(PurchaseImportEntity $import): bool {
+		return in_array($import->getStatus(), [
+			PurchaseImportEntity::STATUS_PENDING,
+			PurchaseImportEntity::STATUS_IN_REVIEW,
+		], true);
+	}
+
+	/**
+	 * @param PurchaseImportItemEntity[] $items
+	 * @param PurchaseImportCategoryEntity[] $categories
+	 */
+	private function resetSuggestions(PurchaseImportEntity $import, array $items, array $categories): void {
+		if ($import->getStoreAction() === PurchaseImportEntity::ACTION_PENDING) {
+			$import->setSuggestedStoreId(null);
+			$import->setSuggestedStoreName(null);
+			$import->setStoreMatchSource(null);
+			$import->setStoreConfidence(null);
+		}
+		foreach ($items as $item) {
+			if ($item->getAction() !== PurchaseImportEntity::ACTION_PENDING) {
+				continue;
+			}
+			$item->setSuggestedProductId(null);
+			$item->setSuggestedProductName(null);
+			$item->setSuggestedCategoryId(null);
+			$item->setMatchSource(null);
+			$item->setConfidence(null);
+		}
+		foreach ($categories as $category) {
+			if ($category->getAction() !== PurchaseImportEntity::ACTION_PENDING) {
+				continue;
+			}
+			$category->setSuggestedCategoryId(null);
+			$category->setMatchSource(null);
+			$category->setConfidence(null);
+		}
+	}
+
+	/**
+	 * @param PurchaseImportItemEntity[] $items
+	 * @param PurchaseImportCategoryEntity[] $categories
+	 */
+	private function persistSuggestionState(
+		PurchaseImportEntity $import,
+		array $items,
+		array $categories,
+		DateTime $now,
+	): void {
+		$import->setStatus(PurchaseImportEntity::STATUS_IN_REVIEW);
+		$import->setUpdatedAt($now);
+		$this->importMapper->update($import);
+		foreach ($items as $item) {
+			$item->setUpdatedAt($now);
+			$this->itemMapper->update($item);
+		}
+		foreach ($categories as $category) {
+			$category->setUpdatedAt($now);
+			$this->categoryMapper->update($category);
+		}
+	}
+
+	/**
+	 * @param array<string, mixed> $mapping
+	 *
+	 * @return string|null error message, null on success
+	 */
+	private function applyStoreMapping(PurchaseImportEntity $import, array $mapping, string $userId): ?string {
+		$action = $mapping['action'] ?? null;
+		if (!is_string($action) || !$this->isValidAction($action)) {
+			return 'Invalid store action';
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_MAP_EXISTING) {
+			$mappedId = isset($mapping['mappedStoreId']) && is_string($mapping['mappedStoreId']) ? $mapping['mappedStoreId'] : '';
+			if ($mappedId === '' || $this->storeMapper->findByIdAndOwner($mappedId, $userId) === null) {
+				return 'Unknown store';
+			}
+			$import->setMappedStoreId($mappedId);
+		} else {
+			$import->setMappedStoreId(null);
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_CREATE_NEW) {
+			$name = isset($mapping['name']) && is_string($mapping['name']) ? trim($mapping['name']) : '';
+			if ($name === '' || mb_strlen($name) > 255) {
+				return 'Store name is required';
+			}
+			$import->setSuggestedStoreName($name);
+		}
+
+		$import->setStoreAction($action);
+
+		return null;
+	}
+
+	/**
+	 * @param array<string, mixed> $mapping
+	 *
+	 * @return string|null error message, null on success
+	 */
+	private function applyCategoryMapping(PurchaseImportCategoryEntity $row, array $mapping, string $userId): ?string {
+		$action = $mapping['action'] ?? null;
+		if (!is_string($action) || !$this->isValidAction($action)) {
+			return 'Invalid category action';
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_MAP_EXISTING) {
+			$mappedId = isset($mapping['mappedCategoryId']) && is_string($mapping['mappedCategoryId']) ? $mapping['mappedCategoryId'] : '';
+			if ($mappedId === '' || $this->categoryMapperCatalog->findByIdAndOwner($mappedId, $userId) === null) {
+				return 'Unknown category';
+			}
+			$row->setMappedCategoryId($mappedId);
+		} else {
+			$row->setMappedCategoryId(null);
+		}
+
+		$row->setAction($action);
+
+		return null;
+	}
+
+	/**
+	 * @param array<string, mixed> $mapping
+	 *
+	 * @return string|null error message, null on success
+	 */
+	private function applyItemMapping(PurchaseImportItemEntity $row, array $mapping, string $userId): ?string {
+		$action = $mapping['action'] ?? null;
+		if (!is_string($action) || !$this->isValidAction($action)) {
+			return 'Invalid item action';
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_MAP_EXISTING) {
+			$mappedId = isset($mapping['mappedProductId']) && is_string($mapping['mappedProductId']) ? $mapping['mappedProductId'] : '';
+			if ($mappedId === '' || $this->productMapper->findByIdAndOwner($mappedId, $userId) === null) {
+				return 'Unknown product';
+			}
+			$row->setMappedProductId($mappedId);
+		} else {
+			$row->setMappedProductId(null);
+		}
+
+		if ($action === PurchaseImportEntity::ACTION_CREATE_NEW) {
+			$name = isset($mapping['newProductName']) && is_string($mapping['newProductName']) ? trim($mapping['newProductName']) : '';
+			if ($name === '' || mb_strlen($name) > 255) {
+				return 'Product name is required';
+			}
+			$row->setNewProductName($name);
+		}
+
+		if (isset($mapping['mappedCategoryId']) && is_string($mapping['mappedCategoryId']) && $mapping['mappedCategoryId'] !== '') {
+			if ($this->categoryMapperCatalog->findByIdAndOwner($mapping['mappedCategoryId'], $userId) === null) {
+				return 'Unknown category';
+			}
+			$row->setMappedCategoryId($mapping['mappedCategoryId']);
+		} else {
+			$row->setMappedCategoryId(null);
+		}
+
+		$row->setAction($action);
+
+		return null;
+	}
+
+	private function isValidAction(string $action): bool {
+		return in_array($action, [
+			PurchaseImportEntity::ACTION_PENDING,
+			PurchaseImportEntity::ACTION_MAP_EXISTING,
+			PurchaseImportEntity::ACTION_CREATE_NEW,
+			PurchaseImportEntity::ACTION_SKIP,
+		], true);
 	}
 
 	private function getCurrentUserId(): ?string {

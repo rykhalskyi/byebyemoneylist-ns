@@ -5,10 +5,21 @@ declare(strict_types=1);
 namespace Controller;
 
 use OCA\ByeByeMoneyList\Controller\PurchaseImportController;
+use OCA\ByeByeMoneyList\Db\CategoryMapper;
+use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Db\PurchaseImportCategoryMapper;
 use OCA\ByeByeMoneyList\Db\PurchaseImportItemMapper;
 use OCA\ByeByeMoneyList\Db\PurchaseImportMapper;
+use OCA\ByeByeMoneyList\Db\StoreMapper;
+use OCA\ByeByeMoneyList\Entity\CategoryEntity;
+use OCA\ByeByeMoneyList\Entity\ListEntity;
+use OCA\ByeByeMoneyList\Entity\ProductEntity;
+use OCA\ByeByeMoneyList\Entity\PurchaseImportCategoryEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportEntity;
+use OCA\ByeByeMoneyList\Entity\PurchaseImportItemEntity;
+use OCA\ByeByeMoneyList\Entity\StoreEntity;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportAiService;
+use OCA\ByeByeMoneyList\Service\Import\PurchaseImportApproveService;
 use OCA\ByeByeMoneyList\Service\Import\PurchaseImportMatcher;
 use OCP\AppFramework\Http;
 use OCP\IDBConnection;
@@ -24,6 +35,11 @@ final class PurchaseImportControllerTest extends TestCase {
 	private PurchaseImportItemMapper $itemMapper;
 	private PurchaseImportCategoryMapper $categoryMapper;
 	private PurchaseImportMatcher $matcher;
+	private PurchaseImportAiService $aiService;
+	private PurchaseImportApproveService $approveService;
+	private StoreMapper $storeMapper;
+	private CategoryMapper $catalogCategoryMapper;
+	private ProductMapper $productMapper;
 	private IUserSession $userSession;
 
 	protected function setUp(): void {
@@ -32,6 +48,11 @@ final class PurchaseImportControllerTest extends TestCase {
 		$this->itemMapper = $this->createMock(PurchaseImportItemMapper::class);
 		$this->categoryMapper = $this->createMock(PurchaseImportCategoryMapper::class);
 		$this->matcher = $this->createMock(PurchaseImportMatcher::class);
+		$this->aiService = $this->createMock(PurchaseImportAiService::class);
+		$this->approveService = $this->createMock(PurchaseImportApproveService::class);
+		$this->storeMapper = $this->createMock(StoreMapper::class);
+		$this->catalogCategoryMapper = $this->createMock(CategoryMapper::class);
+		$this->productMapper = $this->createMock(ProductMapper::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$db = $this->createMock(IDBConnection::class);
 		$logger = $this->createMock(LoggerInterface::class);
@@ -42,6 +63,11 @@ final class PurchaseImportControllerTest extends TestCase {
 			$this->itemMapper,
 			$this->categoryMapper,
 			$this->matcher,
+			$this->aiService,
+			$this->approveService,
+			$this->storeMapper,
+			$this->catalogCategoryMapper,
+			$this->productMapper,
 			$db,
 			$this->userSession,
 			$logger,
@@ -249,5 +275,175 @@ final class PurchaseImportControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('import-1', $data['import']['id']);
+	}
+
+	private function makeItem(string $id = 'item-1', string $name = 'Milk'): PurchaseImportItemEntity {
+		$item = new PurchaseImportItemEntity();
+		$item->setId($id);
+		$item->setImportId('import-1');
+		$item->setOwner('alice');
+		$item->setRawName($name);
+		$item->setQuantity(1.0);
+		$item->setAction(PurchaseImportEntity::ACTION_PENDING);
+		return $item;
+	}
+
+	private function makeCategory(string $id = 'row-cat-1', string $name = 'Groceries'): PurchaseImportCategoryEntity {
+		$category = new PurchaseImportCategoryEntity();
+		$category->setId($id);
+		$category->setImportId('import-1');
+		$category->setOwner('alice');
+		$category->setRawName($name);
+		$category->setAction(PurchaseImportEntity::ACTION_PENDING);
+		return $category;
+	}
+
+	public function testSuggestRejectsApprovedImport(): void {
+		$this->mockUser();
+		$this->importMapper->method('findByIdAndOwner')
+			->willReturn($this->makeImport(PurchaseImportEntity::STATUS_APPROVED));
+		$this->matcher->expects($this->never())->method('suggestForImport');
+
+		$response = $this->controller->suggest('import-1');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+	}
+
+	public function testSuggestRunsMatcherAndPersists(): void {
+		$this->mockUser();
+		$import = $this->makeImport(PurchaseImportEntity::STATUS_PENDING);
+		$this->importMapper->method('findByIdAndOwner')->willReturn($import);
+		$this->itemMapper->method('findByImportId')->willReturn([]);
+		$this->categoryMapper->method('findByImportId')->willReturn([]);
+		$this->matcher->expects($this->once())->method('suggestForImport');
+		$this->importMapper->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$response = $this->controller->suggest('import-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(PurchaseImportEntity::STATUS_IN_REVIEW, $response->getData()['import']['status']);
+	}
+
+	public function testSaveMappingRejectsUnknownProduct(): void {
+		$this->mockUser();
+		$this->importMapper->method('findByIdAndOwner')
+			->willReturn($this->makeImport(PurchaseImportEntity::STATUS_PENDING));
+		$this->itemMapper->method('findByImportId')->willReturn([$this->makeItem()]);
+		$this->categoryMapper->method('findByImportId')->willReturn([]);
+		$this->productMapper->method('findByIdAndOwner')->willReturn(null);
+
+		$response = $this->controller->saveMapping('import-1', [], [], [[
+			'id' => 'item-1',
+			'action' => PurchaseImportEntity::ACTION_MAP_EXISTING,
+			'mappedProductId' => 'missing',
+		]]);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testSaveMappingStoresActions(): void {
+		$this->mockUser();
+		$this->importMapper->method('findByIdAndOwner')
+			->willReturn($this->makeImport(PurchaseImportEntity::STATUS_PENDING));
+		$item = $this->makeItem();
+		$this->itemMapper->method('findByImportId')->willReturn([$item]);
+		$this->categoryMapper->method('findByImportId')->willReturn([]);
+		$product = new ProductEntity();
+		$product->setId('product-1');
+		$product->setOwner('alice');
+		$product->setName('Milk');
+		$this->productMapper->method('findByIdAndOwner')->willReturn($product);
+		$this->itemMapper->expects($this->once())->method('update')->willReturnArgument(0);
+		$this->importMapper->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$response = $this->controller->saveMapping('import-1', [], [], [[
+			'id' => 'item-1',
+			'action' => PurchaseImportEntity::ACTION_MAP_EXISTING,
+			'mappedProductId' => 'product-1',
+		]]);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(
+			PurchaseImportEntity::ACTION_MAP_EXISTING,
+			$response->getData()['import']['items'][0]['action'],
+		);
+		$this->assertSame('product-1', $response->getData()['import']['items'][0]['mappedProductId']);
+	}
+
+	public function testSaveMappingStoresStoreAndCategoryChoices(): void {
+		$this->mockUser();
+		$import = $this->makeImport(PurchaseImportEntity::STATUS_PENDING);
+		$this->importMapper->method('findByIdAndOwner')->willReturn($import);
+		$row = $this->makeCategory();
+		$this->itemMapper->method('findByImportId')->willReturn([]);
+		$this->categoryMapper->method('findByImportId')->willReturn([$row]);
+		$store = new StoreEntity();
+		$store->setId('store-1');
+		$store->setOwner('alice');
+		$store->setName('Lidl');
+		$this->storeMapper->method('findByIdAndOwner')->willReturn($store);
+		$category = new CategoryEntity();
+		$category->setId('cat-1');
+		$category->setOwner('alice');
+		$category->setName('Groceries');
+		$this->catalogCategoryMapper->method('findByIdAndOwner')->willReturn($category);
+
+		$response = $this->controller->saveMapping(
+			'import-1',
+			['action' => PurchaseImportEntity::ACTION_MAP_EXISTING, 'mappedStoreId' => 'store-1'],
+			[['id' => 'row-cat-1', 'action' => PurchaseImportEntity::ACTION_MAP_EXISTING, 'mappedCategoryId' => 'cat-1']],
+			[],
+		);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('store-1', $response->getData()['import']['storeMapping']['mappedStoreId']);
+		$this->assertSame('cat-1', $response->getData()['import']['categories'][0]['mappedCategoryId']);
+	}
+
+	public function testApproveReturnsDuplicateForApprovedImport(): void {
+		$this->mockUser();
+		$this->importMapper->method('findByIdAndOwner')
+			->willReturn($this->makeImport(PurchaseImportEntity::STATUS_APPROVED));
+		$this->itemMapper->method('findByImportId')->willReturn([]);
+		$this->categoryMapper->method('findByImportId')->willReturn([]);
+		$this->approveService->expects($this->never())->method('approve');
+
+		$response = $this->controller->approve('import-1');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertTrue($response->getData()['duplicate']);
+	}
+
+	public function testApproveCreatesList(): void {
+		$this->mockUser();
+		$this->importMapper->method('findByIdAndOwner')
+			->willReturn($this->makeImport(PurchaseImportEntity::STATUS_IN_REVIEW));
+		$this->itemMapper->method('findByImportId')->willReturn([]);
+		$this->categoryMapper->method('findByImportId')->willReturn([]);
+		$list = new ListEntity();
+		$list->setId('b1f0c7d2-3b1e-4a67-9c55-0e1d2f3a4b5c');
+		$list->setName('Purchase');
+		$list->setStatus('finished');
+		$list->setIsFinished(true);
+		$this->approveService->method('approve')->willReturn($list);
+
+		$response = $this->controller->approve('import-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('b1f0c7d2-3b1e-4a67-9c55-0e1d2f3a4b5c', $response->getData()['list']['id']);
+	}
+
+	public function testDiscardMarksImportDiscarded(): void {
+		$this->mockUser();
+		$import = $this->makeImport(PurchaseImportEntity::STATUS_PENDING);
+		$this->importMapper->method('findByIdAndOwner')->willReturn($import);
+		$this->itemMapper->method('findByImportId')->willReturn([]);
+		$this->categoryMapper->method('findByImportId')->willReturn([]);
+		$this->importMapper->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$response = $this->controller->discard('import-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(PurchaseImportEntity::STATUS_DISCARDED, $response->getData()['import']['status']);
 	}
 }

@@ -33,6 +33,22 @@ class ListMapper extends QBMapper {
 		return $this->findEntities($qb);
 	}
 
+	/**
+	 * Highest sort position used by the owner's lists (0 when there are none).
+	 */
+	public function getMaxPosition(string $userId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->max('position'))
+			->from($this->tableName)
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)));
+
+		$result = $qb->executeQuery();
+		$max = (int)($result->fetchOne() ?? 0);
+		$result->closeCursor();
+
+		return $max;
+	}
+
 	public function findById(string $id): ?ListEntity {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')
