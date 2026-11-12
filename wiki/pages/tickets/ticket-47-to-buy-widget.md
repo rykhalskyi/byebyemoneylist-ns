@@ -1,7 +1,7 @@
 ---
 created: 2026-10-13
 type: ticket
-status: proposed
+status: implemented
 summary: T47 — To Buy dashboard widget (title, checked/total, pending preview, create CTA)
 ---
 
@@ -29,4 +29,11 @@ when no active list exists. Widget layout stays in localStorage (D-32).
 
 ## Outcome
 
-Not started.
+Implemented on `feature/to-buy-list-redesign`:
+
+- `dashboardWidgets` gains the `toBuy` type (cart icon, "To Buy" label).
+- New `ToBuyWidget`: active list title, `checked/total` progress, the first up-to-3
+  pending item names, "All done" state, loading state, and a create affordance when no
+  list is active. Refreshes on mount and window focus; opens the dedicated screen.
+- `Dashboard` renders it and emits `openToBuy`; `App` opens the To Buy screen.
+- Tests: `ToBuyWidget.spec.ts` (4 cases). Vitest 246 green; lint/stylelint/build clean.

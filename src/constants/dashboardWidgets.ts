@@ -1,4 +1,4 @@
-import { mdiCalendarMonth, mdiCalendarToday, mdiCartPlus, mdiInformationOutline, mdiReceiptText, mdiShape } from '@mdi/js'
+import { mdiCalendarMonth, mdiCalendarToday, mdiCart, mdiCartPlus, mdiInformationOutline, mdiReceiptText, mdiShape } from '@mdi/js'
 import { t } from '../utils/l10n.ts'
 
 export type DashboardWidgetType
@@ -7,6 +7,7 @@ export type DashboardWidgetType
 		| 'thisMonth'
 		| 'addPurchase'
 		| 'scanPurchase'
+		| 'toBuy'
 		| 'info'
 
 export interface DashboardWidgetConfig {
@@ -29,6 +30,7 @@ export function dashboardWidgetDefinitions(): DashboardWidgetDefinition[] {
 		{ type: 'categorySpending', label: t('Spent in category'), icon: mdiShape, requiresCategory: true },
 		{ type: 'addPurchase', label: t('Add purchase'), icon: mdiCartPlus, requiresCategory: false },
 		{ type: 'scanPurchase', label: t('Scan purchase'), icon: mdiReceiptText, requiresCategory: false },
+		{ type: 'toBuy', label: t('To Buy'), icon: mdiCart, requiresCategory: false },
 		{ type: 'info', label: t('Info'), icon: mdiInformationOutline, requiresCategory: false },
 	]
 }

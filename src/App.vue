@@ -68,7 +68,7 @@ function openPurchase(mode: 'manual' | 'scan') {
 		<NcAppContent :class="$style.content">
 			<ToBuy v-if="toBuyOpen" @close="toBuyOpen = false" />
 			<template v-else>
-				<Dashboard v-if="currentView === 'dashboard'" @purchase="openPurchase" />
+				<Dashboard v-if="currentView === 'dashboard'" @purchase="openPurchase" @openToBuy="toBuyOpen = true" />
 				<ShoppingLists
 					v-else-if="currentView === 'lists'"
 					:purchaseMode="purchaseIntent"

@@ -107,3 +107,4 @@
 ## [2026-11-12] update | T44 implemented: AddListDialog (To Buy/Subscription/Income), To Buy card with Active chip and plain-text check/rename/delete/add UI, item dialogs, client kind/isActive model, archived removal, l10n
 ## [2026-11-12] update | T45 implemented: kind filter chips, purchases always create a new list (open-list picker removed), dashboard/analytics exclude NEED_TO_BUY, finished totals ignore To Buy
 ## [2026-11-12] update | T46 implemented: dedicated ToBuy paper screen with quick-add, rename, check, delete+undo and no-active CTA; App hides the menu while open
+## [2026-11-12] update | T47 implemented: To Buy dashboard widget with progress/preview, empty CTA and screen navigation; dashboard/app wiring
