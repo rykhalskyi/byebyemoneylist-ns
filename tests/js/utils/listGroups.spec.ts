@@ -9,6 +9,8 @@ const BASE: ShoppingList = {
 	storeId: null,
 	categoryId: null,
 	status: 'new',
+	kind: 'PURCHASE',
+	isActive: false,
 	finalTotal: null,
 	totalPrice: null,
 	createdAt: null,

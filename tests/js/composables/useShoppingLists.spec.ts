@@ -23,6 +23,8 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 		storeId: null,
 		categoryId: null,
 		status: 'new',
+		kind: 'PURCHASE',
+		isActive: false,
 		finalTotal: null,
 		totalPrice: null,
 		createdAt: new Date().toISOString(),
@@ -40,10 +42,14 @@ function item(overrides: Partial<ListItem> = {}): ListItem {
 		listId: 'l1',
 		productId: 'p1',
 		productName: 'Milk',
+		customName: null,
 		price: 1.5,
 		quantity: 2,
 		isChecked: false,
+		position: 0,
+		discount: null,
 		createdAt: null,
+		updatedAt: null,
 		...overrides,
 	}
 }

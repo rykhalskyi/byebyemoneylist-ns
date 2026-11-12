@@ -1,10 +1,39 @@
-import type { Category, ListItem, ListStatus, Product, ShoppingList } from '../types.ts'
+import type { Category, ListItem, ListKind, ListStatus, Product, ShoppingList } from '../types.ts'
 
 import { mdiAutorenew, mdiCart, mdiCashPlus } from '@mdi/js'
 import { formatDate, formatTotal } from './format.ts'
 import { getCanonicalLocale, t } from './l10n.ts'
 
 export type StatusVariant = 'secondary' | 'success' | 'tertiary'
+
+/**
+ * Resolve the list kind, falling back to the legacy flags for older rows.
+ *
+ * @param list the list to inspect
+ */
+export function deriveKind(list: ShoppingList): ListKind {
+	if (list.kind !== undefined && list.kind !== null) {
+		return list.kind
+	}
+	if (list.isIncome) {
+		return 'INCOME'
+	}
+	if (list.isSubscription) {
+		return 'SUBSCRIPTION'
+	}
+	if (list.status === 'finished') {
+		return 'PURCHASE'
+	}
+	return 'NEED_TO_BUY'
+}
+
+export function isToBuy(list: ShoppingList): boolean {
+	return deriveKind(list) === 'NEED_TO_BUY'
+}
+
+export function isToBuyActive(list: ShoppingList): boolean {
+	return isToBuy(list) && list.isActive === true
+}
 
 export function listIcon(list: ShoppingList): string {
 	if (list.isIncome) {
@@ -17,6 +46,9 @@ export function listIcon(list: ShoppingList): string {
 }
 
 export function addItemLabel(list: ShoppingList): string {
+	if (isToBuy(list)) {
+		return t('Add item')
+	}
 	if (list.isIncome) {
 		return t('Add income source')
 	}
@@ -30,8 +62,6 @@ export function statusLabel(status: ListStatus): string {
 	switch (status) {
 		case 'finished':
 			return t('Finished')
-		case 'archived':
-			return t('Archived')
 		default:
 			return t('New')
 	}
@@ -40,9 +70,6 @@ export function statusLabel(status: ListStatus): string {
 export function statusVariant(status: ListStatus): StatusVariant {
 	if (status === 'finished') {
 		return 'success'
-	}
-	if (status === 'archived') {
-		return 'tertiary'
 	}
 	return 'secondary'
 }
@@ -56,14 +83,21 @@ export function formatQuantity(quantity: number): string {
 	}).format(quantity)
 }
 
+export function itemName(item: ListItem): string {
+	return item.customName ?? item.productName
+}
+
 export function itemDetails(item: ListItem): string {
-	if (item.price === null) {
+	if (item.productId === null || item.price === null) {
 		return ''
 	}
 	return formatTotal(item.price * item.quantity)
 }
 
 export function itemSubname(item: ListItem): string {
+	if (item.productId === null) {
+		return ''
+	}
 	const quantity = formatQuantity(item.quantity)
 	if (item.price === null) {
 		return quantity

@@ -1,7 +1,7 @@
 ---
 created: 2026-10-13
 type: ticket
-status: proposed
+status: implemented
 summary: T44 — Add list dialog, dedicated To Buy card and item check/rename/delete UI
 ---
 
@@ -44,4 +44,19 @@ R6). This also introduces the app's first check-off UI.
 
 ## Outcome
 
-Not started.
+Implemented on `feature/to-buy-list-redesign`:
+
+- New `AddListDialog` (vertical To Buy / Subscription / Income selector, no Purchase):
+  To Buy creates the active list with optional carry-over of unchecked items;
+  Subscription = name + all categories + interval (default Monthly, recurring forced,
+  start-empty false); Income = name + income categories + recurring/period/start-empty.
+- `ShoppingLists` header is now **Add list** + **Add purchase**; `NewListDialog` removed.
+- To Buy card: Active chip, date-only subtitle, plain-text checkbox rows with
+  strikethrough, rename on tap, delete, "Add item", and an Open list/Delete menu.
+- New `AddToBuyItemDialog` and `EditToBuyItemDialog`; To Buy add/check/rename/delete
+  wired through the composable.
+- Client model: `kind`/`isActive`, nullable `productId`, `customName`, dropped `archived`;
+  `listDisplay` kind helpers; l10n en/de/uk updated.
+- "Open list" currently expands the card; T46 will point it at the dedicated screen.
+
+Vitest 237 green; eslint, stylelint and production build clean.

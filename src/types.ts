@@ -1,4 +1,6 @@
-export type ListStatus = 'new' | 'finished' | 'archived'
+export type ListStatus = 'new' | 'finished'
+
+export type ListKind = 'NEED_TO_BUY' | 'PURCHASE' | 'INCOME' | 'SUBSCRIPTION'
 
 export type ShareMode = 'readonly' | 'readwrite'
 
@@ -8,6 +10,8 @@ export interface ShoppingList {
 	storeId: string | null
 	categoryId: string | null
 	status: ListStatus
+	kind: ListKind
+	isActive: boolean
 	finalTotal: number | null
 	totalPrice: number | null
 	createdAt: string | null
@@ -117,6 +121,8 @@ export interface ListPayload {
 	isIncome?: boolean
 	isSubscription?: boolean
 	isRecurring?: boolean
+	recurringPeriod?: string
+	isForwardEmpty?: boolean
 }
 
 export interface CategoryPayload {
@@ -194,16 +200,21 @@ export interface ProductMergePayload {
 export interface ListItem {
 	id: string
 	listId: string
-	productId: string
+	productId: string | null
 	productName: string
+	customName: string | null
 	price: number | null
 	quantity: number
 	isChecked: boolean
+	position: number
+	discount: number | null
 	createdAt: string | null
+	updatedAt: string | null
 }
 
 export interface ListItemPayload {
-	productId: string
+	productId?: string | null
+	customName?: string | null
 	price?: number | null
 	quantity?: number
 	publishToOwner?: boolean
@@ -213,6 +224,7 @@ export interface ListItemUpdatePayload {
 	isChecked?: boolean
 	price?: number | null
 	quantity?: number
+	customName?: string | null
 }
 
 export interface CategorySpending {

@@ -1,4 +1,4 @@
-import type { ShoppingList } from '../../../../src/types.ts'
+import type { ListItem, ShoppingList } from '../../../../src/types.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
@@ -18,6 +18,8 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 		storeId: null,
 		categoryId: null,
 		status: 'new',
+		kind: 'PURCHASE',
+		isActive: false,
 		finalTotal: null,
 		totalPrice: null,
 		createdAt: null,
@@ -29,14 +31,14 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 	}
 }
 
-async function render(props: { list: ShoppingList, expanded?: boolean }) {
+async function render(props: { list: ShoppingList, expanded?: boolean, items?: ListItem[] }) {
 	const wrapper = mount(ShoppingListRow, {
 		props: {
 			list: props.list,
 			stores: [],
 			categories: [],
 			products: [],
-			items: [],
+			items: props.items ?? [],
 			itemsLoading: false,
 			itemsError: '',
 			expanded: props.expanded ?? false,
@@ -118,5 +120,41 @@ describe('ShoppingListRow', () => {
 		const wrapper = await render({ list: list({ sharedBy: 'alice', revoked: true }) })
 		expect(wrapper.html()).toContain('revoked')
 		expect(wrapper.findAllComponents(NcActionButton).map((button) => button.text())).not.toContain('Copy to my catalog')
+	})
+
+	it('renders the To Buy card with an active mark, plain-text rows and open/delete actions', async () => {
+		const items: ListItem[] = [
+			{
+				id: 'i1',
+				listId: 'l1',
+				productId: null,
+				productName: 'Milk',
+				customName: 'Milk',
+				price: null,
+				quantity: 1,
+				isChecked: false,
+				position: 0,
+				discount: null,
+				createdAt: null,
+				updatedAt: null,
+			},
+		]
+		const wrapper = await render({
+			list: list({ kind: 'NEED_TO_BUY', isActive: true }),
+			expanded: true,
+			items,
+		})
+
+		expect(wrapper.text()).toContain('Active')
+		expect(wrapper.text()).toContain('Milk')
+		expect(wrapper.text()).toContain('Add item')
+		expect(wrapper.text()).not.toContain('Shared by')
+
+		await openMenu(wrapper)
+		const names = wrapper.findAllComponents(NcActionButton).map((button) => button.text())
+		expect(names).toContain('Open list')
+		expect(names).toContain('Delete')
+		expect(names).not.toContain('Share')
+		expect(names).not.toContain('View receipt')
 	})
 })

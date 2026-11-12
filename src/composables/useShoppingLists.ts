@@ -1,7 +1,7 @@
 import type { Category, ListItem, Product, ShoppingList, Store } from '../types.ts'
 
 import { computed, ref } from 'vue'
-import { copyList, deleteList, deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores } from '../services/listsApi.ts'
+import { copyList, deleteList, deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores, updateListItem } from '../services/listsApi.ts'
 import { t } from '../utils/l10n.ts'
 import { groupListsByMonth } from '../utils/listGroups.ts'
 
@@ -22,6 +22,8 @@ export function useShoppingLists() {
 	const deleting = ref(false)
 	const receiptList = ref<ShoppingList | null>(null)
 	const addProductListId = ref<string | null>(null)
+	const addToBuyListId = ref<string | null>(null)
+	const editingToBuyItem = ref<ListItem | null>(null)
 
 	const groups = computed(() => groupListsByMonth(lists.value))
 
@@ -162,6 +164,57 @@ export function useShoppingLists() {
 		addProductListId.value = null
 	}
 
+	function openAddToBuyItem(list: ShoppingList) {
+		addToBuyListId.value = list.id
+	}
+
+	function closeAddToBuyItem() {
+		addToBuyListId.value = null
+	}
+
+	function onToBuyItemAdded(item: ListItem) {
+		const items = itemsByList.value[item.listId] ?? []
+		itemsByList.value = { ...itemsByList.value, [item.listId]: [...items, item] }
+		addToBuyListId.value = null
+	}
+
+	function openEditToBuyItem(item: ListItem) {
+		editingToBuyItem.value = item
+	}
+
+	function closeEditToBuyItem() {
+		editingToBuyItem.value = null
+	}
+
+	function onToBuyItemUpdated(item: ListItem) {
+		const items = itemsByList.value[item.listId] ?? []
+		itemsByList.value = {
+			...itemsByList.value,
+			[item.listId]: items.map((candidate) => (candidate.id === item.id ? item : candidate)),
+		}
+		editingToBuyItem.value = null
+	}
+
+	async function onToggleToBuyItem(list: ShoppingList, item: ListItem, checked: boolean) {
+		const items = itemsByList.value[list.id] ?? []
+		itemsByList.value = {
+			...itemsByList.value,
+			[list.id]: items.map((candidate) => (candidate.id === item.id ? { ...candidate, isChecked: checked } : candidate)),
+		}
+		try {
+			const updated = await updateListItem(list.id, item.id, { isChecked: checked })
+			onToBuyItemUpdated(updated)
+		} catch {
+			await loadItems(list.id)
+		}
+	}
+
+	function openList(list: ShoppingList) {
+		if (expandedId.value !== list.id) {
+			toggleExpand(list)
+		}
+	}
+
 	function askDelete(list: ShoppingList) {
 		pendingDelete.value = list
 	}
@@ -235,6 +288,8 @@ export function useShoppingLists() {
 		deleting,
 		receiptList,
 		addProductListId,
+		addToBuyListId,
+		editingToBuyItem,
 		addProductType,
 		deleteMessage,
 		loadData,
@@ -247,6 +302,14 @@ export function useShoppingLists() {
 		onDeleteItem,
 		openAddProduct,
 		closeAddProduct,
+		openAddToBuyItem,
+		closeAddToBuyItem,
+		onToBuyItemAdded,
+		openEditToBuyItem,
+		closeEditToBuyItem,
+		onToBuyItemUpdated,
+		onToggleToBuyItem,
+		openList,
 		askDelete,
 		closeConfirmDialog,
 		onConfirmDelete,

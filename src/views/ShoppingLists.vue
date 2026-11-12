@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import type { ShoppingList } from '../types.ts'
+import type { ListItem, ShoppingList } from '../types.ts'
 
-import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiCashPlus, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiPlus } from '@mdi/js'
 import { computed, onMounted, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import AddListDialog from '../components/AddListDialog.vue'
 import AddProductDialog from '../components/AddProductDialog.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
-import NewListDialog from '../components/NewListDialog.vue'
 import PurchaseDialog from '../components/PurchaseDialog.vue'
 import ReceiptViewDialog from '../components/ReceiptViewDialog.vue'
+import AddToBuyItemDialog from '../components/shoppinglists/AddToBuyItemDialog.vue'
+import EditToBuyItemDialog from '../components/shoppinglists/EditToBuyItemDialog.vue'
 import ListGroupSection from '../components/shoppinglists/ListGroupSection.vue'
 import ShareListDialog from '../components/shoppinglists/ShareListDialog.vue'
 import { useShoppingLists } from '../composables/useShoppingLists.ts'
@@ -41,6 +43,8 @@ const {
 	deleting,
 	receiptList,
 	addProductListId,
+	addToBuyListId,
+	editingToBuyItem,
 	addProductType,
 	deleteMessage,
 	loadData,
@@ -53,6 +57,14 @@ const {
 	onDeleteItem,
 	openAddProduct,
 	closeAddProduct,
+	openAddToBuyItem,
+	closeAddToBuyItem,
+	onToBuyItemAdded,
+	openEditToBuyItem,
+	closeEditToBuyItem,
+	onToBuyItemUpdated,
+	onToggleToBuyItem,
+	openList,
 	askDelete,
 	closeConfirmDialog,
 	onConfirmDelete,
@@ -62,8 +74,7 @@ const {
 	onCopyList,
 } = useShoppingLists()
 
-const showDialog = ref(false)
-const newListIsIncome = ref(false)
+const showAddListDialog = ref(false)
 const showPurchaseDialog = ref(false)
 const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
 const shareList = ref<ShoppingList | null>(null)
@@ -76,14 +87,13 @@ const addProductSharedOwner = computed<string | null>(() => {
 
 onMounted(loadData)
 
-function openListDialog(isIncome: boolean) {
-	newListIsIncome.value = isIncome
-	showDialog.value = true
-}
-
 function openPurchaseDialog(mode: 'manual' | 'scan') {
 	purchaseDialogMode.value = mode
 	showPurchaseDialog.value = true
+}
+
+function onRenameItem(_list: ShoppingList, item: ListItem) {
+	openEditToBuyItem(item)
 }
 
 function openShare(list: ShoppingList) {
@@ -142,19 +152,8 @@ watch(
 				<NcButton
 					:class="$style['add-button']"
 					type="button"
-					variant="secondary"
-					@click="openListDialog(true)">
-					<template #icon>
-						<NcIconSvgWrapper :path="mdiCashPlus" :size="20" />
-					</template>
-					{{ t('Add income') }}
-				</NcButton>
-
-				<NcButton
-					:class="$style['add-button']"
-					type="button"
 					variant="primary"
-					@click="openListDialog(false)">
+					@click="showAddListDialog = true">
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiPlus" :size="20" />
 					</template>
@@ -189,7 +188,7 @@ watch(
 				<NcIconSvgWrapper :path="mdiCartOff" :size="64" />
 			</template>
 			<template #action>
-				<NcButton type="button" variant="primary" @click="openListDialog(false)">
+				<NcButton type="button" variant="primary" @click="showAddListDialog = true">
 					{{ t('Add list') }}
 				</NcButton>
 			</template>
@@ -218,13 +217,17 @@ watch(
 				@share="openShare"
 				@manageShares="openManageShares"
 				@addItem="openAddProduct"
+				@addToBuyItem="openAddToBuyItem"
+				@open="openList"
+				@toggleItem="onToggleToBuyItem"
+				@renameItem="onRenameItem"
 				@deleteItem="onDeleteItem" />
 		</div>
 
-		<NewListDialog
-			:open="showDialog"
-			:isIncome="newListIsIncome"
-			@update:open="showDialog = $event"
+		<AddListDialog
+			:open="showAddListDialog"
+			:categories="categories"
+			@update:open="showAddListDialog = $event"
 			@created="onCreated" />
 		<PurchaseDialog
 			:open="showPurchaseDialog"
@@ -247,6 +250,18 @@ watch(
 			:sharedOwner="addProductSharedOwner"
 			@update:open="closeAddProduct"
 			@added="onItemAdded" />
+		<AddToBuyItemDialog
+			:open="addToBuyListId !== null"
+			:listId="addToBuyListId ?? ''"
+			@update:open="closeAddToBuyItem"
+			@added="onToBuyItemAdded" />
+		<EditToBuyItemDialog
+			v-if="editingToBuyItem !== null"
+			:open="true"
+			:listId="editingToBuyItem.listId"
+			:item="editingToBuyItem"
+			@update:open="closeEditToBuyItem"
+			@updated="onToBuyItemUpdated" />
 		<ConfirmDialog
 			:open="pendingDelete !== null"
 			:title="t('Delete list')"

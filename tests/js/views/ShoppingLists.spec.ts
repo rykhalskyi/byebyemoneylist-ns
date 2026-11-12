@@ -7,8 +7,8 @@ import { nextTick } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
+import AddListDialog from '../../../src/components/AddListDialog.vue'
 import ConfirmDialog from '../../../src/components/ConfirmDialog.vue'
-import NewListDialog from '../../../src/components/NewListDialog.vue'
 import PurchaseDialog from '../../../src/components/PurchaseDialog.vue'
 import ReceiptViewDialog from '../../../src/components/ReceiptViewDialog.vue'
 import ShoppingLists from '../../../src/views/ShoppingLists.vue'
@@ -24,6 +24,10 @@ vi.mock('../../../src/services/listsApi.ts', () => ({
 	deleteList: vi.fn(),
 	fetchListReceipt: vi.fn(),
 	deleteListReceipt: vi.fn(),
+	createToBuyList: vi.fn(),
+	createList: vi.fn(),
+	fetchActiveToBuyList: vi.fn().mockResolvedValue(null),
+	updateListItem: vi.fn(),
 }))
 
 vi.mock('../../../src/services/llmApi.ts', () => ({
@@ -37,6 +41,8 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 		storeId: null,
 		categoryId: null,
 		status: 'new',
+		kind: 'PURCHASE',
+		isActive: false,
 		finalTotal: null,
 		totalPrice: null,
 		createdAt: new Date().toISOString(),
@@ -133,19 +139,20 @@ describe('ShoppingLists', () => {
 		expect(wrapper.text()).toContain('Weekly groceries')
 	})
 
-	it('renders an Add income button', async () => {
+	it('renders an Add list button', async () => {
 		const wrapper = await render()
-		const button = wrapper.findAll('button').find((candidate) => candidate.text() === 'Add income')
+		const button = wrapper.findAll('button').find((candidate) => candidate.text() === 'Add list')
 		expect(button).toBeDefined()
 	})
 
-	it('opens the new list dialog preset for income', async () => {
+	it('opens the add list dialog', async () => {
 		const wrapper = await render()
+		expect(wrapper.findComponent(AddListDialog).props('open')).toBe(false)
 
-		await wrapper.findAll('button').find((candidate) => candidate.text() === 'Add income')!.trigger('click')
+		await wrapper.findAll('button').find((candidate) => candidate.text() === 'Add list')!.trigger('click')
 		await nextTick()
 
-		expect(wrapper.findComponent(NewListDialog).props('isIncome')).toBe(true)
+		expect(wrapper.findComponent(AddListDialog).props('open')).toBe(true)
 	})
 
 	it('uses a distinct icon for income and subscription lists', async () => {
@@ -154,7 +161,7 @@ describe('ShoppingLists', () => {
 			.map((icon) => icon.props('path'))
 
 		const income = await render([list({ id: 'i1', name: 'Salary', isIncome: true })])
-		expect(paths(income).filter((path) => path === mdiCashPlus)).toHaveLength(2)
+		expect(paths(income)).toContain(mdiCashPlus)
 
 		const subscription = await render([list({ id: 's1', name: 'Netflix', isSubscription: true })])
 		expect(paths(subscription)).toContain(mdiAutorenew)
