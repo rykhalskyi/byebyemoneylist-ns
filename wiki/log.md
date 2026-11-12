@@ -109,3 +109,4 @@
 ## [2026-11-12] update | T46 implemented: dedicated ToBuy paper screen with quick-add, rename, check, delete+undo and no-active CTA; App hides the menu while open
 ## [2026-11-12] update | T47 implemented: To Buy dashboard widget with progress/preview, empty CTA and screen navigation; dashboard/app wiring
 ## [2026-11-12] update | T48 implemented: server-side To Buy auto-check service with active-profile gate, pending-id filtering and hooks from list finalization, receipt commit and import approval
+## [2026-11-12] update | To Buy redesign T42–T48 implemented on feature/to-buy-list-redesign; automated checks green, migration dry-run and manual smoke pending

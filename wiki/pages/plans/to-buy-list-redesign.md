@@ -1,7 +1,7 @@
 ---
 created: 2026-10-13
 type: plan
-status: proposed
+status: in-progress
 summary: To Buy list redesign implementation plan — seven tickets from data model/migration to LLM auto-check
 ---
 
@@ -198,9 +198,9 @@ backfill `kind`/`is_active` and convert To Buy items to plain text (D-28, D-33).
 
 ## Testing checklist
 
-- [ ] `composer lint`, `composer cs:check`, `composer psalm`, `composer test:unit`.
-- [ ] `npm run lint`, `npm run stylelint`, `npm run test`, `npm run build`, `npm run l10n`.
-- [ ] `composer openapi` regenerates `openapi.json`.
+- [x] `composer lint`, `composer cs:check`, `composer psalm`, `composer test:unit`.
+- [x] `npm run lint`, `npm run stylelint`, `npm run test`, `npm run build`, `npm run l10n`.
+- [x] `composer openapi` regenerates `openapi.json`.
 - [ ] Migration dry-run on a dev instance with existing lists; verify kinds/active flag and that To Buy items become plain text (name kept, product link/price/discount cleared).
 - [ ] Manual smoke: create a To Buy list; add/check/rename/delete items (+undo); carry over items into a new list; filters; dedicated screen; widget; finalize a purchase with an active profile and confirm matches get checked; verify To Buy lists never affect dashboard/analytics or the purchase flow; verify no archive or in-store affordance remains.
 
