@@ -1,7 +1,7 @@
 ---
 created: 2026-10-13
 type: ticket
-status: proposed
+status: implemented
 summary: T46 — Dedicated To Buy screen (paper surface, check/add/rename/delete with undo)
 ---
 
@@ -29,4 +29,12 @@ navigation is hidden while it is open (the "no bottom nav" equivalent) (R8).
 
 ## Outcome
 
-Not started.
+Implemented on `feature/to-buy-list-redesign`:
+
+- New `ToBuy` screen: paper surface, own header + back, progress, checkbox rows with
+  strikethrough, rename-on-tap (reuses `EditToBuyItemDialog`), quick-add row (Enter adds
+  and keeps focus), delete with a 4 s undo, empty-list hint and no-active-list create CTA.
+- `App.vue` gained a `toBuyOpen` state that hides the `Menu` and renders `ToBuy`; the To
+  Buy card's "Open list" action now emits `openToBuy` from `ShoppingLists`.
+- Tests: `tests/js/views/ToBuy.spec.ts` (6 cases). Vitest 242 green; lint/stylelint/build
+  clean.

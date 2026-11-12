@@ -229,12 +229,6 @@ export function useShoppingLists() {
 		}
 	}
 
-	function openList(list: ShoppingList) {
-		if (expandedId.value !== list.id) {
-			toggleExpand(list)
-		}
-	}
-
 	function askDelete(list: ShoppingList) {
 		pendingDelete.value = list
 	}
@@ -331,7 +325,6 @@ export function useShoppingLists() {
 		closeEditToBuyItem,
 		onToBuyItemUpdated,
 		onToggleToBuyItem,
-		openList,
 		askDelete,
 		closeConfirmDialog,
 		onConfirmDelete,

@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<{ purchaseMode?: 'manual' | 'scan' | null
 	purchaseMode: null,
 })
 
-const emit = defineEmits<{ purchaseOpened: [] }>()
+const emit = defineEmits<{ purchaseOpened: [], openToBuy: [] }>()
 
 const {
 	lists,
@@ -67,7 +67,6 @@ const {
 	closeEditToBuyItem,
 	onToBuyItemUpdated,
 	onToggleToBuyItem,
-	openList,
 	askDelete,
 	closeConfirmDialog,
 	onConfirmDelete,
@@ -101,6 +100,10 @@ onMounted(loadData)
 function openPurchaseDialog(mode: 'manual' | 'scan') {
 	purchaseDialogMode.value = mode
 	showPurchaseDialog.value = true
+}
+
+function onOpenToBuyList() {
+	emit('openToBuy')
 }
 
 function onRenameItem(_list: ShoppingList, item: ListItem) {
@@ -254,7 +257,7 @@ watch(
 				@manageShares="openManageShares"
 				@addItem="openAddProduct"
 				@addToBuyItem="openAddToBuyItem"
-				@open="openList"
+				@open="onOpenToBuyList"
 				@toggleItem="onToggleToBuyItem"
 				@renameItem="onRenameItem"
 				@deleteItem="onDeleteItem" />
