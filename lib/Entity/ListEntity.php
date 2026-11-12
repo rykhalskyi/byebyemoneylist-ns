@@ -45,9 +45,18 @@ use OCP\DB\Types;
  * @method void setIsForwardEmpty(bool $isForwardEmpty)
  * @method ?string getReceiptPath()
  * @method void setReceiptPath(?string $receiptPath)
+ * @method ?string getKind()
+ * @method void setKind(?string $kind)
+ * @method ?bool getIsActive()
+ * @method void setIsActive(bool $isActive)
  * @psalm-suppress PropertyNotSetInConstructor, PossiblyUnusedProperty
  */
 class ListEntity extends Entity {
+	public const KIND_NEED_TO_BUY = 'NEED_TO_BUY';
+	public const KIND_PURCHASE = 'PURCHASE';
+	public const KIND_INCOME = 'INCOME';
+	public const KIND_SUBSCRIPTION = 'SUBSCRIPTION';
+
 	protected ?string $owner = null;
 	protected ?string $name = null;
 	protected ?string $storeId = null;
@@ -65,6 +74,8 @@ class ListEntity extends Entity {
 	protected ?string $recurringPeriod = 'MONTH';
 	protected ?bool $isForwardEmpty = true;
 	protected ?string $receiptPath = null;
+	protected ?string $kind = null;
+	protected ?bool $isActive = false;
 
 	public function __construct() {
 		$this->addType('id', Types::STRING);
@@ -80,5 +91,28 @@ class ListEntity extends Entity {
 		$this->addType('recurringPeriod', Types::STRING);
 		$this->addType('isForwardEmpty', Types::BOOLEAN);
 		$this->addType('receiptPath', Types::STRING);
+		$this->addType('kind', Types::STRING);
+		$this->addType('isActive', Types::BOOLEAN);
+	}
+
+	/**
+	 * Resolve the explicit kind, falling back to the legacy flags when it is unset.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 */
+	public function resolveKind(): string {
+		if ($this->kind !== null && $this->kind !== '') {
+			return $this->kind;
+		}
+		if ($this->isIncome === true) {
+			return self::KIND_INCOME;
+		}
+		if ($this->isSubscription === true) {
+			return self::KIND_SUBSCRIPTION;
+		}
+		if ($this->isFinished === true) {
+			return self::KIND_PURCHASE;
+		}
+		return self::KIND_NEED_TO_BUY;
 	}
 }

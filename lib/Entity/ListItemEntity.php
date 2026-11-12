@@ -61,7 +61,7 @@ class ListItemEntity extends Entity {
 		return $this->productId;
 	}
 
-	public function setProductId(string $productId): void {
+	public function setProductId(?string $productId): void {
 		$this->productId = $productId;
 		$this->markFieldUpdated('productId');
 	}
