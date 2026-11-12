@@ -28,8 +28,12 @@ finalizing a To Buy list as a purchase (R4). Also serialize `kind`/`isActive`.
    - `GET /api/lists/to-buy` — active list or `{ list: null }`;
    - 422 when finalizing a `NEED_TO_BUY` list.
 4. `lib/Controller/ListItemController.php` — plain-text create for To Buy lists
-   (`customName` only; a supplied `productId` degrades to a name copy).
-5. `tests/unit/Controller/{List,ListItem}ControllerTest.php`; `composer openapi`.
+   (`customName` only; a supplied `productId` degrades to a name copy); serialize
+   `productName` from `customName` for To Buy.
+5. `lib/Service/Sharing/ListCopyService.php` — copy a To Buy list as To Buy: preserve
+   `kind`, copy items as plain text (`productId` null, `customName`, qty 1, no price/
+   discount) and leave the copy inactive (D-39).
+6. `tests/unit/Controller/{List,ListItem}ControllerTest.php`; `composer openapi`.
 
 ## Outcome
 

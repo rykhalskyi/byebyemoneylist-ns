@@ -21,7 +21,8 @@ when no active list exists. Widget layout stays in localStorage (D-32).
 
 1. `src/constants/dashboardWidgets.ts` — add `toBuy` type (icon/label).
 2. `src/components/dashboard/widgets/ToBuyWidget.vue` (new) — title, progress, preview,
-   empty-state create CTA; opens the To Buy screen.
+   empty-state create CTA; opens the To Buy screen; refresh when list items change
+   (Android observes item changes) and on view mount.
 3. `src/components/dashboard/AddWidgetDialog.vue` + `src/views/Dashboard.vue` — offer and
    render the widget; wire the `App.vue` toBuy intent.
 4. Tests: `tests/js/**` widget spec.

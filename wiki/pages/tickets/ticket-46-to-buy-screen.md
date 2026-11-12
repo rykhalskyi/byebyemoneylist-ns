@@ -19,7 +19,9 @@ navigation is hidden while it is open (the "no bottom nav" equivalent) (R8).
 
 ## Plan
 
-1. `src/views/ToBuy.vue` (new) — paper surface, own header, item rows, quick-add,
+1. `src/views/ToBuy.vue` (new) — paper surface, own header + back, item rows (checkbox,
+   strikethrough + muted when checked, insertion order, tap-to-rename), quick-add row
+   pinned at the bottom (IME "Done" adds and clears), delete with a 4 s undo,
    empty-list hint, no-active create CTA.
 2. `src/App.vue` — a `toBuy` view state that hides `Menu`; the card "Open list" action
    and the widget open it.

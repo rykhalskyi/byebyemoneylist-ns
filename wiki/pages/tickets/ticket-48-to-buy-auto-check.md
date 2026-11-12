@@ -21,12 +21,15 @@ ones the model is confident about. Silent, best-effort, never blocks the purchas
 ## Plan
 
 1. `lib/Service/ToBuy/ToBuyAutoMatchService.php` (new) — gate on the active profile
-   (`DefaultLlmProfileService`); prompt for `{"matchedIds":[...]}` across
-   languages/synonyms; accept only supplied pending ids; never throw; re-verify the list
+   (`DefaultLlmProfileService`) only, with no separate consent prompt (D-38); prompt for
+   `{"matchedIds":[...]}` across languages/synonyms; accept only supplied pending ids;
+   swallow ordinary failures but let request cancellation propagate; re-verify the list
    and unchecked state before writing.
-2. Hook: `lib/Controller/ListController.php` (when `isFinished` becomes true) and
-   `lib/Service/Receipt/ReceiptCommitService.php` — resolve purchased names (receipt
-   items, else the finished list's checked items), then check matches.
+2. Hook **every** purchase finalization: `lib/Controller/ListController.php` (create or
+   update when `isFinished` becomes true), `lib/Service/Receipt/ReceiptCommitService.php`
+   and `lib/Service/Import/PurchaseImportApproveService.php` — resolve purchased names as
+   Android does (receipt/entered non-coupon items, else the finished list's checked
+   `quantity > 0` items; total-only list yields nothing), then check matches.
 3. `tests/unit/Service/ToBuy/ToBuyAutoMatchServiceTest.php` (new) — matching, filtering,
    active-profile gate, failure/CancellationException handling.
 
