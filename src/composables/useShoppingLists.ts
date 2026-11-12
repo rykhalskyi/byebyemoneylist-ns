@@ -3,7 +3,24 @@ import type { Category, ListItem, Product, ShoppingList, Store } from '../types.
 import { computed, ref } from 'vue'
 import { copyList, deleteList, deleteListItem, fetchCategories, fetchListItems, fetchLists, fetchProducts, fetchStores, updateListItem } from '../services/listsApi.ts'
 import { t } from '../utils/l10n.ts'
+import { deriveKind } from '../utils/listDisplay.ts'
 import { groupListsByMonth } from '../utils/listGroups.ts'
+
+export type KindFilter = 'all' | 'toBuy' | 'purchases' | 'income' | 'subscriptions'
+
+const KIND_BY_FILTER: Record<Exclude<KindFilter, 'all'>, 'NEED_TO_BUY' | 'PURCHASE' | 'INCOME' | 'SUBSCRIPTION'> = {
+	toBuy: 'NEED_TO_BUY',
+	purchases: 'PURCHASE',
+	income: 'INCOME',
+	subscriptions: 'SUBSCRIPTION',
+}
+
+export function matchesKindFilter(list: ShoppingList, filter: KindFilter): boolean {
+	if (filter === 'all') {
+		return true
+	}
+	return deriveKind(list) === KIND_BY_FILTER[filter]
+}
 
 export function useShoppingLists() {
 	const lists = ref<ShoppingList[]>([])
@@ -12,6 +29,7 @@ export function useShoppingLists() {
 	const products = ref<Product[]>([])
 	const loading = ref(true)
 	const error = ref<string | null>(null)
+	const kindFilter = ref<KindFilter>('all')
 	const expandedId = ref<string | null>(null)
 	const itemsByList = ref<Record<string, ListItem[]>>({})
 	const itemsLoading = ref<Record<string, boolean>>({})
@@ -25,7 +43,9 @@ export function useShoppingLists() {
 	const addToBuyListId = ref<string | null>(null)
 	const editingToBuyItem = ref<ListItem | null>(null)
 
-	const groups = computed(() => groupListsByMonth(lists.value))
+	const filteredLists = computed(() => lists.value.filter((list) => matchesKindFilter(list, kindFilter.value)))
+
+	const groups = computed(() => groupListsByMonth(filteredLists.value))
 
 	const addProductType = computed<'subscriptions' | 'income' | undefined>(() => {
 		const list = lists.value.find((candidate) => candidate.id === addProductListId.value)
@@ -277,6 +297,8 @@ export function useShoppingLists() {
 		products,
 		loading,
 		error,
+		kindFilter,
+		filteredLists,
 		groups,
 		itemsByList,
 		itemsLoading,

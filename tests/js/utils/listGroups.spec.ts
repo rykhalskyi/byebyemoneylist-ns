@@ -46,6 +46,14 @@ describe('finishedTotal', () => {
 		expect(finishedTotal(lists)).toBe(7)
 	})
 
+	it('never counts To Buy lists', () => {
+		const lists = [
+			list('a', '2026-09-01T10:00:00Z', { status: 'finished', finalTotal: 10, kind: 'NEED_TO_BUY' }),
+			list('b', '2026-09-02T10:00:00Z', status('finished', 7)),
+		]
+		expect(finishedTotal(lists)).toBe(7)
+	})
+
 	it('returns null when nothing qualifies', () => {
 		expect(finishedTotal([list('a', '2026-09-01T10:00:00Z')])).toBeNull()
 		expect(finishedTotal([])).toBeNull()

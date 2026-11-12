@@ -105,3 +105,4 @@
 ## [2026-11-12] update | T42 started on feature/to-buy-list-redesign: kind/isActive entity fields + resolveKind(), nullable product_id, migration Version1013Date20261112 with backfill and plain-text item conversion, app version 1.3.0
 ## [2026-11-12] update | T43 implemented: active To Buy list queries/atomic insert, GET/POST /api/lists/to-buy, plain-text To Buy items with nullable product_id, finish guard, To Buy copy support, openapi regenerated
 ## [2026-11-12] update | T44 implemented: AddListDialog (To Buy/Subscription/Income), To Buy card with Active chip and plain-text check/rename/delete/add UI, item dialogs, client kind/isActive model, archived removal, l10n
+## [2026-11-12] update | T45 implemented: kind filter chips, purchases always create a new list (open-list picker removed), dashboard/analytics exclude NEED_TO_BUY, finished totals ignore To Buy

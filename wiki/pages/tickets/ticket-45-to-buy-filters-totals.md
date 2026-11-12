@@ -1,7 +1,7 @@
 ---
 created: 2026-10-13
 type: ticket
-status: proposed
+status: implemented
 summary: T45 — To Buy status filters and exclusion from totals and the purchase flow
 ---
 
@@ -29,4 +29,13 @@ list (R7, R10).
 
 ## Outcome
 
-Not started.
+Implemented on `feature/to-buy-list-redesign`:
+
+- Status filter chips All / To Buy / Purchases / Income / Subscriptions, filtering the
+  grouped lists by derived kind (`matchesKindFilter`), with an empty-filter state.
+- Purchase flow always creates a new PURCHASE list: removed the `newLists` picker, the
+  `findNewListByName` match/update path and the `lists` prop from `PurchaseDialog`.
+- `DashboardMapper` and `AnalyticsMapper` add `kind != 'NEED_TO_BUY'` defensively.
+- `finishedTotal` never counts To Buy lists.
+- Tests cover kind filtering, To Buy exclusion from totals and existing purchase/scan
+  flows. Vitest 236 green; PHPUnit 294 green; lint/stylelint/build clean.

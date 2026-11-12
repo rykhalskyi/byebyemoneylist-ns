@@ -1,7 +1,7 @@
-import type { ListItem, ShoppingList } from '../../../src/types.ts'
+import type { ListItem } from '../../../src/types.ts'
 
 import { describe, expect, it } from 'vitest'
-import { defaultListName, findNewListByName, itemsTotal, parsePrice } from '../../../src/utils/purchase.ts'
+import { defaultListName, itemsTotal, parsePrice } from '../../../src/utils/purchase.ts'
 
 function item(overrides: Partial<ListItem> = {}): ListItem {
 	return {
@@ -9,28 +9,14 @@ function item(overrides: Partial<ListItem> = {}): ListItem {
 		listId: 'list',
 		productId: 'product',
 		productName: 'Product',
+		customName: null,
 		price: null,
 		quantity: 1,
 		isChecked: false,
+		position: 0,
+		discount: null,
 		createdAt: null,
-		...overrides,
-	}
-}
-
-function list(id: string, name: string, overrides: Partial<ShoppingList> = {}): ShoppingList {
-	return {
-		id,
-		name,
-		storeId: null,
-		categoryId: null,
-		status: 'new',
-		finalTotal: null,
-		totalPrice: null,
-		createdAt: null,
-		isIncome: false,
-		isSubscription: false,
-		isRecurring: false,
-		hasReceipt: false,
+		updatedAt: null,
 		...overrides,
 	}
 }
@@ -68,21 +54,5 @@ describe('defaultListName', () => {
 		const name = defaultListName('Aldi', new Date('2026-09-12T10:00:00Z'))
 		expect(name.startsWith('Aldi ')).toBe(true)
 		expect(name.length).toBeGreaterThan('Aldi '.length)
-	})
-})
-
-describe('findNewListByName', () => {
-	it('matches a new list case-insensitively and trims whitespace', () => {
-		const lists = [list('a', 'Weekly Groceries')]
-		expect(findNewListByName(lists, '  weekly groceries ')?.id).toBe('a')
-	})
-
-	it('ignores finished lists', () => {
-		const lists = [list('a', 'Weekly Groceries', { status: 'finished' })]
-		expect(findNewListByName(lists, 'Weekly Groceries')).toBeNull()
-	})
-
-	it('returns null for a blank name', () => {
-		expect(findNewListByName([list('a', 'Weekly')], '   ')).toBeNull()
 	})
 })

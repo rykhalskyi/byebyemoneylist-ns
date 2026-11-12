@@ -1,4 +1,4 @@
-import type { ListItem, ShoppingList } from '../types.ts'
+import type { ListItem } from '../types.ts'
 
 import { getCanonicalLocale } from './l10n.ts'
 
@@ -47,21 +47,4 @@ export function itemsTotal(items: readonly ListItem[]): number {
 		}
 		return sum + item.price * item.quantity
 	}, 0)
-}
-
-/**
- * Find an unfinished list by name, ignoring case and surrounding whitespace.
- * This decides whether saving a purchase updates an existing list or creates a
- * new one.
- *
- * @param lists the candidate lists
- * @param name the name typed or selected by the user
- * @return the matching list, or null when none matches
- */
-export function findNewListByName(lists: readonly ShoppingList[], name: string): ShoppingList | null {
-	const normalized = name.trim().toLowerCase()
-	if (normalized === '') {
-		return null
-	}
-	return lists.find((list) => list.status === 'new' && list.name.trim().toLowerCase() === normalized) ?? null
 }

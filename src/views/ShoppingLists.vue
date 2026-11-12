@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { KindFilter } from '../composables/useShoppingLists.ts'
 import type { ListItem, ShoppingList } from '../types.ts'
 
 import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiPlus } from '@mdi/js'
@@ -32,6 +33,8 @@ const {
 	products,
 	loading,
 	error,
+	kindFilter,
+	filteredLists,
 	groups,
 	itemsByList,
 	itemsLoading,
@@ -79,6 +82,14 @@ const showPurchaseDialog = ref(false)
 const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
 const shareList = ref<ShoppingList | null>(null)
 const shareAddOnly = ref(false)
+
+const filters: { id: KindFilter, label: string }[] = [
+	{ id: 'all', label: t('All') },
+	{ id: 'toBuy', label: t('To Buy') },
+	{ id: 'purchases', label: t('Purchases') },
+	{ id: 'income', label: t('Income') },
+	{ id: 'subscriptions', label: t('Subscriptions') },
+]
 
 const addProductSharedOwner = computed<string | null>(() => {
 	const list = lists.value.find((candidate) => candidate.id === addProductListId.value)
@@ -162,6 +173,17 @@ watch(
 			</div>
 		</div>
 
+		<div v-if="!loading && lists.length > 0" :class="$style.filters">
+			<NcButton
+				v-for="filter in filters"
+				:key="filter.id"
+				type="button"
+				:variant="kindFilter === filter.id ? 'primary' : 'secondary'"
+				@click="kindFilter = filter.id">
+				{{ filter.label }}
+			</NcButton>
+		</div>
+
 		<div v-if="loading" :class="$style.center">
 			<NcLoadingIcon />
 		</div>
@@ -190,6 +212,20 @@ watch(
 			<template #action>
 				<NcButton type="button" variant="primary" @click="showAddListDialog = true">
 					{{ t('Add list') }}
+				</NcButton>
+			</template>
+		</NcEmptyContent>
+
+		<NcEmptyContent
+			v-else-if="filteredLists.length === 0"
+			:name="t('No lists match this filter')"
+			:description="t('Try another list type or show all lists.')">
+			<template #icon>
+				<NcIconSvgWrapper :path="mdiCartOff" :size="64" />
+			</template>
+			<template #action>
+				<NcButton type="button" @click="kindFilter = 'all'">
+					{{ t('Show all') }}
 				</NcButton>
 			</template>
 		</NcEmptyContent>
@@ -231,7 +267,6 @@ watch(
 			@created="onCreated" />
 		<PurchaseDialog
 			:open="showPurchaseDialog"
-			:lists="lists"
 			:stores="stores"
 			:categories="categories"
 			:initialMode="purchaseDialogMode"
@@ -308,6 +343,13 @@ watch(
 .list {
 	margin: 16px 0 0;
 	padding: 0;
+}
+
+.filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 16px;
 }
 
 .add-button {
