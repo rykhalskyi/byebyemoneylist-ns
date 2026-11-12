@@ -1,7 +1,7 @@
 ---
 created: 2026-10-13
 type: ticket
-status: proposed
+status: implemented
 summary: T43 — To Buy list & item API: atomic active-list create, plain-text items, purchase guard
 ---
 
@@ -37,4 +37,16 @@ finalizing a To Buy list as a purchase (R4). Also serialize `kind`/`isActive`.
 
 ## Outcome
 
-Not started.
+Implemented on `feature/to-buy-list-redesign`:
+
+- `ListMapper` — `findActiveToBuyList`, `deactivateAllToBuyLists`, atomic
+  `insertActiveToBuyList`.
+- `ListController` — `kind`/`isActive` serialization; `GET`/`POST
+  /api/lists/to-buy`; creating a list derives `kind`; finalizing a `NEED_TO_BUY`
+  list returns 422.
+- `ListItemController` — nullable `productId`; plain-text To Buy create (name from
+  `customName` or product name, quantity 1, no price/discount); To Buy serialization
+  uses the saved name.
+- `ListCopyService` — preserves `kind`, copies To Buy items as plain text and leaves
+  the copy inactive.
+- `openapi.json` regenerated; PHPUnit 294 green.

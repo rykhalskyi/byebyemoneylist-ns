@@ -12,6 +12,7 @@ use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Db\ProductMapper;
 use OCA\ByeByeMoneyList\Entity\CatalogShareEntity;
+use OCA\ByeByeMoneyList\Entity\ListEntity;
 use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Service\Sharing\CatalogSharingService;
@@ -68,7 +69,7 @@ class ListItemController extends OCSController {
 	 *
 	 * @param string $id List id
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND, array{items: list<array{id: string, listId: string, productId: string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}>}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND, array{items: list<array{id: string, listId: string, productId: ?string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}>}|array{message: string}, array{}>
 	 *
 	 * 200: Items returned
 	 * 401: Current user is not logged in
@@ -95,7 +96,7 @@ class ListItemController extends OCSController {
 		);
 
 		$serialized = array_map(
-			fn (ListItemEntity $item): array => $this->serializeItem($item, $productNames[$item->getProductId() ?? ''] ?? ''),
+			fn (ListItemEntity $item): array => $this->serializeItem($item, $this->itemProductName($item, $productNames)),
 			$items,
 		);
 
@@ -108,25 +109,25 @@ class ListItemController extends OCSController {
 	 * @psalm-suppress InvalidReturnType, InvalidReturnStatement
 	 *
 	 * @param string $id List id
-	 * @param string $productId Product id (required; owned by the current user or a sharing user)
+	 * @param ?string $productId Product id (required for non-To-Buy lists; optional plain-text name source for To Buy)
 	 * @param ?float $price Optional product price (must not be negative)
 	 * @param ?float $quantity Quantity as a float (must be greater than zero)
 	 * @param int $position Sort position within the list
 	 * @param ?float $discount Optional discount amount (must not be negative)
-	 * @param ?string $customName Optional display name override
+	 * @param ?string $customName Optional display name override (the item name for To Buy)
 	 * @param bool $publishToOwner Publish the current user's own product to the list owner's catalog
 	 *
-	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{item: array{id: string, listId: string, productId: string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_CREATED|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{item: array{id: string, listId: string, productId: ?string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}}|array{message: string}, array{}>
 	 *
 	 * 201: Item added
 	 * 401: Current user is not logged in
 	 * 404: List not found or not owned by the current user
-	 * 422: Product not found, price/discount is negative or out of range, or quantity is not positive or out of range
+	 * 422: Product not found, an item name is missing/too long, price/discount is negative or out of range, or quantity is not positive or out of range
 	 * 500: Failed to add the item
 	 */
 	#[NoAdminRequired]
 	#[ApiRoute(verb: 'POST', url: '/api/lists/{id}/items')]
-	public function create(string $id, string $productId, ?float $price = null, ?float $quantity = 1.0, int $position = 0, ?float $discount = null, ?string $customName = null, bool $publishToOwner = false): DataResponse {
+	public function create(string $id, ?string $productId = null, ?float $price = null, ?float $quantity = 1.0, int $position = 0, ?float $discount = null, ?string $customName = null, bool $publishToOwner = false): DataResponse {
 		$userId = $this->getCurrentUserId();
 		if ($userId === null) {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
@@ -137,11 +138,38 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$product = $this->productMapper->findByIdAndOwner($productId, $userId);
-		if ($product === null) {
-			$product = $this->findVisibleProduct($productId, $userId);
+		$isToBuy = $list->resolveKind() === ListEntity::KIND_NEED_TO_BUY;
+
+		$customName = $this->normalizeCustomName($customName);
+		if ($customName === false) {
+			return new DataResponse(['message' => 'customName is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
-		if ($product === null) {
+
+		$product = null;
+		if ($productId !== null && $productId !== '') {
+			$product = $this->productMapper->findByIdAndOwner($productId, $userId);
+			if ($product === null) {
+				$product = $this->findVisibleProduct($productId, $userId);
+			}
+			if ($product === null) {
+				return new DataResponse(['message' => 'Product not found'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+		}
+
+		if ($isToBuy) {
+			$itemName = $customName ?? $product?->getName();
+			if ($itemName === null || trim($itemName) === '') {
+				return new DataResponse(['message' => 'Item name is required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$itemName = trim($itemName);
+			if (mb_strlen($itemName) > self::MAX_CUSTOM_NAME_LENGTH) {
+				return new DataResponse(['message' => 'customName is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
+			$customName = $itemName;
+			$quantity = 1.0;
+			$price = null;
+			$discount = null;
+		} elseif ($product === null) {
 			return new DataResponse(['message' => 'Product not found'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
@@ -165,16 +193,11 @@ class ListItemController extends OCSController {
 			$discount = round($discount, 2);
 		}
 
-		$customName = $this->normalizeCustomName($customName);
-		if ($customName === false) {
-			return new DataResponse(['message' => 'customName is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
-		}
-
 		$item = new ListItemEntity();
 		$item->setId(Uuid::v4());
 		$item->setOwner($userId);
 		$item->setListId($id);
-		$item->setProductId($productId);
+		$item->setProductId($isToBuy ? null : $productId);
 		$item->setQuantity($quantity);
 		$item->setStatus('added');
 		$item->setPosition(max(0, $position));
@@ -199,11 +222,13 @@ class ListItemController extends OCSController {
 		}
 
 		$listOwner = $list->getOwner();
-		if ($publishToOwner && $listOwner !== null && $listOwner !== $userId && $product->getOwner() === $userId) {
-			$this->catalogSharing->publish(CatalogShareEntity::TYPE_PRODUCT, $productId, $userId, $listOwner);
+		if (!$isToBuy && $publishToOwner && $listOwner !== null && $listOwner !== $userId && $product !== null && $product->getOwner() === $userId) {
+			$this->catalogSharing->publish(CatalogShareEntity::TYPE_PRODUCT, (string)$productId, $userId, $listOwner);
 		}
 
-		return new DataResponse(['item' => $this->serializeItem($created, $product->getName() ?? '')], Http::STATUS_CREATED);
+		$productName = $isToBuy ? ($customName ?? '') : ($product?->getName() ?? '');
+
+		return new DataResponse(['item' => $this->serializeItem($created, $productName)], Http::STATUS_CREATED);
 	}
 
 	/**
@@ -220,7 +245,7 @@ class ListItemController extends OCSController {
 	 * @param ?float $discount Optional discount amount (must not be negative)
 	 * @param ?string $customName Optional display name override (null keeps the current value)
 	 *
-	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{item: array{id: string, listId: string, productId: string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}}|array{message: string}, array{}>
+	 * @return DataResponse<Http::STATUS_OK|Http::STATUS_UNAUTHORIZED|Http::STATUS_NOT_FOUND|Http::STATUS_UNPROCESSABLE_ENTITY|Http::STATUS_INTERNAL_SERVER_ERROR, array{item: array{id: string, listId: string, productId: ?string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}}|array{message: string}, array{}>
 	 *
 	 * 200: Item updated
 	 * 401: Current user is not logged in
@@ -250,17 +275,19 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Item not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ($quantity !== null && (!is_finite($quantity) || $quantity <= 0 || $quantity > self::MAX_DECIMAL)) {
+		$isToBuy = $list->resolveKind() === ListEntity::KIND_NEED_TO_BUY;
+
+		if (!$isToBuy && $quantity !== null && (!is_finite($quantity) || $quantity <= 0 || $quantity > self::MAX_DECIMAL)) {
 			return new DataResponse(['message' => 'Quantity must be greater than zero'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
-		if ($quantity !== null) {
+		if (!$isToBuy && $quantity !== null) {
 			$item->setQuantity(round($quantity, 2));
 		}
 
-		if ($price !== null && (!is_finite($price) || $price < 0 || $price > self::MAX_DECIMAL)) {
+		if (!$isToBuy && $price !== null && (!is_finite($price) || $price < 0 || $price > self::MAX_DECIMAL)) {
 			return new DataResponse(['message' => 'Price must not be negative'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
-		if ($price !== null) {
+		if (!$isToBuy && $price !== null) {
 			$item->setPrice(round($price, 2));
 		}
 
@@ -268,10 +295,10 @@ class ListItemController extends OCSController {
 			$item->setPosition(max(0, $position));
 		}
 
-		if ($discount !== null && (!is_finite($discount) || $discount < 0 || $discount > self::MAX_DECIMAL)) {
+		if (!$isToBuy && $discount !== null && (!is_finite($discount) || $discount < 0 || $discount > self::MAX_DECIMAL)) {
 			return new DataResponse(['message' => 'Discount must not be negative'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
-		if ($discount !== null) {
+		if (!$isToBuy && $discount !== null) {
 			$item->setDiscount(round($discount, 2));
 		}
 
@@ -296,7 +323,12 @@ class ListItemController extends OCSController {
 			return new DataResponse(['message' => 'Failed to update item'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		return new DataResponse(['item' => $this->serializeItem($updated, $this->productName($updated->getProductId() ?? ''))], Http::STATUS_OK);
+		$productId = $updated->getProductId();
+		$productName = $productId === null
+			? ($updated->getCustomName() ?? '')
+			: $this->productName($productId);
+
+		return new DataResponse(['item' => $this->serializeItem($updated, $productName)], Http::STATUS_OK);
 	}
 
 	/**
@@ -373,6 +405,17 @@ class ListItemController extends OCSController {
 	}
 
 	/**
+	 * @param array<string, string> $productNames
+	 */
+	private function itemProductName(ListItemEntity $item, array $productNames): string {
+		$productId = $item->getProductId();
+		if ($productId === null) {
+			return $item->getCustomName() ?? '';
+		}
+		return $productNames[$productId] ?? '';
+	}
+
+	/**
 	 * Find a product the user may reference: owned by them, or (read/write shared
 	 * list) owned by a sharing user whose catalog is visible.
 	 */
@@ -407,7 +450,7 @@ class ListItemController extends OCSController {
 	}
 
 	/**
-	 * @return array{id: string, listId: string, productId: string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}
+	 * @return array{id: string, listId: string, productId: ?string, productName: string, price: ?float, quantity: float, isChecked: bool, position: int, discount: ?float, customName: ?string, createdAt: ?string, updatedAt: ?string}
 	 */
 	private function serializeItem(ListItemEntity $item, string $productName): array {
 		$createdAt = $item->getCreatedAt();
@@ -415,7 +458,7 @@ class ListItemController extends OCSController {
 		return [
 			'id' => $item->getId(),
 			'listId' => $item->getListId() ?? '',
-			'productId' => $item->getProductId() ?? '',
+			'productId' => $item->getProductId(),
 			'productName' => $productName,
 			'price' => $item->getPrice(),
 			'quantity' => $item->getQuantity() ?? 1.0,

@@ -76,6 +76,55 @@ class ListMapper extends QBMapper {
 		}
 	}
 
+	public function findActiveToBuyList(string $userId): ?ListEntity {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->tableName)
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->eq('kind', $qb->createNamedParameter(ListEntity::KIND_NEED_TO_BUY, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->eq('is_active', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
+			->orderBy('created_at', 'DESC')
+			->addOrderBy('id', 'DESC')
+			->setMaxResults(1);
+
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException) {
+			return null;
+		}
+	}
+
+	public function deactivateAllToBuyLists(string $userId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->tableName)
+			->set('is_active', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL))
+			->where($qb->expr()->eq('owner', $qb->createNamedParameter($userId, IQueryBuilder::PARAM_STR)))
+			->andWhere($qb->expr()->eq('kind', $qb->createNamedParameter(ListEntity::KIND_NEED_TO_BUY, IQueryBuilder::PARAM_STR)));
+		$qb->executeStatement();
+	}
+
+	/**
+	 * Deactivate the owner's previous To Buy list and insert the new active one atomically.
+	 */
+	public function insertActiveToBuyList(ListEntity $list): ListEntity {
+		$owner = $list->getOwner();
+		if ($owner === null || $owner === '') {
+			throw new \InvalidArgumentException('An active To Buy list needs an owner');
+		}
+
+		$this->db->beginTransaction();
+		try {
+			$this->deactivateAllToBuyLists($owner);
+			$created = $this->insert($list);
+			$this->db->commit();
+
+			return $created;
+		} catch (\Throwable $e) {
+			$this->db->rollBack();
+			throw $e;
+		}
+	}
+
 	/**
 	 * List-category junction category ids grouped by list id.
 	 *

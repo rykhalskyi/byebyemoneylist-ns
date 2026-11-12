@@ -64,6 +64,17 @@ final class ListItemControllerTest extends TestCase {
 		$list->setId($id);
 		$list->setOwner('alice');
 		$list->setName('Groceries');
+		$list->setKind(ListEntity::KIND_PURCHASE);
+		return $list;
+	}
+
+	private function toBuyList(string $id): ListEntity {
+		$list = new ListEntity();
+		$list->setId($id);
+		$list->setOwner('alice');
+		$list->setName('To Buy 12.11.2026');
+		$list->setKind(ListEntity::KIND_NEED_TO_BUY);
+		$list->setIsActive(true);
 		return $list;
 	}
 
@@ -626,10 +637,8 @@ final class ListItemControllerTest extends TestCase {
 			->with($listId, 'alice')
 			->willReturn($this->list($listId));
 
-		$this->productMapper->expects($this->once())
-			->method('findByIdAndOwner')
-			->with($productId, 'alice')
-			->willReturn($this->product($productId, 'Milk'));
+		$this->productMapper->expects($this->never())
+			->method('findByIdAndOwner');
 
 		$this->itemMapper->expects($this->never())->method('insert');
 
@@ -792,5 +801,89 @@ final class ListItemControllerTest extends TestCase {
 		$response = $this->controller->destroy($listId, $itemId);
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}
+
+	public function testCreatePlainTextItemOnToBuyList(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$this->listAccess->method('findWritable')->willReturn($this->toBuyList($listId));
+		$this->productMapper->expects($this->never())->method('findByIdAndOwner');
+		$this->itemMapper->expects($this->once())->method('insert')->willReturnArgument(0);
+
+		$response = $this->controller->create($listId, null, 9.99, 3.0, 0, 1.0, '  Milk  ');
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$item = $response->getData()['item'];
+		$this->assertNull($item['productId']);
+		$this->assertSame('Milk', $item['productName']);
+		$this->assertSame('Milk', $item['customName']);
+		$this->assertNull($item['price']);
+		$this->assertSame(1.0, $item['quantity']);
+		$this->assertNull($item['discount']);
+	}
+
+	public function testCreateToBuyItemCopiesProductName(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$productId = '22222222-3333-4444-8555-666666666666';
+		$this->listAccess->method('findWritable')->willReturn($this->toBuyList($listId));
+		$this->productMapper->expects($this->once())
+			->method('findByIdAndOwner')
+			->with($productId, 'alice')
+			->willReturn($this->product($productId, 'Milk'));
+		$this->itemMapper->expects($this->once())->method('insert')->willReturnArgument(0);
+
+		$response = $this->controller->create($listId, $productId, 5.0, 2.0);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$item = $response->getData()['item'];
+		$this->assertNull($item['productId']);
+		$this->assertSame('Milk', $item['productName']);
+		$this->assertNull($item['price']);
+		$this->assertSame(1.0, $item['quantity']);
+	}
+
+	public function testCreateToBuyItemRequiresName(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$this->listAccess->method('findWritable')->willReturn($this->toBuyList($listId));
+		$this->itemMapper->expects($this->never())->method('insert');
+
+		$response = $this->controller->create($listId);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testUpdateToBuyItemIgnoresPricingFields(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+		$this->listAccess->method('findWritable')->willReturn($this->toBuyList($listId));
+
+		$item = new ListItemEntity();
+		$item->setId($itemId);
+		$item->setOwner('alice');
+		$item->setListId($listId);
+		$item->setProductId(null);
+		$item->setCustomName('Milk');
+		$item->setQuantity(1.0);
+		$item->setIsChecked(false);
+		$this->itemMapper->method('findByIdAndListId')->willReturn($item);
+		$this->itemMapper->expects($this->once())->method('update')->willReturnArgument(0);
+
+		$response = $this->controller->update($listId, $itemId, true, 9.9, 5.0, null, 1.0);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$updated = $response->getData()['item'];
+		$this->assertTrue($updated['isChecked']);
+		$this->assertNull($updated['price']);
+		$this->assertSame(1.0, $updated['quantity']);
+		$this->assertNull($updated['discount']);
+		$this->assertNull($updated['productId']);
+		$this->assertSame('Milk', $updated['productName']);
 	}
 }

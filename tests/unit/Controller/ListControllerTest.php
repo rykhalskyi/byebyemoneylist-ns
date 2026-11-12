@@ -9,6 +9,7 @@ use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Db\ListShareMapper;
 use OCA\ByeByeMoneyList\Entity\ListEntity;
+use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
 use OCA\ByeByeMoneyList\Service\Sharing\ListCopyService;
@@ -290,6 +291,8 @@ final class ListControllerTest extends TestCase {
 		$this->assertNull($list['categoryId']);
 		$this->assertSame([], $list['categoryIds']);
 		$this->assertSame('new', $list['status']);
+		$this->assertSame(ListEntity::KIND_NEED_TO_BUY, $list['kind']);
+		$this->assertFalse($list['isActive']);
 		$this->assertFalse($list['isFinished']);
 		$this->assertSame(0, $list['position']);
 		$this->assertFalse($list['isSubscription']);
@@ -331,6 +334,7 @@ final class ListControllerTest extends TestCase {
 		$this->assertFalse($list['isForwardEmpty']);
 		$this->assertTrue($list['isSubscription']);
 		$this->assertFalse($list['isIncome']);
+		$this->assertSame(ListEntity::KIND_SUBSCRIPTION, $list['kind']);
 	}
 
 	public function testCreateWithStoreAndCategory(): void {
@@ -428,6 +432,7 @@ final class ListControllerTest extends TestCase {
 
 		$list = $this->makeList('11111111-2222-4333-8444-555555555555', 'Old name');
 		$list->setStatus('new');
+		$list->setKind(ListEntity::KIND_PURCHASE);
 
 		$this->mapper->expects($this->once())
 			->method('findByIdAndOwner')
@@ -621,6 +626,97 @@ final class ListControllerTest extends TestCase {
 		$this->mapper->expects($this->never())->method('insert');
 
 		$response = $this->controller->create('Groceries', purchaseDate: '2026-09-05');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testCreateToBuyCreatesActiveListAndCarriesOverNames(): void {
+		$this->mockUser('alice');
+
+		$this->mapper->expects($this->once())
+			->method('insertActiveToBuyList')
+			->willReturnCallback(function (ListEntity $list): ListEntity {
+				$list->setId('to-buy-1');
+				return $list;
+			});
+
+		$inserted = [];
+		$this->itemMapper->expects($this->exactly(2))
+			->method('insert')
+			->willReturnCallback(function (ListItemEntity $item) use (&$inserted): ListItemEntity {
+				$inserted[] = $item;
+				return $item;
+			});
+
+		$response = $this->controller->createToBuy('Купити', ['Milk', '  Bread  ', '']);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$list = $response->getData()['list'];
+		$this->assertSame(ListEntity::KIND_NEED_TO_BUY, $list['kind']);
+		$this->assertTrue($list['isActive']);
+		$this->assertSame('new', $list['status']);
+		$this->assertMatchesRegularExpression('/^Купити \d{2}\.\d{2}\.\d{4}$/u', $list['name']);
+		$this->assertCount(2, $inserted);
+		$this->assertNull($inserted[0]->getProductId());
+		$this->assertSame(1.0, $inserted[0]->getQuantity());
+		$this->assertSame('Milk', $inserted[0]->getCustomName());
+		$this->assertSame('Bread', $inserted[1]->getCustomName());
+		$this->assertSame(0, $inserted[0]->getPosition());
+		$this->assertSame(1, $inserted[1]->getPosition());
+	}
+
+	public function testCreateToBuyRejectsTooLongItemName(): void {
+		$this->mockUser('alice');
+		$this->mapper->expects($this->never())->method('insertActiveToBuyList');
+
+		$response = $this->controller->createToBuy('To Buy', [str_repeat('a', 256)]);
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testActiveToBuyReturnsActiveList(): void {
+		$this->mockUser('alice');
+
+		$list = new ListEntity();
+		$list->setId('to-buy-1');
+		$list->setOwner('alice');
+		$list->setName('To Buy 12.11.2026');
+		$list->setKind(ListEntity::KIND_NEED_TO_BUY);
+		$list->setIsActive(true);
+		$list->setStatus('new');
+
+		$this->mapper->expects($this->once())->method('findActiveToBuyList')->with('alice')->willReturn($list);
+		$this->mapper->method('findCategoryIdsByListIds')->willReturn([]);
+
+		$response = $this->controller->activeToBuy();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('to-buy-1', $response->getData()['list']['id']);
+		$this->assertSame(ListEntity::KIND_NEED_TO_BUY, $response->getData()['list']['kind']);
+		$this->assertTrue($response->getData()['list']['isActive']);
+	}
+
+	public function testActiveToBuyReturnsNullWhenNone(): void {
+		$this->mockUser('alice');
+		$this->mapper->method('findActiveToBuyList')->with('alice')->willReturn(null);
+
+		$response = $this->controller->activeToBuy();
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertNull($response->getData()['list']);
+	}
+
+	public function testUpdateRejectsFinishingToBuyList(): void {
+		$this->mockUser('alice');
+
+		$list = $this->makeList('list-1', 'To Buy 12.11.2026');
+		$list->setKind(ListEntity::KIND_NEED_TO_BUY);
+		$list->setIsActive(true);
+
+		$this->mapper->method('findByIdAndOwner')->willReturn($list);
+		$this->mapper->expects($this->never())->method('update');
+
+		$response = $this->controller->update('list-1', 'To Buy 12.11.2026', isFinished: true);
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}
