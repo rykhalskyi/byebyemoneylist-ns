@@ -22,6 +22,7 @@ use OCA\ByeByeMoneyList\Entity\PurchaseImportCategoryEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportItemEntity;
 use OCA\ByeByeMoneyList\Entity\StoreEntity;
+use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
@@ -43,6 +44,7 @@ class PurchaseImportApproveService {
 	private CategoryMapper $categoryMapper;
 	private PurchaseImportMapper $importMapper;
 	private LoggerInterface $logger;
+	private ToBuyAutoMatchService $toBuyAutoMatch;
 
 	/** @psalm-suppress PossiblyUnusedMethod */
 	public function __construct(
@@ -55,6 +57,7 @@ class PurchaseImportApproveService {
 		CategoryMapper $categoryMapper,
 		PurchaseImportMapper $importMapper,
 		LoggerInterface $logger,
+		ToBuyAutoMatchService $toBuyAutoMatch,
 	) {
 		$this->db = $db;
 		$this->listMapper = $listMapper;
@@ -65,6 +68,7 @@ class PurchaseImportApproveService {
 		$this->categoryMapper = $categoryMapper;
 		$this->importMapper = $importMapper;
 		$this->logger = $logger;
+		$this->toBuyAutoMatch = $toBuyAutoMatch;
 	}
 
 	/**
@@ -195,6 +199,12 @@ class PurchaseImportApproveService {
 			$this->importMapper->update($import);
 
 			$this->db->commit();
+
+			$purchasedNames = array_map(
+				static fn (array $resolved): string => $resolved['rawName'],
+				$resolvedItems,
+			);
+			$this->toBuyAutoMatch->matchAfterPurchase($owner, $purchasedNames);
 
 			return $created;
 		} catch (PurchaseImportDuplicateException $e) {

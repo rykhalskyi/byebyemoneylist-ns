@@ -20,6 +20,7 @@ use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
 use OCA\ByeByeMoneyList\Entity\StoreEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
+use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
@@ -44,6 +45,7 @@ class ReceiptCommitService {
 	private ReceiptPictureService $receiptPictureService;
 	private ReceiptProductMatcher $matcher;
 	private LoggerInterface $logger;
+	private ToBuyAutoMatchService $toBuyAutoMatch;
 
 	/** @psalm-suppress PossiblyUnusedMethod */
 	public function __construct(
@@ -58,6 +60,7 @@ class ReceiptCommitService {
 		ReceiptPictureService $receiptPictureService,
 		ReceiptProductMatcher $matcher,
 		LoggerInterface $logger,
+		ToBuyAutoMatchService $toBuyAutoMatch,
 	) {
 		$this->db = $db;
 		$this->listMapper = $listMapper;
@@ -70,6 +73,7 @@ class ReceiptCommitService {
 		$this->receiptPictureService = $receiptPictureService;
 		$this->matcher = $matcher;
 		$this->logger = $logger;
+		$this->toBuyAutoMatch = $toBuyAutoMatch;
 	}
 
 	/**
@@ -177,6 +181,18 @@ class ReceiptCommitService {
 			$updated = $this->listMapper->update($created);
 
 			$this->db->commit();
+
+			$purchasedNames = [];
+			foreach ($items as $item) {
+				if ($item['isCoupon'] ?? false) {
+					continue;
+				}
+				$purchasedName = trim($item['name']);
+				if ($purchasedName !== '') {
+					$purchasedNames[] = $purchasedName;
+				}
+			}
+			$this->toBuyAutoMatch->matchAfterPurchase($userId, $purchasedNames);
 
 			return $updated;
 		} catch (\Exception $e) {

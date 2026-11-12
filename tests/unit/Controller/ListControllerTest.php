@@ -13,6 +13,7 @@ use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
 use OCA\ByeByeMoneyList\Service\Sharing\ListCopyService;
+use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
 use OCP\AppFramework\Http;
 use OCP\IDBConnection;
 use OCP\IRequest;
@@ -30,6 +31,7 @@ final class ListControllerTest extends TestCase {
 	private ListCopyService $listCopyService;
 	private IDBConnection $db;
 	private IUserSession $userSession;
+	private ToBuyAutoMatchService $toBuyAutoMatch;
 
 	protected function setUp(): void {
 		$request = $this->createMock(IRequest::class);
@@ -40,6 +42,7 @@ final class ListControllerTest extends TestCase {
 		$this->listCopyService = $this->createMock(ListCopyService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
+		$this->toBuyAutoMatch = $this->createMock(ToBuyAutoMatchService::class);
 		$logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new ListController(
@@ -52,6 +55,7 @@ final class ListControllerTest extends TestCase {
 			$this->db,
 			$this->userSession,
 			$logger,
+			$this->toBuyAutoMatch,
 		);
 	}
 
@@ -446,6 +450,10 @@ final class ListControllerTest extends TestCase {
 		$this->mapper->expects($this->once())
 			->method('replaceCategoriesByListId')
 			->with('11111111-2222-4333-8444-555555555555', ['cat-9']);
+
+		$this->toBuyAutoMatch->expects($this->once())
+			->method('matchAfterPurchaseList')
+			->with('alice', '11111111-2222-4333-8444-555555555555');
 
 		$response = $this->controller->update(
 			'11111111-2222-4333-8444-555555555555',

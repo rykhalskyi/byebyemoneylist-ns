@@ -16,6 +16,7 @@ use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
 use OCA\ByeByeMoneyList\Service\Sharing\ListCopyService;
+use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
@@ -42,6 +43,7 @@ class ListController extends OCSController {
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
+	private ToBuyAutoMatchService $toBuyAutoMatch;
 
 	public function __construct(
 		IRequest $request,
@@ -53,6 +55,7 @@ class ListController extends OCSController {
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
+		ToBuyAutoMatchService $toBuyAutoMatch,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 		$this->mapper = $mapper;
@@ -63,6 +66,7 @@ class ListController extends OCSController {
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
+		$this->toBuyAutoMatch = $toBuyAutoMatch;
 	}
 
 	/**
@@ -256,6 +260,10 @@ class ListController extends OCSController {
 			return new DataResponse(['message' => 'Failed to create list'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
+		if ($isFinished) {
+			$this->toBuyAutoMatch->matchAfterPurchaseList($userId, $created->getId());
+		}
+
 		return new DataResponse(['list' => $this->serializeList($created, null, $listCategoryIds)], Http::STATUS_CREATED);
 	}
 
@@ -379,6 +387,10 @@ class ListController extends OCSController {
 			}
 			$this->logger->error('Failed to update list', ['exception' => $e]);
 			return new DataResponse(['message' => 'Failed to update list'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		if ($isFinished === true) {
+			$this->toBuyAutoMatch->matchAfterPurchaseList($userId, $updated->getId());
 		}
 
 		return new DataResponse(['list' => $this->serializeList($updated, null, $listCategoryIds)], Http::STATUS_OK);

@@ -1,7 +1,7 @@
 ---
 created: 2026-10-13
 type: ticket
-status: proposed
+status: implemented
 summary: T48 — Server-side LLM auto-check of pending To Buy items after a purchase
 ---
 
@@ -35,4 +35,15 @@ ones the model is confident about. Silent, best-effort, never blocks the purchas
 
 ## Outcome
 
-Not started.
+Implemented on `feature/to-buy-list-redesign`:
+
+- New `ToBuyAutoMatchService`: gates only on an active LLM profile, prompts for
+  `{"matchedIds":[...]}`, accepts only ids from the current pending set, re-verifies the
+  active list and unchecked state before writing, and swallows all failures (best-effort).
+  `matchAfterPurchaseList()` resolves a finalized list's checked `quantity > 0` item
+  names (falling back to catalog names).
+- Hooks: `ListController` create/update when finished, `ReceiptCommitService` (non-coupon
+  item names) and `PurchaseImportApproveService` (approved non-coupon names).
+- Tests: `ToBuyAutoMatchServiceTest` (active-profile gate, missing list, id filtering,
+  provider failure, checked-list resolution) plus constructor mocks for the three hooks.
+  PHPUnit 299 green; psalm and php-cs-fixer clean; Vitest 246 green.
