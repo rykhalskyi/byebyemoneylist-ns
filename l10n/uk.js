@@ -209,6 +209,7 @@ OC.L10N.register(
 		"Mapping saved." : "Зіставлення збережено.",
 		"Mark products as income to track your earnings." : "Позначте продукти як дохід, щоб відстежувати свої надходження.",
 		"Mark products as subscriptions to track recurring costs." : "Позначте продукти як підписки, щоб відстежувати регулярні витрати.",
+		"Matching products with AI…" : "Зіставлення продуктів за допомогою ШІ…",
 		"Max Tokens" : "Макс. токенів",
 		"Meat & Poultry" : "М’ясо та птиця",
 		"Merge" : "Об’єднати",

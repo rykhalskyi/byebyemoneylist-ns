@@ -235,6 +235,9 @@ New classes under `lib/`:
   string $prompt, int $connect, int $read, int $maxTokens): string` to
   `Service/Receipt/OpenAiCompatibleScanner` (reuse `ENDPOINTS`, `DEFAULT_MODELS`,
   error handling, `response_format=json_object`; no image part).
+- The web review runs this automatically on open when product rows are still
+  unresolved or only fuzzy-matched; the **AI suggest** button remains for manual
+  re-runs.
 - Prompt: compact JSON with the import (store name/address, list category names,
   items) plus candidate catalog:
   - stores: `{id, name, address}`
@@ -329,6 +332,8 @@ Edge cases:
     - action toggle: Map existing / Create new / Skip;
     - for Create new: editable product name + category select;
     - coupon rows default to Skip with an explanatory hint.
+  - On open, automatically calls `/suggest-ai` when non-coupon rows are unresolved
+    or fuzzy-matched; failures stay silent so deterministic suggestions still show.
   - Buttons: **Suggest**, **AI suggest** (spinner; disabled/hint when no active LLM
     profile), **Save mapping**, **Approve**. Approve first saves then calls
     `/approve`; on success emits `approved` and the parent reloads.

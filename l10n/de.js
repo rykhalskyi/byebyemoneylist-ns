@@ -209,6 +209,7 @@ OC.L10N.register(
 		"Mapping saved." : "Zuordnung gespeichert.",
 		"Mark products as income to track your earnings." : "Markiere Produkte als Einkommen, um deine Einnahmen zu verfolgen.",
 		"Mark products as subscriptions to track recurring costs." : "Markiere Produkte als Abonnements, um wiederkehrende Kosten zu verfolgen.",
+		"Matching products with AI…" : "Produkte werden mit KI abgeglichen…",
 		"Max Tokens" : "Max. Token",
 		"Meat & Poultry" : "Fleisch & Geflügel",
 		"Merge" : "Zusammenführen",

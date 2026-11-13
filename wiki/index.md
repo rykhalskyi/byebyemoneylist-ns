@@ -81,6 +81,7 @@
 - [tickets/ticket-47-to-buy-widget](pages/tickets/ticket-47-to-buy-widget.md) — T47 — To Buy dashboard widget (title, checked/total, pending preview, create CTA)
 - [tickets/ticket-48-to-buy-auto-check](pages/tickets/ticket-48-to-buy-auto-check.md) — T48 — Server-side LLM auto-check of pending To Buy items after a purchase
 - [tickets/ticket-49-inbox-button-and-ai-fix](pages/tickets/ticket-49-inbox-button-and-ai-fix.md) — T49 — Inbox entry moves into Shopping Lists, Inbox shows reviewable imports only, AI suggestions report profile state correctly
+- [tickets/ticket-50-auto-ai-import-matching](pages/tickets/ticket-50-auto-ai-import-matching.md) — T50 — Purchase import review runs AI product matching automatically and falls back to create-new
 
 ## Research
 - [research/syncronisation](pages/research/syncronisation.md) — Client-side synchronisation of categories, stores, products and shopping lists between the Android client and the Nextcloud app.
