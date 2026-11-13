@@ -268,13 +268,14 @@ async function onSubmit() {
 
 .types {
 	display: flex;
-	flex-direction: column;
+	width: 100%;
 	gap: 8px;
 }
 
 .types > * {
-	width: 100%;
-	justify-content: flex-start;
+	flex: 1 1 0;
+	min-width: 0;
+	justify-content: center;
 }
 
 .hint {
