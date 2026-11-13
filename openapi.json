@@ -3458,6 +3458,8 @@
                                                                             "categoryId",
                                                                             "categoryIds",
                                                                             "status",
+                                                                            "kind",
+                                                                            "isActive",
                                                                             "finalTotal",
                                                                             "totalPrice",
                                                                             "createdAt",
@@ -3500,6 +3502,12 @@
                                                                             },
                                                                             "status": {
                                                                                 "type": "string"
+                                                                            },
+                                                                            "kind": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "isActive": {
+                                                                                "type": "boolean"
                                                                             },
                                                                             "finalTotal": {
                                                                                 "type": "number",
@@ -3632,6 +3640,8 @@
                                                                                     "categoryId",
                                                                                     "categoryIds",
                                                                                     "status",
+                                                                                    "kind",
+                                                                                    "isActive",
                                                                                     "finalTotal",
                                                                                     "totalPrice",
                                                                                     "createdAt",
@@ -3674,6 +3684,12 @@
                                                                                     },
                                                                                     "status": {
                                                                                         "type": "string"
+                                                                                    },
+                                                                                    "kind": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "isActive": {
+                                                                                        "type": "boolean"
                                                                                     },
                                                                                     "finalTotal": {
                                                                                         "type": "number",
@@ -3948,6 +3964,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -3990,6 +4008,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -4119,6 +4143,8 @@
                                                                                 "categoryId",
                                                                                 "categoryIds",
                                                                                 "status",
+                                                                                "kind",
+                                                                                "isActive",
                                                                                 "finalTotal",
                                                                                 "totalPrice",
                                                                                 "createdAt",
@@ -4161,6 +4187,12 @@
                                                                                 },
                                                                                 "status": {
                                                                                     "type": "string"
+                                                                                },
+                                                                                "kind": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isActive": {
+                                                                                    "type": "boolean"
                                                                                 },
                                                                                 "finalTotal": {
                                                                                     "type": "number",
@@ -4311,6 +4343,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -4353,6 +4387,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -4480,6 +4520,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -4522,6 +4564,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -4785,6 +4833,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -4827,6 +4877,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -4956,6 +5012,8 @@
                                                                                 "categoryId",
                                                                                 "categoryIds",
                                                                                 "status",
+                                                                                "kind",
+                                                                                "isActive",
                                                                                 "finalTotal",
                                                                                 "totalPrice",
                                                                                 "createdAt",
@@ -4998,6 +5056,12 @@
                                                                                 },
                                                                                 "status": {
                                                                                     "type": "string"
+                                                                                },
+                                                                                "kind": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isActive": {
+                                                                                    "type": "boolean"
                                                                                 },
                                                                                 "finalTotal": {
                                                                                     "type": "number",
@@ -5148,6 +5212,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -5190,6 +5256,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -5317,6 +5389,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -5359,6 +5433,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -5486,6 +5566,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -5528,6 +5610,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -5938,6 +6026,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -5980,6 +6070,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -6109,6 +6205,8 @@
                                                                                 "categoryId",
                                                                                 "categoryIds",
                                                                                 "status",
+                                                                                "kind",
+                                                                                "isActive",
                                                                                 "finalTotal",
                                                                                 "totalPrice",
                                                                                 "createdAt",
@@ -6151,6 +6249,12 @@
                                                                                 },
                                                                                 "status": {
                                                                                     "type": "string"
+                                                                                },
+                                                                                "kind": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isActive": {
+                                                                                    "type": "boolean"
                                                                                 },
                                                                                 "finalTotal": {
                                                                                     "type": "number",
@@ -6301,6 +6405,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -6343,6 +6449,12 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -6470,6 +6582,8 @@
                                                                         "categoryId",
                                                                         "categoryIds",
                                                                         "status",
+                                                                        "kind",
+                                                                        "isActive",
                                                                         "finalTotal",
                                                                         "totalPrice",
                                                                         "createdAt",
@@ -6512,6 +6626,1212 @@
                                                                         },
                                                                         "status": {
                                                                             "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "finalTotal": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "purchaseDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "position": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isFinished": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasReceipt": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "sharedBy": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "shareMode": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ocs/v2.php/apps/byebyemoneylist/api/lists/to-buy": {
+            "get": {
+                "operationId": "list-active-to-buy",
+                "summary": "Get the current user's active To Buy list",
+                "tags": [
+                    "list"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Active To Buy list returned (or null)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "list"
+                                                            ],
+                                                            "properties": {
+                                                                "list": {
+                                                                    "type": "object",
+                                                                    "nullable": true,
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "storeId",
+                                                                        "categoryId",
+                                                                        "categoryIds",
+                                                                        "status",
+                                                                        "kind",
+                                                                        "isActive",
+                                                                        "finalTotal",
+                                                                        "totalPrice",
+                                                                        "createdAt",
+                                                                        "createDate",
+                                                                        "updatedAt",
+                                                                        "purchaseDate",
+                                                                        "position",
+                                                                        "isFinished",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty",
+                                                                        "hasReceipt",
+                                                                        "sharedBy",
+                                                                        "shareMode",
+                                                                        "revoked",
+                                                                        "hasShares"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "finalTotal": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "purchaseDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "position": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isFinished": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasReceipt": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "sharedBy": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "shareMode": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "list"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "list": {
+                                                                            "type": "object",
+                                                                            "nullable": true,
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "storeId",
+                                                                                "categoryId",
+                                                                                "categoryIds",
+                                                                                "status",
+                                                                                "kind",
+                                                                                "isActive",
+                                                                                "finalTotal",
+                                                                                "totalPrice",
+                                                                                "createdAt",
+                                                                                "createDate",
+                                                                                "updatedAt",
+                                                                                "purchaseDate",
+                                                                                "position",
+                                                                                "isFinished",
+                                                                                "isSubscription",
+                                                                                "isIncome",
+                                                                                "isRecurring",
+                                                                                "recurringPeriod",
+                                                                                "isForwardEmpty",
+                                                                                "hasReceipt",
+                                                                                "sharedBy",
+                                                                                "shareMode",
+                                                                                "revoked",
+                                                                                "hasShares"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "storeId": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryId": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryIds": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    }
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "kind": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isActive": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "finalTotal": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "totalPrice": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "createdAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "createDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "updatedAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "purchaseDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "position": {
+                                                                                    "type": "integer",
+                                                                                    "format": "int64"
+                                                                                },
+                                                                                "isFinished": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isSubscription": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isIncome": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isRecurring": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "recurringPeriod": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isForwardEmpty": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "hasReceipt": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "sharedBy": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "shareMode": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "revoked": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "hasShares": {
+                                                                                    "type": "boolean"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "list-create-to-buy",
+                "summary": "Create a new active To Buy list, optionally carrying over item names",
+                "tags": [
+                    "list"
+                ],
+                "security": [
+                    {
+                        "bearer_auth": []
+                    },
+                    {
+                        "basic_auth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "prefix": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Localized \"To Buy\" prefix (client-supplied)"
+                                    },
+                                    "itemNames": {
+                                        "type": "array",
+                                        "default": [],
+                                        "description": "Optional plain-text item names to carry over",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "OCS-APIRequest",
+                        "in": "header",
+                        "description": "Required to be true for the API request to pass",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": true
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "To Buy list created and activated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "list"
+                                                            ],
+                                                            "properties": {
+                                                                "list": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "storeId",
+                                                                        "categoryId",
+                                                                        "categoryIds",
+                                                                        "status",
+                                                                        "kind",
+                                                                        "isActive",
+                                                                        "finalTotal",
+                                                                        "totalPrice",
+                                                                        "createdAt",
+                                                                        "createDate",
+                                                                        "updatedAt",
+                                                                        "purchaseDate",
+                                                                        "position",
+                                                                        "isFinished",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty",
+                                                                        "hasReceipt",
+                                                                        "sharedBy",
+                                                                        "shareMode",
+                                                                        "revoked",
+                                                                        "hasShares"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "finalTotal": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "purchaseDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "position": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isFinished": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasReceipt": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "sharedBy": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "shareMode": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Current user is not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "list"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "list": {
+                                                                            "type": "object",
+                                                                            "required": [
+                                                                                "id",
+                                                                                "name",
+                                                                                "storeId",
+                                                                                "categoryId",
+                                                                                "categoryIds",
+                                                                                "status",
+                                                                                "kind",
+                                                                                "isActive",
+                                                                                "finalTotal",
+                                                                                "totalPrice",
+                                                                                "createdAt",
+                                                                                "createDate",
+                                                                                "updatedAt",
+                                                                                "purchaseDate",
+                                                                                "position",
+                                                                                "isFinished",
+                                                                                "isSubscription",
+                                                                                "isIncome",
+                                                                                "isRecurring",
+                                                                                "recurringPeriod",
+                                                                                "isForwardEmpty",
+                                                                                "hasReceipt",
+                                                                                "sharedBy",
+                                                                                "shareMode",
+                                                                                "revoked",
+                                                                                "hasShares"
+                                                                            ],
+                                                                            "properties": {
+                                                                                "id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "storeId": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryId": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "categoryIds": {
+                                                                                    "type": "array",
+                                                                                    "items": {
+                                                                                        "type": "string"
+                                                                                    }
+                                                                                },
+                                                                                "status": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "kind": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isActive": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "finalTotal": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "totalPrice": {
+                                                                                    "type": "number",
+                                                                                    "format": "double",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "createdAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "createDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "updatedAt": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "purchaseDate": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "position": {
+                                                                                    "type": "integer",
+                                                                                    "format": "int64"
+                                                                                },
+                                                                                "isFinished": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isSubscription": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isIncome": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "isRecurring": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "recurringPeriod": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "isForwardEmpty": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "hasReceipt": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "sharedBy": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "shareMode": {
+                                                                                    "type": "string",
+                                                                                    "nullable": true
+                                                                                },
+                                                                                "revoked": {
+                                                                                    "type": "boolean"
+                                                                                },
+                                                                                "hasShares": {
+                                                                                    "type": "boolean"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "message"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "message": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "type": "object",
+                                            "required": [
+                                                "ocs"
+                                            ],
+                                            "properties": {
+                                                "ocs": {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "meta",
+                                                        "data"
+                                                    ],
+                                                    "properties": {
+                                                        "meta": {
+                                                            "$ref": "#/components/schemas/OCSMeta"
+                                                        },
+                                                        "data": {}
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The prefix or an item name is too long, or too many items were sent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "list"
+                                                            ],
+                                                            "properties": {
+                                                                "list": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "storeId",
+                                                                        "categoryId",
+                                                                        "categoryIds",
+                                                                        "status",
+                                                                        "kind",
+                                                                        "isActive",
+                                                                        "finalTotal",
+                                                                        "totalPrice",
+                                                                        "createdAt",
+                                                                        "createDate",
+                                                                        "updatedAt",
+                                                                        "purchaseDate",
+                                                                        "position",
+                                                                        "isFinished",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty",
+                                                                        "hasReceipt",
+                                                                        "sharedBy",
+                                                                        "shareMode",
+                                                                        "revoked",
+                                                                        "hasShares"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "finalTotal": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "totalPrice": {
+                                                                            "type": "number",
+                                                                            "format": "double",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "createDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "purchaseDate": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "position": {
+                                                                            "type": "integer",
+                                                                            "format": "int64"
+                                                                        },
+                                                                        "isFinished": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isSubscription": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isIncome": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "isRecurring": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "recurringPeriod": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isForwardEmpty": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasReceipt": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "sharedBy": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "shareMode": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "revoked": {
+                                                                            "type": "boolean"
+                                                                        },
+                                                                        "hasShares": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "message"
+                                                            ],
+                                                            "properties": {
+                                                                "message": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create the list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "ocs"
+                                    ],
+                                    "properties": {
+                                        "ocs": {
+                                            "type": "object",
+                                            "required": [
+                                                "meta",
+                                                "data"
+                                            ],
+                                            "properties": {
+                                                "meta": {
+                                                    "$ref": "#/components/schemas/OCSMeta"
+                                                },
+                                                "data": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "object",
+                                                            "required": [
+                                                                "list"
+                                                            ],
+                                                            "properties": {
+                                                                "list": {
+                                                                    "type": "object",
+                                                                    "required": [
+                                                                        "id",
+                                                                        "name",
+                                                                        "storeId",
+                                                                        "categoryId",
+                                                                        "categoryIds",
+                                                                        "status",
+                                                                        "kind",
+                                                                        "isActive",
+                                                                        "finalTotal",
+                                                                        "totalPrice",
+                                                                        "createdAt",
+                                                                        "createDate",
+                                                                        "updatedAt",
+                                                                        "purchaseDate",
+                                                                        "position",
+                                                                        "isFinished",
+                                                                        "isSubscription",
+                                                                        "isIncome",
+                                                                        "isRecurring",
+                                                                        "recurringPeriod",
+                                                                        "isForwardEmpty",
+                                                                        "hasReceipt",
+                                                                        "sharedBy",
+                                                                        "shareMode",
+                                                                        "revoked",
+                                                                        "hasShares"
+                                                                    ],
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "storeId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryId": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "categoryIds": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "kind": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "isActive": {
+                                                                            "type": "boolean"
                                                                         },
                                                                         "finalTotal": {
                                                                             "type": "number",
@@ -6696,7 +8016,8 @@
                                                                                 "type": "string"
                                                                             },
                                                                             "productId": {
-                                                                                "type": "string"
+                                                                                "type": "string",
+                                                                                "nullable": true
                                                                             },
                                                                             "productName": {
                                                                                 "type": "string"
@@ -6815,7 +8136,8 @@
                                                                                         "type": "string"
                                                                                     },
                                                                                     "productId": {
-                                                                                        "type": "string"
+                                                                                        "type": "string",
+                                                                                        "nullable": true
                                                                                     },
                                                                                     "productName": {
                                                                                         "type": "string"
@@ -6955,7 +8277,8 @@
                                                                                 "type": "string"
                                                                             },
                                                                             "productId": {
-                                                                                "type": "string"
+                                                                                "type": "string",
+                                                                                "nullable": true
                                                                             },
                                                                             "productName": {
                                                                                 "type": "string"
@@ -7035,18 +8358,17 @@
                     }
                 ],
                 "requestBody": {
-                    "required": true,
+                    "required": false,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "type": "object",
-                                "required": [
-                                    "productId"
-                                ],
                                 "properties": {
                                     "productId": {
                                         "type": "string",
-                                        "description": "Product id (required; owned by the current user or a sharing user)"
+                                        "nullable": true,
+                                        "default": null,
+                                        "description": "Product id (required for non-To-Buy lists; optional plain-text name source for To Buy)"
                                     },
                                     "price": {
                                         "type": "number",
@@ -7078,7 +8400,7 @@
                                         "type": "string",
                                         "nullable": true,
                                         "default": null,
-                                        "description": "Optional display name override"
+                                        "description": "Optional display name override (the item name for To Buy)"
                                     },
                                     "publishToOwner": {
                                         "type": "boolean",
@@ -7164,7 +8486,8 @@
                                                                             "type": "string"
                                                                         },
                                                                         "productId": {
-                                                                            "type": "string"
+                                                                            "type": "string",
+                                                                            "nullable": true
                                                                         },
                                                                         "productName": {
                                                                             "type": "string"
@@ -7280,7 +8603,8 @@
                                                                                     "type": "string"
                                                                                 },
                                                                                 "productId": {
-                                                                                    "type": "string"
+                                                                                    "type": "string",
+                                                                                    "nullable": true
                                                                                 },
                                                                                 "productName": {
                                                                                     "type": "string"
@@ -7417,7 +8741,8 @@
                                                                             "type": "string"
                                                                         },
                                                                         "productId": {
-                                                                            "type": "string"
+                                                                            "type": "string",
+                                                                            "nullable": true
                                                                         },
                                                                         "productName": {
                                                                             "type": "string"
@@ -7480,7 +8805,7 @@
                         }
                     },
                     "422": {
-                        "description": "Product not found, price/discount is negative or out of range, or quantity is not positive or out of range",
+                        "description": "Product not found, an item name is missing/too long, price/discount is negative or out of range, or quantity is not positive or out of range",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7531,7 +8856,8 @@
                                                                             "type": "string"
                                                                         },
                                                                         "productId": {
-                                                                            "type": "string"
+                                                                            "type": "string",
+                                                                            "nullable": true
                                                                         },
                                                                         "productName": {
                                                                             "type": "string"
@@ -7645,7 +8971,8 @@
                                                                             "type": "string"
                                                                         },
                                                                         "productId": {
-                                                                            "type": "string"
+                                                                            "type": "string",
+                                                                            "nullable": true
                                                                         },
                                                                         "productName": {
                                                                             "type": "string"
@@ -7860,7 +9187,8 @@
                                                                             "type": "string"
                                                                         },
                                                                         "productId": {
-                                                                            "type": "string"
+                                                                            "type": "string",
+                                                                            "nullable": true
                                                                         },
                                                                         "productName": {
                                                                             "type": "string"
@@ -7976,7 +9304,8 @@
                                                                                     "type": "string"
                                                                                 },
                                                                                 "productId": {
-                                                                                    "type": "string"
+                                                                                    "type": "string",
+                                                                                    "nullable": true
                                                                                 },
                                                                                 "productName": {
                                                                                     "type": "string"
@@ -8113,7 +9442,8 @@
                                                                             "type": "string"
                                                                         },
                                                                         "productId": {
-                                                                            "type": "string"
+                                                                            "type": "string",
+                                                                            "nullable": true
                                                                         },
                                                                         "productName": {
                                                                             "type": "string"
@@ -8227,7 +9557,8 @@
                                                                             "type": "string"
                                                                         },
                                                                         "productId": {
-                                                                            "type": "string"
+                                                                            "type": "string",
+                                                                            "nullable": true
                                                                         },
                                                                         "productName": {
                                                                             "type": "string"
@@ -8341,7 +9672,8 @@
                                                                             "type": "string"
                                                                         },
                                                                         "productId": {
-                                                                            "type": "string"
+                                                                            "type": "string",
+                                                                            "nullable": true
                                                                         },
                                                                         "productName": {
                                                                             "type": "string"

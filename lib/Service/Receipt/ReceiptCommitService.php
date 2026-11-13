@@ -6,6 +6,7 @@ namespace OCA\ByeByeMoneyList\Service\Receipt;
 
 use DateTime;
 use DateTimeZone;
+use OCA\ByeByeMoneyList\BackgroundJob\ToBuyAutoMatchJob;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
@@ -21,6 +22,7 @@ use OCA\ByeByeMoneyList\Entity\ProductPriceEntity;
 use OCA\ByeByeMoneyList\Entity\StoreEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
 use OCA\ByeByeMoneyList\Util\Uuid;
+use OCP\BackgroundJob\IJobList;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -44,6 +46,7 @@ class ReceiptCommitService {
 	private ReceiptPictureService $receiptPictureService;
 	private ReceiptProductMatcher $matcher;
 	private LoggerInterface $logger;
+	private IJobList $jobList;
 
 	/** @psalm-suppress PossiblyUnusedMethod */
 	public function __construct(
@@ -58,6 +61,7 @@ class ReceiptCommitService {
 		ReceiptPictureService $receiptPictureService,
 		ReceiptProductMatcher $matcher,
 		LoggerInterface $logger,
+		IJobList $jobList,
 	) {
 		$this->db = $db;
 		$this->listMapper = $listMapper;
@@ -70,6 +74,7 @@ class ReceiptCommitService {
 		$this->receiptPictureService = $receiptPictureService;
 		$this->matcher = $matcher;
 		$this->logger = $logger;
+		$this->jobList = $jobList;
 	}
 
 	/**
@@ -103,6 +108,7 @@ class ReceiptCommitService {
 			$list->setName($name);
 			$list->setStatus('finished');
 			$list->setIsFinished(true);
+			$list->setKind(ListEntity::KIND_PURCHASE);
 			$list->setFinalTotal($finalTotal !== null ? round($finalTotal, 2) : null);
 			$list->setPurchaseDate($purchaseDate);
 			$list->setPosition(0);
@@ -178,11 +184,40 @@ class ReceiptCommitService {
 
 			$this->db->commit();
 
+			$purchasedNames = [];
+			foreach ($items as $item) {
+				if ($item['isCoupon'] ?? false) {
+					continue;
+				}
+				$purchasedName = trim($item['name']);
+				if ($purchasedName !== '') {
+					$purchasedNames[] = $purchasedName;
+				}
+			}
+			$this->queueToBuyAutoMatch($userId, $purchasedNames);
+
 			return $updated;
 		} catch (\Exception $e) {
 			$this->db->rollBack();
 			$this->logger->error('Failed to commit scanned receipt', ['exception' => $e]);
 			throw new RuntimeException('Failed to save the scanned receipt', 0, $e);
+		}
+	}
+
+	/**
+	 * @param list<string> $purchasedNames
+	 */
+	private function queueToBuyAutoMatch(string $userId, array $purchasedNames): void {
+		if ($purchasedNames === []) {
+			return;
+		}
+		try {
+			$this->jobList->add(ToBuyAutoMatchJob::class, [
+				'userId' => $userId,
+				'names' => $purchasedNames,
+			]);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Failed to queue To Buy auto-check', ['exception' => $e]);
 		}
 	}
 

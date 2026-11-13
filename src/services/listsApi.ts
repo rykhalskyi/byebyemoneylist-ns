@@ -39,6 +39,23 @@ export async function copyList(id: string): Promise<ShoppingList> {
 	return data.ocs.data.list
 }
 
+export async function fetchActiveToBuyList(): Promise<ShoppingList | null> {
+	const { data } = await axios.get<OcsData<{ list: ShoppingList | null }>>(generateOcsUrl('/apps/byebyemoneylist/api/lists/to-buy'))
+	return data.ocs.data.list
+}
+
+export async function createToBuyList(prefix: string, itemNames: string[] = []): Promise<ShoppingList> {
+	const { data } = await axios.post<OcsData<{ list: ShoppingList }>>(
+		generateOcsUrl('/apps/byebyemoneylist/api/lists/to-buy'),
+		{ prefix, itemNames },
+	)
+	return data.ocs.data.list
+}
+
+export async function addToBuyItem(listId: string, name: string): Promise<ListItem> {
+	return addListItem(listId, { customName: name })
+}
+
 export async function fetchListShares(listId: string): Promise<ListShare[]> {
 	const { data } = await axios.get<OcsData<{ shares: ListShare[] }>>(generateOcsUrl(`/apps/byebyemoneylist/api/lists/${listId}/shares`))
 	return data.ocs.data.shares

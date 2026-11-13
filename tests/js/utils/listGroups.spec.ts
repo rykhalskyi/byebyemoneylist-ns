@@ -9,6 +9,8 @@ const BASE: ShoppingList = {
 	storeId: null,
 	categoryId: null,
 	status: 'new',
+	kind: 'PURCHASE',
+	isActive: false,
 	finalTotal: null,
 	totalPrice: null,
 	createdAt: null,
@@ -39,6 +41,14 @@ describe('finishedTotal', () => {
 	it('ignores finished lists without a stored final total', () => {
 		const lists = [
 			list('a', '2026-09-01T10:00:00Z', status('finished', null)),
+			list('b', '2026-09-02T10:00:00Z', status('finished', 7)),
+		]
+		expect(finishedTotal(lists)).toBe(7)
+	})
+
+	it('never counts To Buy lists', () => {
+		const lists = [
+			list('a', '2026-09-01T10:00:00Z', { status: 'finished', finalTotal: 10, kind: 'NEED_TO_BUY' }),
 			list('b', '2026-09-02T10:00:00Z', status('finished', 7)),
 		]
 		expect(finishedTotal(lists)).toBe(7)

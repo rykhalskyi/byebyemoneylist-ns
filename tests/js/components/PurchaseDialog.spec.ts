@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcRadioGroupButton from '@nextcloud/vue/components/NcRadioGroupButton'
-import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 import PurchaseDialog from '../../../src/components/PurchaseDialog.vue'
 import * as llmApi from '../../../src/services/llmApi.ts'
 import * as receiptApi from '../../../src/services/receiptApi.ts'
@@ -38,6 +38,8 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 		storeId: null,
 		categoryId: null,
 		status: 'new',
+		kind: 'PURCHASE',
+		isActive: false,
 		finalTotal: null,
 		totalPrice: null,
 		createdAt: null,
@@ -91,9 +93,9 @@ function profile(isActive: boolean): LlmProfile {
 	}
 }
 
-async function render(mode: 'manual' | 'scan', lists: ShoppingList[] = []) {
+async function render(mode: 'manual' | 'scan') {
 	const wrapper = mount(PurchaseDialog, {
-		props: { open: false, lists, stores: [], categories: [], initialMode: mode },
+		props: { open: false, stores: [], categories: [], initialMode: mode },
 		global: { stubs: { teleport: true } },
 	})
 	await wrapper.setProps({ open: true })
@@ -120,7 +122,7 @@ async function clickButton(wrapper: Awaited<ReturnType<typeof render>>, label: s
 }
 
 async function selectListName(wrapper: Awaited<ReturnType<typeof render>>, name: string) {
-	await wrapper.findComponent(NcSelect).vm.$emit('update:modelValue', name)
+	await wrapper.findComponent(NcTextField).find('input').setValue(name)
 	await nextTick()
 }
 

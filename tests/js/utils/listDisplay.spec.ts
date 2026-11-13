@@ -3,7 +3,7 @@ import type { Category, ListItem, Product, ShoppingList } from '../../../src/typ
 import { mdiAutorenew, mdiCart, mdiCashPlus } from '@mdi/js'
 import { describe, expect, it } from 'vitest'
 import { formatDate, formatTotal } from '../../../src/utils/format.ts'
-import { addItemLabel, categoryColor, checkedSum, hasActiveShares, isReadOnlyList, isRevokedList, isSharedList, itemDetails, itemSubname, listIcon, listMarkStyle, listSubname, listTotal, priceText, productCategory, productCategoryColor, sharedByLabel, statusLabel, statusVariant } from '../../../src/utils/listDisplay.ts'
+import { addItemLabel, categoryColor, checkedSum, deriveKind, hasActiveShares, isReadOnlyList, isRevokedList, isSharedList, isToBuy, isToBuyActive, itemDetails, itemName, itemSubname, listIcon, listMarkStyle, listSubname, listTotal, priceText, productCategory, productCategoryColor, sharedByLabel, statusLabel, statusVariant } from '../../../src/utils/listDisplay.ts'
 
 function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 	return {
@@ -12,6 +12,8 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 		storeId: null,
 		categoryId: null,
 		status: 'new',
+		kind: 'PURCHASE',
+		isActive: false,
 		finalTotal: null,
 		totalPrice: null,
 		createdAt: null,
@@ -29,10 +31,14 @@ function item(overrides: Partial<ListItem> = {}): ListItem {
 		listId: 'l1',
 		productId: 'p1',
 		productName: 'Milk',
+		customName: null,
 		price: null,
 		quantity: 1,
 		isChecked: false,
+		position: 0,
+		discount: null,
 		createdAt: null,
+		updatedAt: null,
 		...overrides,
 	}
 }
@@ -42,6 +48,23 @@ describe('listIcon', () => {
 		expect(listIcon(list())).toBe(mdiCart)
 		expect(listIcon(list({ isIncome: true }))).toBe(mdiCashPlus)
 		expect(listIcon(list({ isSubscription: true }))).toBe(mdiAutorenew)
+		expect(listIcon(list({ kind: 'NEED_TO_BUY' }))).toBe(mdiCart)
+	})
+})
+
+describe('kind helpers', () => {
+	it('derives the kind from the legacy flags when missing', () => {
+		expect(deriveKind(list({ kind: undefined as never, isIncome: true }))).toBe('INCOME')
+		expect(deriveKind(list({ kind: undefined as never, isSubscription: true }))).toBe('SUBSCRIPTION')
+		expect(deriveKind(list({ kind: undefined as never, status: 'finished' }))).toBe('PURCHASE')
+		expect(deriveKind(list({ kind: undefined as never }))).toBe('NEED_TO_BUY')
+	})
+
+	it('detects To Buy lists and the active one', () => {
+		expect(isToBuy(list({ kind: 'NEED_TO_BUY' }))).toBe(true)
+		expect(isToBuy(list())).toBe(false)
+		expect(isToBuyActive(list({ kind: 'NEED_TO_BUY', isActive: true }))).toBe(true)
+		expect(isToBuyActive(list({ kind: 'NEED_TO_BUY', isActive: false }))).toBe(false)
 	})
 })
 
@@ -50,6 +73,7 @@ describe('addItemLabel', () => {
 		expect(addItemLabel(list())).toBe('Add product')
 		expect(addItemLabel(list({ isIncome: true }))).toBe('Add income source')
 		expect(addItemLabel(list({ isSubscription: true }))).toBe('Add subscription')
+		expect(addItemLabel(list({ kind: 'NEED_TO_BUY' }))).toBe('Add item')
 	})
 })
 
@@ -57,13 +81,11 @@ describe('statusLabel and statusVariant', () => {
 	it('maps statuses to labels', () => {
 		expect(statusLabel('new')).toBe('New')
 		expect(statusLabel('finished')).toBe('Finished')
-		expect(statusLabel('archived')).toBe('Archived')
 	})
 
 	it('maps statuses to chip variants', () => {
 		expect(statusVariant('new')).toBe('secondary')
 		expect(statusVariant('finished')).toBe('success')
-		expect(statusVariant('archived')).toBe('tertiary')
 	})
 })
 
@@ -71,11 +93,18 @@ describe('item formatting', () => {
 	it('renders details from price and quantity', () => {
 		expect(itemDetails(item({ price: 2, quantity: 3 }))).toBe(formatTotal(6))
 		expect(itemDetails(item())).toBe('')
+		expect(itemDetails(item({ productId: null, price: 2 }))).toBe('')
 	})
 
 	it('renders the quantity and unit price in the subname', () => {
 		expect(itemSubname(item({ price: 2, quantity: 3 }))).toBe(`3 × ${formatTotal(2)}`)
 		expect(itemSubname(item({ quantity: 3 }))).toBe('3')
+		expect(itemSubname(item({ productId: null, quantity: 3 }))).toBe('')
+	})
+
+	it('prefers the custom name for plain-text items', () => {
+		expect(itemName(item())).toBe('Milk')
+		expect(itemName(item({ productId: null, customName: 'Bread' }))).toBe('Bread')
 	})
 })
 

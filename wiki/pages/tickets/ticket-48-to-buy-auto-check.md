@@ -1,7 +1,7 @@
 ---
 created: 2026-10-13
 type: ticket
-status: proposed
+status: implemented
 summary: T48 — Server-side LLM auto-check of pending To Buy items after a purchase
 ---
 
@@ -21,15 +21,29 @@ ones the model is confident about. Silent, best-effort, never blocks the purchas
 ## Plan
 
 1. `lib/Service/ToBuy/ToBuyAutoMatchService.php` (new) — gate on the active profile
-   (`DefaultLlmProfileService`); prompt for `{"matchedIds":[...]}` across
-   languages/synonyms; accept only supplied pending ids; never throw; re-verify the list
+   (`DefaultLlmProfileService`) only, with no separate consent prompt (D-38); prompt for
+   `{"matchedIds":[...]}` across languages/synonyms; accept only supplied pending ids;
+   swallow ordinary failures but let request cancellation propagate; re-verify the list
    and unchecked state before writing.
-2. Hook: `lib/Controller/ListController.php` (when `isFinished` becomes true) and
-   `lib/Service/Receipt/ReceiptCommitService.php` — resolve purchased names (receipt
-   items, else the finished list's checked items), then check matches.
+2. Hook **every** purchase finalization: `lib/Controller/ListController.php` (create or
+   update when `isFinished` becomes true), `lib/Service/Receipt/ReceiptCommitService.php`
+   and `lib/Service/Import/PurchaseImportApproveService.php` — resolve purchased names as
+   Android does (receipt/entered non-coupon items, else the finished list's checked
+   `quantity > 0` items; total-only list yields nothing), then check matches.
 3. `tests/unit/Service/ToBuy/ToBuyAutoMatchServiceTest.php` (new) — matching, filtering,
    active-profile gate, failure/CancellationException handling.
 
 ## Outcome
 
-Not started.
+Implemented on `feature/to-buy-list-redesign`:
+
+- New `ToBuyAutoMatchService`: gates only on an active LLM profile, prompts for
+  `{"matchedIds":[...]}`, accepts only ids from the current pending set, re-verifies the
+  active list and unchecked state before writing, and swallows all failures (best-effort).
+  `matchAfterPurchaseList()` resolves a finalized list's checked `quantity > 0` item
+  names (falling back to catalog names).
+- Hooks: `ListController` create/update when finished, `ReceiptCommitService` (non-coupon
+  item names) and `PurchaseImportApproveService` (approved non-coupon names).
+- Tests: `ToBuyAutoMatchServiceTest` (active-profile gate, missing list, id filtering,
+  provider failure, checked-list resolution) plus constructor mocks for the three hooks.
+  PHPUnit 299 green; psalm and php-cs-fixer clean; Vitest 246 green.

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Category, ListItem, Product, ShoppingList, Store } from '../../types.ts'
 
-import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiDotsVertical, mdiReceiptText, mdiShareVariant } from '@mdi/js'
+import { mdiChevronDown, mdiContentCopy, mdiDelete, mdiDotsVertical, mdiOpenInNew, mdiReceiptText, mdiShareVariant } from '@mdi/js'
+import { computed } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcChip from '@nextcloud/vue/components/NcChip'
@@ -9,7 +10,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import ShoppingListItems from './ShoppingListItems.vue'
 import { t } from '../../utils/l10n.ts'
-import { addItemLabel, categoryColor, hasActiveShares, isReadOnlyList, isRevokedList, isSharedList, listIcon, listMarkStyle, listSubname, priceText, sharedByLabel, statusLabel, statusVariant } from '../../utils/listDisplay.ts'
+import { addItemLabel, categoryColor, hasActiveShares, isReadOnlyList, isRevokedList, isSharedList, isToBuy, isToBuyActive, listIcon, listMarkStyle, listSubname, priceText, sharedByLabel, statusLabel, statusVariant } from '../../utils/listDisplay.ts'
 
 const props = defineProps<{
 	list: ShoppingList
@@ -30,13 +31,36 @@ const emit = defineEmits<{
 	share: []
 	manageShares: []
 	addItem: []
+	addToBuyItem: []
+	open: []
+	toggleItem: [item: ListItem, checked: boolean]
+	renameItem: [item: ListItem]
 	deleteItem: [item: ListItem]
 }>()
+
+const toBuy = computed(() => isToBuy(props.list))
+const toBuyActive = computed(() => isToBuyActive(props.list))
 
 function onToggle() {
 	if (!isRevokedList(props.list)) {
 		emit('toggle')
 	}
+}
+
+function onAdd() {
+	if (toBuy.value) {
+		emit('addToBuyItem')
+	} else {
+		emit('addItem')
+	}
+}
+
+function onToggleItem(item: ListItem, checked: boolean) {
+	emit('toggleItem', item, checked)
+}
+
+function onRenameItem(item: ListItem) {
+	emit('renameItem', item)
 }
 
 function storeName(storeId: string | null): string {
@@ -61,7 +85,12 @@ function categoryName(categoryId: string | null): string {
 			</template>
 			<template #subname>
 				<div :class="$style.subname">
-					<span>{{ listSubname(props.list, storeName(props.list.storeId), categoryName(props.list.categoryId)) }}</span>
+					<span>{{ toBuy ? listSubname(props.list, '', '') : listSubname(props.list, storeName(props.list.storeId), categoryName(props.list.categoryId)) }}</span>
+					<NcChip
+						v-if="toBuyActive"
+						:text="t('Active')"
+						variant="success"
+						noClose />
 					<NcChip
 						v-if="hasActiveShares(props.list)"
 						:text="t('Shared')"
@@ -76,10 +105,14 @@ function categoryName(categoryId: string | null): string {
 						variant="tertiary"
 						noClose />
 					<NcChip
-						v-if="priceText(props.list, props.items) !== null"
+						v-if="!toBuy && priceText(props.list, props.items) !== null"
 						:text="priceText(props.list, props.items) ?? ''"
 						noClose />
-					<NcChip :text="statusLabel(props.list.status)" :variant="statusVariant(props.list.status)" noClose />
+					<NcChip
+						v-if="!toBuy"
+						:text="statusLabel(props.list.status)"
+						:variant="statusVariant(props.list.status)"
+						noClose />
 					<NcIconSvgWrapper
 						inline
 						:path="mdiChevronDown"
@@ -94,30 +127,52 @@ function categoryName(categoryId: string | null): string {
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiDotsVertical" :size="20" />
 					</template>
-					<NcActionButton v-if="isSharedList(props.list) && !isRevokedList(props.list)" @click.stop="emit('copy')">
-						<template #icon>
-							<NcIconSvgWrapper :path="mdiContentCopy" :size="20" />
-						</template>
-						{{ t('Copy to my catalog') }}
-					</NcActionButton>
-					<NcActionButton v-if="!isSharedList(props.list)" @click.stop="emit('share')">
-						<template #icon>
-							<NcIconSvgWrapper :path="mdiShareVariant" :size="20" />
-						</template>
-						{{ t('Share') }}
-					</NcActionButton>
-					<NcActionButton v-if="!isSharedList(props.list) && props.list.hasReceipt" @click.stop="emit('receipt')">
-						<template #icon>
-							<NcIconSvgWrapper :path="mdiReceiptText" :size="20" />
-						</template>
-						{{ t('View receipt') }}
-					</NcActionButton>
-					<NcActionButton v-if="!isSharedList(props.list)" @click.stop="emit('delete')">
-						<template #icon>
-							<NcIconSvgWrapper :path="mdiDelete" :size="20" />
-						</template>
-						{{ t('Delete') }}
-					</NcActionButton>
+					<template v-if="toBuy">
+						<NcActionButton v-if="isSharedList(props.list) && !isRevokedList(props.list)" @click.stop="emit('copy')">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiContentCopy" :size="20" />
+							</template>
+							{{ t('Copy to my catalog') }}
+						</NcActionButton>
+						<NcActionButton v-if="toBuyActive" @click.stop="emit('open')">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiOpenInNew" :size="20" />
+							</template>
+							{{ t('Open list') }}
+						</NcActionButton>
+						<NcActionButton v-if="!isSharedList(props.list)" @click.stop="emit('delete')">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+							</template>
+							{{ t('Delete') }}
+						</NcActionButton>
+					</template>
+					<template v-else>
+						<NcActionButton v-if="isSharedList(props.list) && !isRevokedList(props.list)" @click.stop="emit('copy')">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiContentCopy" :size="20" />
+							</template>
+							{{ t('Copy to my catalog') }}
+						</NcActionButton>
+						<NcActionButton v-if="!isSharedList(props.list)" @click.stop="emit('share')">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiShareVariant" :size="20" />
+							</template>
+							{{ t('Share') }}
+						</NcActionButton>
+						<NcActionButton v-if="!isSharedList(props.list) && props.list.hasReceipt" @click.stop="emit('receipt')">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiReceiptText" :size="20" />
+							</template>
+							{{ t('View receipt') }}
+						</NcActionButton>
+						<NcActionButton v-if="!isSharedList(props.list)" @click.stop="emit('delete')">
+							<template #icon>
+								<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+							</template>
+							{{ t('Delete') }}
+						</NcActionButton>
+					</template>
 				</NcActions>
 			</template>
 		</NcListItem>
@@ -131,7 +186,10 @@ function categoryName(categoryId: string | null): string {
 			:products="props.products"
 			:categories="props.categories"
 			:readonly="isReadOnlyList(props.list)"
-			@add="emit('addItem')"
+			:toBuy="toBuy"
+			@add="onAdd"
+			@toggle="onToggleItem"
+			@rename="onRenameItem"
 			@delete="emit('deleteItem', $event)" />
 	</div>
 </template>

@@ -28,7 +28,7 @@ export function finishedTotal(lists: readonly ShoppingList[]): number | null {
 	let total = 0
 	let hasFinal = false
 	for (const list of lists) {
-		if (list.status === 'finished' && list.finalTotal !== null) {
+		if (list.kind !== 'NEED_TO_BUY' && list.status === 'finished' && list.finalTotal !== null) {
 			total += list.finalTotal
 			hasFinal = true
 		}

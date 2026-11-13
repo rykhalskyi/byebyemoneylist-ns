@@ -93,6 +93,10 @@ class DashboardMapper extends QBMapper {
 			->andWhere($qb->expr()->eq('l.is_finished', $qb->createNamedParameter(true, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->eq('l.is_income', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
 			->andWhere($qb->expr()->eq('l.is_subscription', $qb->createNamedParameter(false, IQueryBuilder::PARAM_BOOL)))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->isNull('l.kind'),
+				$qb->expr()->neq('l.kind', $qb->createNamedParameter('NEED_TO_BUY', IQueryBuilder::PARAM_STR)),
+			))
 			->andWhere($qb->expr()->gte('l.created_at', $qb->createNamedParameter($from, IQueryBuilder::PARAM_DATETIME_MUTABLE)))
 			->andWhere($qb->expr()->lt('l.created_at', $qb->createNamedParameter($to, IQueryBuilder::PARAM_DATETIME_MUTABLE)));
 	}

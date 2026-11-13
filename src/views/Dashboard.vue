@@ -13,11 +13,12 @@ import InfoWidget from '../components/dashboard/widgets/InfoWidget.vue'
 import ScanPurchaseWidget from '../components/dashboard/widgets/ScanPurchaseWidget.vue'
 import SpentThisMonthWidget from '../components/dashboard/widgets/SpentThisMonthWidget.vue'
 import SpentTodayWidget from '../components/dashboard/widgets/SpentTodayWidget.vue'
+import ToBuyWidget from '../components/dashboard/widgets/ToBuyWidget.vue'
 import { useDashboardWidgets } from '../composables/useDashboardWidgets.ts'
 import { fetchCategories } from '../services/listsApi.ts'
 import { t } from '../utils/l10n.ts'
 
-const emit = defineEmits<{ purchase: [mode: 'manual' | 'scan'] }>()
+const emit = defineEmits<{ purchase: [mode: 'manual' | 'scan'], openToBuy: [] }>()
 
 const { widgets, addWidget, removeWidget, reorderWidgets } = useDashboardWidgets()
 
@@ -72,6 +73,7 @@ function categoryName(categoryId: string | null | undefined): string {
 				<ScanPurchaseWidget
 					v-else-if="widget.type === 'scanPurchase'"
 					@purchase="emit('purchase', $event)" />
+				<ToBuyWidget v-else-if="widget.type === 'toBuy'" @open="emit('openToBuy')" />
 				<InfoWidget v-else-if="widget.type === 'info'" />
 			</template>
 		</WidgetGrid>

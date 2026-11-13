@@ -48,6 +48,7 @@ class ListCopyService {
 			return null;
 		}
 		$sourceOwner = $source->getOwner() ?? '';
+		$sourceKind = $source->resolveKind();
 		$now = new DateTime('now', new DateTimeZone('UTC'));
 
 		$started = false;
@@ -81,6 +82,8 @@ class ListCopyService {
 			$list->setIsForwardEmpty($source->getIsForwardEmpty() ?? true);
 			$list->setIsSubscription($source->getIsSubscription() ?? false);
 			$list->setIsIncome($source->getIsIncome() ?? false);
+			$list->setKind($sourceKind);
+			$list->setIsActive(false);
 			$list->setReceiptPath(null);
 			$created = $this->listMapper->insert($list);
 
@@ -97,6 +100,33 @@ class ListCopyService {
 			/** @var array<string, string> $productMap */
 			$productMap = [];
 			foreach ($this->itemMapper->findByListId($listId) as $sourceItem) {
+				if ($sourceKind === ListEntity::KIND_NEED_TO_BUY) {
+					$customName = $sourceItem->getCustomName();
+					$sourceProductId = $sourceItem->getProductId();
+					if (($customName === null || trim($customName) === '') && $sourceProductId !== null && $sourceProductId !== '') {
+						$customName = $this->productMapper->findByIdAndOwner($sourceProductId, $sourceOwner)?->getName();
+					}
+					$customName = $customName === null ? '' : trim($customName);
+					if ($customName === '') {
+						continue;
+					}
+
+					$item = new ListItemEntity();
+					$item->setId(Uuid::v4());
+					$item->setOwner($userId);
+					$item->setListId($created->getId());
+					$item->setProductId(null);
+					$item->setQuantity(1.0);
+					$item->setCustomName($customName);
+					$item->setPosition($sourceItem->getPosition() ?? 0);
+					$item->setIsChecked(false);
+					$item->setStatus('added');
+					$item->setCreatedAt($now);
+					$item->setUpdatedAt($now);
+					$this->itemMapper->insert($item);
+					continue;
+				}
+
 				$productId = $this->copyProduct(
 					$sourceItem->getProductId(),
 					$sourceOwner,

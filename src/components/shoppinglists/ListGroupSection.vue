@@ -31,6 +31,10 @@ const emit = defineEmits<{
 	share: [list: ShoppingList]
 	manageShares: [list: ShoppingList]
 	addItem: [list: ShoppingList]
+	addToBuyItem: [list: ShoppingList]
+	open: [list: ShoppingList]
+	toggleItem: [list: ShoppingList, item: ListItem, checked: boolean]
+	renameItem: [list: ShoppingList, item: ListItem]
 	deleteItem: [list: ShoppingList, item: ListItem]
 }>()
 
@@ -94,6 +98,10 @@ function monthLabel(month: number | null): string {
 						@share="emit('share', list)"
 						@manageShares="emit('manageShares', list)"
 						@addItem="emit('addItem', list)"
+						@addToBuyItem="emit('addToBuyItem', list)"
+						@open="emit('open', list)"
+						@toggleItem="(item, checked) => emit('toggleItem', list, item, checked)"
+						@renameItem="item => emit('renameItem', list, item)"
 						@deleteItem="emit('deleteItem', list, $event)" />
 				</div>
 			</div>

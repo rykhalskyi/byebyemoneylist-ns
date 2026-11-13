@@ -10,6 +10,7 @@ import Dashboard from './views/Dashboard.vue'
 import Imports from './views/Imports.vue'
 import Settings from './views/Settings.vue'
 import ShoppingLists from './views/ShoppingLists.vue'
+import ToBuy from './views/ToBuy.vue'
 import { useCategoryInitialization } from './composables/useCategoryInitialization.ts'
 import { t } from './utils/l10n.ts'
 
@@ -26,6 +27,7 @@ const items = [
 
 const currentView = ref(items[0].id)
 const purchaseIntent = ref<'manual' | 'scan' | null>(null)
+const toBuyOpen = ref(false)
 
 const { busy: initializing, error: initializeError, shouldPrompt, initialize } = useCategoryInitialization()
 const showInitializeDialog = ref(false)
@@ -58,20 +60,28 @@ function openPurchase(mode: 'manual' | 'scan') {
 
 <template>
 	<NcContent appName="byebyemoneylist">
-		<Menu :items="items" :active="currentView" @select="onSelect" />
+		<Menu
+			v-if="!toBuyOpen"
+			:items="items"
+			:active="currentView"
+			@select="onSelect" />
 		<NcAppContent :class="$style.content">
-			<Dashboard v-if="currentView === 'dashboard'" @purchase="openPurchase" />
-			<ShoppingLists
-				v-else-if="currentView === 'lists'"
-				:purchaseMode="purchaseIntent"
-				@purchaseOpened="purchaseIntent = null" />
-			<Imports v-else-if="currentView === 'imports'" />
-			<Analytics v-else-if="currentView === 'analytics'" />
-			<Catalog v-else-if="currentView === 'catalog'" />
-			<Settings v-else-if="currentView === 'settings'" />
-			<h2 v-else>
-				{{ currentLabel }}
-			</h2>
+			<ToBuy v-if="toBuyOpen" @close="toBuyOpen = false" />
+			<template v-else>
+				<Dashboard v-if="currentView === 'dashboard'" @purchase="openPurchase" @openToBuy="toBuyOpen = true" />
+				<ShoppingLists
+					v-else-if="currentView === 'lists'"
+					:purchaseMode="purchaseIntent"
+					@purchaseOpened="purchaseIntent = null"
+					@openToBuy="toBuyOpen = true" />
+				<Imports v-else-if="currentView === 'imports'" />
+				<Analytics v-else-if="currentView === 'analytics'" />
+				<Catalog v-else-if="currentView === 'catalog'" />
+				<Settings v-else-if="currentView === 'settings'" />
+				<h2 v-else>
+					{{ currentLabel }}
+				</h2>
+			</template>
 		</NcAppContent>
 		<InitializeCategoriesDialog
 			:open="showInitializeDialog"

@@ -4,12 +4,13 @@ import type { Category, ListItem, Product } from '../../types.ts'
 import { mdiDelete, mdiPlus } from '@mdi/js'
 import { computed } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcListItem from '@nextcloud/vue/components/NcListItem'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import ProductThumb from '../catalog/ProductThumb.vue'
 import { t } from '../../utils/l10n.ts'
-import { itemDetails, itemSubname, productCategory } from '../../utils/listDisplay.ts'
+import { itemDetails, itemName, itemSubname, productCategory } from '../../utils/listDisplay.ts'
 
 const props = defineProps<{
 	items: ListItem[]
@@ -19,11 +20,14 @@ const props = defineProps<{
 	products: Product[]
 	categories: Category[]
 	readonly?: boolean
+	toBuy?: boolean
 }>()
 
 const emit = defineEmits<{
 	add: []
 	delete: [item: ListItem]
+	toggle: [item: ListItem, checked: boolean]
+	rename: [item: ListItem]
 }>()
 
 function productOf(item: ListItem): Product | null {
@@ -49,33 +53,63 @@ const rows = computed(() => props.items.map((item) => ({
 
 		<template v-else>
 			<ul v-if="props.items.length > 0" :class="$style['item-list']">
-				<NcListItem
-					v-for="row in rows"
-					:key="row.item.id"
-					:name="row.item.productName"
-					:details="itemDetails(row.item)"
-					compact
-					oneLine>
-					<template #icon>
-						<ProductThumb
-							:product="row.product"
-							:category="row.category" />
-					</template>
-					<template #subname>
-						<span v-if="itemSubname(row.item)">{{ itemSubname(row.item) }}</span>
-					</template>
-					<template #extra-actions>
+				<template v-if="props.toBuy">
+					<li
+						v-for="row in rows"
+						:key="row.item.id"
+						:class="$style['to-buy-row']">
+						<NcCheckboxRadioSwitch
+							:modelValue="row.item.isChecked"
+							:disabled="props.readonly"
+							@update:modelValue="emit('toggle', row.item, $event)" />
+						<button
+							type="button"
+							:class="[$style['to-buy-name'], { [$style.checked]: row.item.isChecked }]"
+							:disabled="props.readonly"
+							@click="emit('rename', row.item)">
+							{{ itemName(row.item) }}
+						</button>
 						<NcButton
 							v-if="!props.readonly"
 							type="button"
-							:aria-label="t('Delete {name}', { name: row.item.productName })"
+							variant="tertiary"
+							:aria-label="t('Delete {name}', { name: itemName(row.item) })"
 							@click="emit('delete', row.item)">
 							<template #icon>
 								<NcIconSvgWrapper :path="mdiDelete" :size="20" />
 							</template>
 						</NcButton>
-					</template>
-				</NcListItem>
+					</li>
+				</template>
+				<template v-else>
+					<NcListItem
+						v-for="row in rows"
+						:key="row.item.id"
+						:name="row.item.productName"
+						:details="itemDetails(row.item)"
+						compact
+						oneLine>
+						<template #icon>
+							<ProductThumb
+								:product="row.product"
+								:category="row.category" />
+						</template>
+						<template #subname>
+							<span v-if="itemSubname(row.item)">{{ itemSubname(row.item) }}</span>
+						</template>
+						<template #extra-actions>
+							<NcButton
+								v-if="!props.readonly"
+								type="button"
+								:aria-label="t('Delete {name}', { name: row.item.productName })"
+								@click="emit('delete', row.item)">
+								<template #icon>
+									<NcIconSvgWrapper :path="mdiDelete" :size="20" />
+								</template>
+							</NcButton>
+						</template>
+					</NcListItem>
+				</template>
 			</ul>
 			<p v-else :class="$style['no-items']">
 				{{ t('No items yet.') }}
@@ -117,6 +151,36 @@ const rows = computed(() => props.items.map((item) => ({
 	list-style: none;
 	margin: 0;
 	padding: 0;
+}
+
+.to-buy-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 2px 0;
+}
+
+.to-buy-name {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	background: none;
+	border: none;
+	padding: 4px 0;
+	text-align: start;
+	color: var(--color-main-text);
+	cursor: pointer;
+}
+
+.to-buy-name:disabled {
+	cursor: default;
+}
+
+.checked {
+	text-decoration: line-through;
+	color: var(--color-text-maxcontrast);
 }
 
 .no-items {

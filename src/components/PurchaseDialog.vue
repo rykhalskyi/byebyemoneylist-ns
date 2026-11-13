@@ -12,17 +12,16 @@ import NcRadioGroup from '@nextcloud/vue/components/NcRadioGroup'
 import NcRadioGroupButton from '@nextcloud/vue/components/NcRadioGroupButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { createList, createStore, fetchListItems, updateList } from '../services/listsApi.ts'
+import { createList, createStore } from '../services/listsApi.ts'
 import { fetchLlmProfiles } from '../services/llmApi.ts'
 import { commitReceipt, scanReceipt } from '../services/receiptApi.ts'
 import { formatTotal } from '../utils/format.ts'
 import { normalizeReceiptImage } from '../utils/image.ts'
 import { t } from '../utils/l10n.ts'
-import { defaultListName, findNewListByName, itemsTotal, parsePrice } from '../utils/purchase.ts'
+import { defaultListName, parsePrice } from '../utils/purchase.ts'
 
 const props = defineProps<{
 	open: boolean
-	lists: ShoppingList[]
 	stores: Store[]
 	categories: Category[]
 	initialMode?: 'manual' | 'scan'
@@ -34,11 +33,10 @@ const emit = defineEmits<{
 }>()
 
 const mode = ref<string>('manual')
-const listValue = ref<ShoppingList | string | null>(null)
+const listNameInput = ref('')
 const storeValue = ref<Store | string | null>(null)
 const category = ref<Category | null>(null)
 const price = ref('')
-const itemsLoading = ref(false)
 const submitting = ref(false)
 const error = ref<string | null>(null)
 const storeError = ref(false)
@@ -59,10 +57,7 @@ const scanError = ref<string | null>(null)
 const saveReceipt = ref(true)
 const hasActiveProfile = ref<boolean | null>(null)
 
-const newLists = computed(() => props.lists.filter((list) => list.status === 'new'))
 const expenseCategories = computed(() => props.categories.filter((category) => !category.income))
-const selectedList = computed(() => (listValue.value !== null && typeof listValue.value === 'object' ? listValue.value : null))
-const listName = computed(() => (typeof listValue.value === 'string' ? listValue.value : listValue.value?.name ?? ''))
 const storeName = computed(() => (typeof storeValue.value === 'string' ? storeValue.value : storeValue.value?.name ?? ''))
 
 const scanItemsSum = computed(() => {
@@ -81,11 +76,10 @@ watch(
 			return
 		}
 		mode.value = props.initialMode ?? 'manual'
-		listValue.value = null
+		listNameInput.value = ''
 		storeValue.value = null
 		category.value = null
 		price.value = ''
-		itemsLoading.value = false
 		submitting.value = false
 		error.value = null
 		storeError.value = false
@@ -103,37 +97,6 @@ watch(
 		void loadActiveProfile()
 	},
 )
-
-watch(listValue, async (value) => {
-	if (value === null || typeof value === 'string') {
-		itemsLoading.value = false
-		return
-	}
-	const store = props.stores.find((candidate) => candidate.id === value.storeId)
-	storeValue.value = store ?? null
-	category.value = props.categories.find((candidate) => candidate.id === value.categoryId) ?? null
-	await prefillTotal(value.id)
-})
-
-async function prefillTotal(listId: string) {
-	itemsLoading.value = true
-	try {
-		const items = await fetchListItems(listId)
-		if (selectedList.value?.id !== listId) {
-			return
-		}
-		const total = itemsTotal(items)
-		price.value = total > 0 ? total.toFixed(2) : ''
-	} catch {
-		if (selectedList.value?.id === listId) {
-			price.value = ''
-		}
-	} finally {
-		if (selectedList.value?.id === listId) {
-			itemsLoading.value = false
-		}
-	}
-}
 
 async function resolveStoreId(name: string): Promise<string> {
 	const existing = props.stores.find((store) => store.name.trim().toLowerCase() === name.toLowerCase())
@@ -249,7 +212,7 @@ async function onSubmit() {
 		return
 	}
 
-	const name = listName.value.trim()
+	const name = listNameInput.value.trim()
 	const trimmedStore = storeName.value.trim()
 	const parsedPrice = parsePrice(price.value)
 	const selectedCategory = category.value
@@ -275,8 +238,7 @@ async function onSubmit() {
 			purchaseDate: new Date().toISOString(),
 			isFinished: true,
 		}
-		const existing = findNewListByName(props.lists, resolvedName)
-		const list = existing === null ? await createList(payload) : await updateList(existing.id, payload)
+		const list = await createList(payload)
 		emit('saved', list)
 		emit('update:open', false)
 	} catch {
@@ -301,7 +263,7 @@ async function submitScan() {
 		return
 	}
 
-	const name = listName.value.trim()
+	const name = listNameInput.value.trim()
 	const resolvedName = name === '' ? defaultListName(scan.storeName ?? t('Receipt')) : name
 
 	submitting.value = true
@@ -350,16 +312,11 @@ async function submitScan() {
 		@update:open="emit('update:open', $event)">
 		<div :class="$style.form">
 			<div :class="$style.field">
-				<NcSelect
-					v-model="listValue"
-					label="name"
-					:inputLabel="t('List name')"
-					:placeholder="t('Select or type a list name')"
-					:options="newLists"
-					:disabled="submitting"
-					:taggable="true"
-					:clearable="false"
-					:filterable="true" />
+				<NcTextField
+					v-model="listNameInput"
+					:label="t('List name')"
+					:placeholder="t('Optional')"
+					:disabled="submitting" />
 				<p :class="$style.hint">
 					{{ mode === 'manual'
 						? t('Leave empty to name it after the store and date.')
@@ -399,8 +356,7 @@ async function submitScan() {
 						inputmode="decimal"
 						:label="t('Total price')"
 						:placeholder="t('e.g. 1.99')"
-						:disabled="submitting || itemsLoading"
-						:helperText="itemsLoading ? t('Loading…') : ''"
+						:disabled="submitting"
 						:error="priceError" />
 					<p v-if="priceError" :class="$style['field-error']">
 						{{ price.trim() === '' ? t('The total price is required.') : t('Please enter a valid total price.') }}

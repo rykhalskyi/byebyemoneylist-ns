@@ -182,4 +182,57 @@ final class ListCopyServiceTest extends TestCase {
 		$this->assertNotNull($result);
 		$this->assertSame('existing-cat', $result->getCategoryId());
 	}
+
+	public function testCopyToBuyListKeepsKindAndCopiesPlainTextItems(): void {
+		$source = new ListEntity();
+		$source->setId('source-list');
+		$source->setOwner('alice');
+		$source->setName('To Buy 12.11.2026');
+		$source->setStatus('new');
+		$source->setKind(ListEntity::KIND_NEED_TO_BUY);
+		$source->setIsActive(true);
+
+		$this->listAccess->method('findReadable')->willReturn($source);
+		$this->db->method('beginTransaction');
+		$this->db->method('commit');
+		$this->listMapper->method('findCategoryIdsByListIds')->willReturn([]);
+		$this->listMapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ListEntity $list): ListEntity {
+				$list->setId('copy-1');
+				return $list;
+			});
+
+		$sourceItem = new ListItemEntity();
+		$sourceItem->setId('item-1');
+		$sourceItem->setOwner('alice');
+		$sourceItem->setListId('source-list');
+		$sourceItem->setProductId(null);
+		$sourceItem->setCustomName('Milk');
+		$sourceItem->setQuantity(1.0);
+		$sourceItem->setPosition(2);
+		$sourceItem->setIsChecked(true);
+		$this->itemMapper->method('findByListId')->willReturn([$sourceItem]);
+
+		$insertedItem = null;
+		$this->itemMapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(function (ListItemEntity $item) use (&$insertedItem): ListItemEntity {
+				$insertedItem = $item;
+				return $item;
+			});
+
+		$result = $this->service->copy('source-list', 'bob');
+
+		$this->assertNotNull($result);
+		$this->assertSame(ListEntity::KIND_NEED_TO_BUY, $result->getKind());
+		$this->assertFalse($result->getIsActive());
+		$this->assertInstanceOf(ListItemEntity::class, $insertedItem);
+		$this->assertNull($insertedItem->getProductId());
+		$this->assertSame('Milk', $insertedItem->getCustomName());
+		$this->assertSame(1.0, $insertedItem->getQuantity());
+		$this->assertNull($insertedItem->getPrice());
+		$this->assertSame(2, $insertedItem->getPosition());
+		$this->assertFalse($insertedItem->getIsChecked());
+	}
 }

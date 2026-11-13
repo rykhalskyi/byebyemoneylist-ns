@@ -16,10 +16,14 @@ function item(overrides: Partial<ListItem> = {}): ListItem {
 		listId: 'l1',
 		productId: 'p1',
 		productName: 'Milk',
+		customName: null,
 		price: 2,
 		quantity: 1,
 		isChecked: false,
+		position: 0,
+		discount: null,
 		createdAt: null,
+		updatedAt: null,
 		...overrides,
 	}
 }

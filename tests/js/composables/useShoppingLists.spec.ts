@@ -2,7 +2,7 @@ import type { ListItem, ShoppingList } from '../../../src/types.ts'
 
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useShoppingLists } from '../../../src/composables/useShoppingLists.ts'
+import { matchesKindFilter, useShoppingLists } from '../../../src/composables/useShoppingLists.ts'
 import * as api from '../../../src/services/listsApi.ts'
 
 vi.mock('../../../src/services/listsApi.ts', () => ({
@@ -23,6 +23,8 @@ function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 		storeId: null,
 		categoryId: null,
 		status: 'new',
+		kind: 'PURCHASE',
+		isActive: false,
 		finalTotal: null,
 		totalPrice: null,
 		createdAt: new Date().toISOString(),
@@ -40,10 +42,14 @@ function item(overrides: Partial<ListItem> = {}): ListItem {
 		listId: 'l1',
 		productId: 'p1',
 		productName: 'Milk',
+		customName: null,
 		price: 1.5,
 		quantity: 2,
 		isChecked: false,
+		position: 0,
+		discount: null,
 		createdAt: null,
+		updatedAt: null,
 		...overrides,
 	}
 }
@@ -204,5 +210,16 @@ describe('useShoppingLists', () => {
 		await store.onCopyList(list({ id: 'shared-1', sharedBy: 'alice' }))
 
 		expect(store.error.value).toBe('Failed to copy the list.')
+	})
+})
+
+describe('matchesKindFilter', () => {
+	it('matches lists by their derived kind', () => {
+		expect(matchesKindFilter(list({ kind: 'NEED_TO_BUY' }), 'toBuy')).toBe(true)
+		expect(matchesKindFilter(list({ kind: 'PURCHASE' }), 'purchases')).toBe(true)
+		expect(matchesKindFilter(list({ kind: 'INCOME' }), 'income')).toBe(true)
+		expect(matchesKindFilter(list({ kind: 'SUBSCRIPTION' }), 'subscriptions')).toBe(true)
+		expect(matchesKindFilter(list({ kind: 'PURCHASE' }), 'toBuy')).toBe(false)
+		expect(matchesKindFilter(list({ kind: 'NEED_TO_BUY' }), 'all')).toBe(true)
 	})
 })
