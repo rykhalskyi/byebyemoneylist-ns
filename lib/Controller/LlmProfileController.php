@@ -183,8 +183,9 @@ class LlmProfileController extends OCSController {
 		$profile->setCreatedAt(new DateTime());
 
 		try {
+			$shouldActivate = $isActive || $this->mapper->findActiveByOwner($userId) === null;
 			$created = $this->mapper->insert($profile);
-			if ($isActive) {
+			if ($shouldActivate) {
 				$this->mapper->setActive($created->getId(), $userId, true);
 				$created->setIsActive(true);
 			}

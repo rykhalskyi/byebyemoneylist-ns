@@ -48,13 +48,13 @@ async function onSelectProfile(profile: LlmProfile) {
 	if (actionInProgress.value) {
 		return
 	}
-	const targetActive = !profile.isActive
+	const targetActive = true
 	actionInProgress.value = true
 	try {
 		await activateLlmProfile(profile.id, targetActive)
 		profiles.value = profiles.value.map((p) => ({
 			...p,
-			isActive: p.id === profile.id ? targetActive : false,
+			isActive: p.id === profile.id,
 		}))
 	} catch {
 		error.value = t('Failed to update active profile.')

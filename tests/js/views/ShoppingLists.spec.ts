@@ -1,4 +1,4 @@
-import type { Category, Product, ShoppingList, Store } from '../../../src/types.ts'
+import type { Category, Product, PurchaseImportSummary, ShoppingList, Store } from '../../../src/types.ts'
 
 import { mdiAutorenew, mdiCart, mdiCashPlus, mdiDotsVertical } from '@mdi/js'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
@@ -11,8 +11,10 @@ import AddListDialog from '../../../src/components/AddListDialog.vue'
 import ConfirmDialog from '../../../src/components/ConfirmDialog.vue'
 import PurchaseDialog from '../../../src/components/PurchaseDialog.vue'
 import ReceiptViewDialog from '../../../src/components/ReceiptViewDialog.vue'
+import Imports from '../../../src/views/Imports.vue'
 import ShoppingLists from '../../../src/views/ShoppingLists.vue'
 import * as api from '../../../src/services/listsApi.ts'
+import * as importsApi from '../../../src/services/purchaseImportsApi.ts'
 
 vi.mock('../../../src/services/listsApi.ts', () => ({
 	fetchLists: vi.fn(),
@@ -33,6 +35,30 @@ vi.mock('../../../src/services/listsApi.ts', () => ({
 vi.mock('../../../src/services/llmApi.ts', () => ({
 	fetchLlmProfiles: vi.fn().mockResolvedValue([]),
 }))
+
+vi.mock('../../../src/services/purchaseImportsApi.ts', () => ({
+	fetchPurchaseImports: vi.fn().mockResolvedValue([]),
+}))
+
+function importSummary(status: PurchaseImportSummary['status']): PurchaseImportSummary {
+	return {
+		id: `import-${status}`,
+		clientListId: `list-${status}`,
+		clientId: null,
+		name: 'Incoming purchase',
+		status,
+		storeName: 'Lidl',
+		currency: '€',
+		finalTotal: 4.5,
+		purchaseDate: null,
+		createdAt: null,
+		updatedAt: null,
+		approvedListId: null,
+		approvedAt: null,
+		itemCount: 1,
+		categoryCount: 1,
+	}
+}
 
 function list(overrides: Partial<ShoppingList> = {}): ShoppingList {
 	return {
@@ -91,6 +117,7 @@ enableAutoUnmount(afterEach)
 describe('ShoppingLists', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
+		vi.mocked(importsApi.fetchPurchaseImports).mockResolvedValue([])
 	})
 
 	it('renders a three-dot menu with a delete action for each list', async () => {
@@ -143,6 +170,70 @@ describe('ShoppingLists', () => {
 		const wrapper = await render()
 		const button = wrapper.findAll('button').find((candidate) => candidate.text() === 'Add list')
 		expect(button).toBeDefined()
+	})
+
+	it('disables the Inbox button when there are no incoming lists', async () => {
+		const wrapper = await render()
+		const button = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+
+		expect(button).toBeDefined()
+		expect(button!.attributes('disabled')).toBeDefined()
+		expect(button!.text()).toContain('Inbox (0)')
+	})
+
+	it('shows only pending incoming lists in the Inbox count', async () => {
+		vi.mocked(importsApi.fetchPurchaseImports).mockResolvedValue([
+			importSummary('pending'),
+			importSummary('in_review'),
+			importSummary('approved'),
+			importSummary('discarded'),
+		])
+
+		const wrapper = await render()
+		const button = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+
+		expect(button!.text()).toContain('Inbox (2)')
+		expect(button!.attributes('disabled')).toBeUndefined()
+	})
+
+	it('keeps the Inbox button enabled when the count cannot be loaded', async () => {
+		vi.mocked(importsApi.fetchPurchaseImports).mockRejectedValue(new Error('offline'))
+
+		const wrapper = await render()
+		const button = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+
+		expect(button!.text()).toContain('Inbox (0)')
+		expect(button!.attributes('disabled')).toBeUndefined()
+	})
+
+	it('refreshes the Inbox count when the window regains focus', async () => {
+		vi.mocked(importsApi.fetchPurchaseImports)
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([importSummary('pending')])
+
+		const wrapper = await render()
+		const before = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+		expect(before!.text()).toContain('Inbox (0)')
+
+		window.dispatchEvent(new Event('focus'))
+		await flushPromises()
+		await nextTick()
+
+		const after = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+		expect(after!.text()).toContain('Inbox (1)')
+		expect(after!.attributes('disabled')).toBeUndefined()
+	})
+
+	it('opens the Inbox from the Shopping Lists header', async () => {
+		vi.mocked(importsApi.fetchPurchaseImports).mockResolvedValue([importSummary('pending')])
+		const wrapper = await render()
+		expect(wrapper.findComponent(Imports).exists()).toBe(false)
+
+		const button = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+		await button!.trigger('click')
+		await nextTick()
+
+		expect(wrapper.findComponent(Imports).exists()).toBe(true)
 	})
 
 	it('opens the add list dialog', async () => {

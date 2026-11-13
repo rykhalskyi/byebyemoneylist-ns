@@ -217,8 +217,15 @@ async function runSuggest(ai: boolean) {
 		initFromImport(next)
 		info.value = t('Suggestions updated.')
 	} catch (caught) {
-		if (ai && statusOf(caught) === 409) {
-			error.value = t('Add and activate an LLM profile in Settings to use AI suggestions.')
+		if (statusOf(caught) === 409) {
+			const message = messageOf(caught)?.toLowerCase() ?? ''
+			if (ai && message.includes('llm profile')) {
+				error.value = t('Add and activate an LLM profile in Settings to use AI suggestions.')
+			} else if (message.includes('already imported') || message.includes('already approved')) {
+				emit('approved')
+			} else {
+				error.value = t('Could not update suggestions.')
+			}
 		} else {
 			error.value = t('Could not update suggestions.')
 		}
@@ -275,6 +282,15 @@ function statusOf(caught: unknown): number | null {
 	const response = (caught as { response?: { status?: number } }).response
 	return response?.status ?? null
 }
+
+function messageOf(caught: unknown): string | null {
+	if (typeof caught !== 'object' || caught === null) {
+		return null
+	}
+	const response = (caught as { response?: { data?: { message?: unknown } } }).response
+	const message = response?.data?.message
+	return typeof message === 'string' ? message : null
+}
 </script>
 
 <template>
@@ -300,14 +316,14 @@ function statusOf(caught: unknown): number | null {
 				<NcButton
 					type="button"
 					variant="secondary"
-					:disabled="busy || loadingOptions"
+					:disabled="busy || loadingOptions || isApproved"
 					@click="runSuggest(false)">
 					{{ t('Suggest') }}
 				</NcButton>
 				<NcButton
 					type="button"
 					variant="secondary"
-					:disabled="busy || loadingOptions"
+					:disabled="busy || loadingOptions || isApproved"
 					@click="runSuggest(true)">
 					{{ t('AI suggest') }}
 				</NcButton>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ImportStatus, PurchaseImport, PurchaseImportSummary } from '../types.ts'
 
-import { mdiAlertCircle, mdiInbox } from '@mdi/js'
+import { mdiAlertCircle, mdiArrowLeft, mdiInbox } from '@mdi/js'
 import { onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -11,6 +11,8 @@ import ImportReview from '../components/imports/ImportReview.vue'
 import { discardImport, fetchPurchaseImport, fetchPurchaseImports } from '../services/purchaseImportsApi.ts'
 import { formatDate, formatTotal } from '../utils/format.ts'
 import { t } from '../utils/l10n.ts'
+
+const emit = defineEmits<{ close: [] }>()
 
 const imports = ref<PurchaseImportSummary[]>([])
 const loading = ref(true)
@@ -24,7 +26,8 @@ async function loadImports() {
 	loading.value = true
 	error.value = null
 	try {
-		imports.value = await fetchPurchaseImports()
+		const all = await fetchPurchaseImports()
+		imports.value = all.filter((entry) => isReviewable(entry.status))
 	} catch {
 		error.value = t('Could not load incoming lists.')
 	} finally {
@@ -96,11 +99,19 @@ function isReviewable(status: ImportStatus): boolean {
 
 		<template v-else>
 			<div :class="$style.header">
-				<div>
-					<h2>{{ t('Inbox') }}</h2>
-					<p :class="$style.subtitle">
-						{{ t('Lists sent from the Android app appear here for review.') }}
-					</p>
+				<div :class="$style['header-main']">
+					<NcButton type="button" variant="tertiary" @click="emit('close')">
+						<template #icon>
+							<NcIconSvgWrapper :path="mdiArrowLeft" :size="20" />
+						</template>
+						{{ t('Back to lists') }}
+					</NcButton>
+					<div>
+						<h2>{{ t('Inbox') }}</h2>
+						<p :class="$style.subtitle">
+							{{ t('Lists sent from the Android app appear here for review.') }}
+						</p>
+					</div>
 				</div>
 			</div>
 
@@ -183,6 +194,13 @@ function isReviewable(status: ImportStatus): boolean {
 .header {
 	display: flex;
 	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.header-main {
+	display: flex;
 	align-items: flex-start;
 	gap: 16px;
 	flex-wrap: wrap;

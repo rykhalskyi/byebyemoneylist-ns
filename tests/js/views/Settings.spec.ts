@@ -76,6 +76,21 @@ describe('Settings.vue', () => {
 		expect(llmApi.activateLlmProfile).toHaveBeenCalledWith('prof-1', true)
 	})
 
+	it('does not deactivate a profile when it is selected again', async () => {
+		const profile = mockProfile({ id: 'prof-1', name: 'DeepSeek', isActive: true })
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([profile])
+		vi.mocked(llmApi.activateLlmProfile).mockResolvedValue(undefined)
+
+		const wrapper = mount(Settings)
+		await flushPromises()
+
+		wrapper.findComponent(LlmProfileCard).vm.$emit('select', profile)
+		await flushPromises()
+
+		expect(llmApi.activateLlmProfile).toHaveBeenCalledWith('prof-1', true)
+		expect(wrapper.findComponent(LlmProfileCard).props('profile').isActive).toBe(true)
+	})
+
 	it('opens dialog when add profile button is clicked', async () => {
 		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([])
 
