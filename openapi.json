@@ -7569,7 +7569,7 @@
                         }
                     },
                     "422": {
-                        "description": "An item name is too long",
+                        "description": "The prefix or an item name is too long, or too many items were sent",
                         "content": {
                             "application/json": {
                                 "schema": {
