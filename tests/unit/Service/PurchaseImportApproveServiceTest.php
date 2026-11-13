@@ -18,7 +18,7 @@ use OCA\ByeByeMoneyList\Entity\PurchaseImportEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportItemEntity;
 use OCA\ByeByeMoneyList\Service\Import\PurchaseImportApproveService;
 use OCA\ByeByeMoneyList\Service\Import\PurchaseImportDuplicateException;
-use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
+use OCP\BackgroundJob\IJobList;
 use OCP\IDBConnection;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -40,7 +40,7 @@ final class PurchaseImportApproveServiceTest extends TestCase {
 		$categoryMapper = $this->createMock(CategoryMapper::class);
 		$this->importMapper = $this->createMock(PurchaseImportMapper::class);
 		$logger = $this->createMock(LoggerInterface::class);
-		$toBuyAutoMatch = $this->createMock(ToBuyAutoMatchService::class);
+		$jobList = $this->createMock(IJobList::class);
 
 		$this->service = new PurchaseImportApproveService(
 			$db,
@@ -52,7 +52,7 @@ final class PurchaseImportApproveServiceTest extends TestCase {
 			$categoryMapper,
 			$this->importMapper,
 			$logger,
-			$toBuyAutoMatch,
+			$jobList,
 		);
 	}
 
@@ -108,6 +108,7 @@ final class PurchaseImportApproveServiceTest extends TestCase {
 		$this->assertSame(6, $list->getPosition());
 		$this->assertSame(10.0, $list->getFinalTotal());
 		$this->assertTrue($list->getIsFinished());
+		$this->assertSame(ListEntity::KIND_PURCHASE, $list->getKind());
 		$this->assertSame(PurchaseImportEntity::STATUS_APPROVED, $import->getStatus());
 		$this->assertSame($list->getId(), $import->getApprovedListId());
 	}

@@ -6,6 +6,7 @@ namespace OCA\ByeByeMoneyList\Service\Import;
 
 use DateTime;
 use DateTimeZone;
+use OCA\ByeByeMoneyList\BackgroundJob\ToBuyAutoMatchJob;
 use OCA\ByeByeMoneyList\Db\CategoryMapper;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
@@ -22,8 +23,8 @@ use OCA\ByeByeMoneyList\Entity\PurchaseImportCategoryEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportEntity;
 use OCA\ByeByeMoneyList\Entity\PurchaseImportItemEntity;
 use OCA\ByeByeMoneyList\Entity\StoreEntity;
-use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
 use OCA\ByeByeMoneyList\Util\Uuid;
+use OCP\BackgroundJob\IJobList;
 use OCP\IDBConnection;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -44,7 +45,7 @@ class PurchaseImportApproveService {
 	private CategoryMapper $categoryMapper;
 	private PurchaseImportMapper $importMapper;
 	private LoggerInterface $logger;
-	private ToBuyAutoMatchService $toBuyAutoMatch;
+	private IJobList $jobList;
 
 	/** @psalm-suppress PossiblyUnusedMethod */
 	public function __construct(
@@ -57,7 +58,7 @@ class PurchaseImportApproveService {
 		CategoryMapper $categoryMapper,
 		PurchaseImportMapper $importMapper,
 		LoggerInterface $logger,
-		ToBuyAutoMatchService $toBuyAutoMatch,
+		IJobList $jobList,
 	) {
 		$this->db = $db;
 		$this->listMapper = $listMapper;
@@ -68,7 +69,7 @@ class PurchaseImportApproveService {
 		$this->categoryMapper = $categoryMapper;
 		$this->importMapper = $importMapper;
 		$this->logger = $logger;
-		$this->toBuyAutoMatch = $toBuyAutoMatch;
+		$this->jobList = $jobList;
 	}
 
 	/**
@@ -110,6 +111,7 @@ class PurchaseImportApproveService {
 			$list->setName($this->listName($import));
 			$list->setStatus('finished');
 			$list->setIsFinished(true);
+			$list->setKind(ListEntity::KIND_PURCHASE);
 			$list->setIsSubscription(false);
 			$list->setIsIncome(false);
 			$list->setIsRecurring(false);
@@ -204,7 +206,7 @@ class PurchaseImportApproveService {
 				static fn (array $resolved): string => $resolved['rawName'],
 				$resolvedItems,
 			);
-			$this->toBuyAutoMatch->matchAfterPurchase($owner, $purchasedNames);
+			$this->queueToBuyAutoMatch($owner, $purchasedNames);
 
 			return $created;
 		} catch (PurchaseImportDuplicateException $e) {
@@ -214,6 +216,23 @@ class PurchaseImportApproveService {
 			$this->db->rollBack();
 			$this->logger->error('Failed to approve purchase import', ['exception' => $e]);
 			throw new RuntimeException('Failed to approve purchase import', 0, $e);
+		}
+	}
+
+	/**
+	 * @param list<string> $purchasedNames
+	 */
+	private function queueToBuyAutoMatch(string $owner, array $purchasedNames): void {
+		if ($purchasedNames === []) {
+			return;
+		}
+		try {
+			$this->jobList->add(ToBuyAutoMatchJob::class, [
+				'userId' => $owner,
+				'names' => $purchasedNames,
+			]);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Failed to queue To Buy auto-check', ['exception' => $e]);
 		}
 	}
 

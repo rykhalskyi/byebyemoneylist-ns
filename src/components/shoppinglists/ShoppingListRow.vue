@@ -134,7 +134,7 @@ function categoryName(categoryId: string | null): string {
 							</template>
 							{{ t('Copy to my catalog') }}
 						</NcActionButton>
-						<NcActionButton @click.stop="emit('open')">
+						<NcActionButton v-if="toBuyActive" @click.stop="emit('open')">
 							<template #icon>
 								<NcIconSvgWrapper :path="mdiOpenInNew" :size="20" />
 							</template>

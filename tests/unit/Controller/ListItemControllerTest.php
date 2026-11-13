@@ -886,4 +886,26 @@ final class ListItemControllerTest extends TestCase {
 		$this->assertNull($updated['productId']);
 		$this->assertSame('Milk', $updated['productName']);
 	}
+
+	public function testUpdateToBuyItemRejectsBlankName(): void {
+		$this->mockUser('alice');
+
+		$listId = '11111111-2222-4333-8444-555555555555';
+		$itemId = '33333333-4444-4555-8666-777777777777';
+		$this->listAccess->method('findWritable')->willReturn($this->toBuyList($listId));
+
+		$item = new ListItemEntity();
+		$item->setId($itemId);
+		$item->setOwner('alice');
+		$item->setListId($listId);
+		$item->setProductId(null);
+		$item->setCustomName('Milk');
+		$item->setQuantity(1.0);
+		$this->itemMapper->method('findByIdAndListId')->willReturn($item);
+		$this->itemMapper->expects($this->never())->method('update');
+
+		$response = $this->controller->update($listId, $itemId, customName: '   ');
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
 }

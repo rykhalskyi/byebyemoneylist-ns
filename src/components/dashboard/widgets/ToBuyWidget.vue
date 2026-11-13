@@ -19,7 +19,7 @@ const checked = computed(() => items.value.filter((item) => item.isChecked).leng
 const preview = computed(() => items.value
 	.filter((item) => !item.isChecked)
 	.slice(0, 3)
-	.map((item) => itemName(item)))
+	.map((item) => ({ id: item.id, name: itemName(item) })))
 
 onMounted(() => {
 	void load()
@@ -69,8 +69,8 @@ async function load() {
 				{{ t('{checked} of {total} done', { checked, total }) }}
 			</span>
 			<ul v-if="preview.length > 0" :class="$style.preview">
-				<li v-for="name in preview" :key="name" :class="$style.previewItem">
-					{{ name }}
+				<li v-for="previewItem in preview" :key="previewItem.id" :class="$style.previewItem">
+					{{ previewItem.name }}
 				</li>
 			</ul>
 			<span v-else :class="$style.done">

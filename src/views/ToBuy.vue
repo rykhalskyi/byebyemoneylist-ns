@@ -19,7 +19,8 @@ const emit = defineEmits<{ close: [] }>()
 const list = ref<ShoppingList | null>(null)
 const items = ref<ListItem[]>([])
 const loading = ref(true)
-const error = ref<string | null>(null)
+const loadError = ref<string | null>(null)
+const actionError = ref<string | null>(null)
 const newItem = ref('')
 const adding = ref(false)
 const editingItem = ref<ListItem | null>(null)
@@ -34,25 +35,27 @@ onBeforeUnmount(flushUndo)
 
 async function load() {
 	loading.value = true
-	error.value = null
+	loadError.value = null
+	actionError.value = null
 	try {
 		list.value = await fetchActiveToBuyList()
 		items.value = list.value === null ? [] : await fetchListItems(list.value.id)
 	} catch {
-		error.value = t('Failed to load the To Buy list.')
+		loadError.value = t('Failed to load the To Buy list.')
 	} finally {
 		loading.value = false
 	}
 }
 
 async function createList() {
+	actionError.value = null
 	try {
 		list.value = await createToBuyList(t('To Buy'))
 		items.value = []
 		await nextTick()
 		newItemField.value?.focus()
 	} catch {
-		error.value = t('Failed to create the To Buy list.')
+		actionError.value = t('Failed to create the To Buy list.')
 	}
 }
 
@@ -63,6 +66,7 @@ async function addItem() {
 		return
 	}
 	adding.value = true
+	actionError.value = null
 	try {
 		const item = await addToBuyItem(listId, name)
 		items.value = [...items.value, item]
@@ -70,7 +74,7 @@ async function addItem() {
 		await nextTick()
 		newItemField.value?.focus()
 	} catch {
-		error.value = t('Failed to add the item.')
+		actionError.value = t('Failed to add the item.')
 	} finally {
 		adding.value = false
 	}
@@ -82,12 +86,13 @@ async function toggle(item: ListItem, checked: boolean) {
 		return
 	}
 	const previous = items.value
+	actionError.value = null
 	items.value = items.value.map((candidate) => (candidate.id === item.id ? { ...candidate, isChecked: checked } : candidate))
 	try {
 		replaceItem(await updateListItem(listId, item.id, { isChecked: checked }))
 	} catch {
 		items.value = previous
-		error.value = t('Failed to update the item.')
+		actionError.value = t('Failed to update the item.')
 	}
 }
 
@@ -187,9 +192,9 @@ function onNewItemKeydown(event: KeyboardEvent) {
 		</div>
 
 		<NcEmptyContent
-			v-else-if="error !== null"
+			v-else-if="loadError !== null"
 			:name="t('Could not load the To Buy list')"
-			:description="error">
+			:description="loadError">
 			<template #icon>
 				<NcIconSvgWrapper :path="mdiCart" :size="64" />
 			</template>
@@ -201,6 +206,9 @@ function onNewItemKeydown(event: KeyboardEvent) {
 		</NcEmptyContent>
 
 		<div v-else :class="$style.paper">
+			<p v-if="actionError !== null" :class="$style.error">
+				{{ actionError }}
+			</p>
 			<NcEmptyContent
 				v-if="list === null"
 				:name="t('No active To Buy list')"
@@ -381,6 +389,11 @@ function onNewItemKeydown(event: KeyboardEvent) {
 
 .quickAdd > :first-child {
 	flex: 1 1 auto;
+}
+
+.error {
+	color: var(--color-error);
+	margin: 0 0 12px;
 }
 
 .undo {

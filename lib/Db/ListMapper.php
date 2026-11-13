@@ -104,7 +104,9 @@ class ListMapper extends QBMapper {
 	}
 
 	/**
-	 * Deactivate the owner's previous To Buy list and insert the new active one atomically.
+	 * Deactivate the owner's previous To Buy list and insert the new active one.
+	 * The caller is responsible for wrapping this in a transaction when the
+	 * switch must be atomic with additional writes.
 	 */
 	public function insertActiveToBuyList(ListEntity $list): ListEntity {
 		$owner = $list->getOwner();
@@ -112,17 +114,9 @@ class ListMapper extends QBMapper {
 			throw new \InvalidArgumentException('An active To Buy list needs an owner');
 		}
 
-		$this->db->beginTransaction();
-		try {
-			$this->deactivateAllToBuyLists($owner);
-			$created = $this->insert($list);
-			$this->db->commit();
+		$this->deactivateAllToBuyLists($owner);
 
-			return $created;
-		} catch (\Throwable $e) {
-			$this->db->rollBack();
-			throw $e;
-		}
+		return $this->insert($list);
 	}
 
 	/**

@@ -19,7 +19,7 @@ use OCA\ByeByeMoneyList\Entity\ProductEntity;
 use OCA\ByeByeMoneyList\Service\Receipt\ReceiptCommitService;
 use OCA\ByeByeMoneyList\Service\Receipt\ReceiptProductMatcher;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
-use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
+use OCP\BackgroundJob\IJobList;
 use OCP\IDBConnection;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -49,7 +49,7 @@ final class ReceiptCommitServiceTest extends TestCase {
 		$this->receiptPictureService = $this->createMock(ReceiptPictureService::class);
 		$this->matcher = $this->createMock(ReceiptProductMatcher::class);
 		$logger = $this->createMock(LoggerInterface::class);
-		$toBuyAutoMatch = $this->createMock(ToBuyAutoMatchService::class);
+		$jobList = $this->createMock(IJobList::class);
 
 		$this->service = new ReceiptCommitService(
 			$this->db,
@@ -63,7 +63,7 @@ final class ReceiptCommitServiceTest extends TestCase {
 			$this->receiptPictureService,
 			$this->matcher,
 			$logger,
-			$toBuyAutoMatch,
+			$jobList,
 		);
 	}
 
@@ -143,6 +143,7 @@ final class ReceiptCommitServiceTest extends TestCase {
 
 		$this->assertSame('finished', $result->getStatus());
 		$this->assertTrue($result->getIsFinished());
+		$this->assertSame(ListEntity::KIND_PURCHASE, $result->getKind());
 		$this->assertSame(3.0, $result->getFinalTotal());
 	}
 

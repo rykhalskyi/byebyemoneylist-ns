@@ -8,6 +8,7 @@ use DateTime;
 use DateTimeInterface;
 use DateTimeZone;
 use OCA\ByeByeMoneyList\AppInfo\Application;
+use OCA\ByeByeMoneyList\BackgroundJob\ToBuyAutoMatchJob;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
 use OCA\ByeByeMoneyList\Db\ListShareMapper;
@@ -16,13 +17,13 @@ use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
 use OCA\ByeByeMoneyList\Service\Sharing\ListCopyService;
-use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
 use OCA\ByeByeMoneyList\Util\Uuid;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\ApiRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\OCSController;
+use OCP\BackgroundJob\IJobList;
 use OCP\IDBConnection;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -34,6 +35,7 @@ use Psr\Log\LoggerInterface;
 class ListController extends OCSController {
 	private const MAX_DECIMAL = 9999999999.99;
 	private const MAX_ITEM_NAME_LENGTH = 255;
+	private const MAX_ITEM_NAMES = 500;
 
 	private ListMapper $mapper;
 	private ListItemMapper $itemMapper;
@@ -43,7 +45,7 @@ class ListController extends OCSController {
 	private IDBConnection $db;
 	private IUserSession $userSession;
 	private LoggerInterface $logger;
-	private ToBuyAutoMatchService $toBuyAutoMatch;
+	private IJobList $jobList;
 
 	public function __construct(
 		IRequest $request,
@@ -55,7 +57,7 @@ class ListController extends OCSController {
 		IDBConnection $db,
 		IUserSession $userSession,
 		LoggerInterface $logger,
-		ToBuyAutoMatchService $toBuyAutoMatch,
+		IJobList $jobList,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 		$this->mapper = $mapper;
@@ -66,7 +68,7 @@ class ListController extends OCSController {
 		$this->db = $db;
 		$this->userSession = $userSession;
 		$this->logger = $logger;
-		$this->toBuyAutoMatch = $toBuyAutoMatch;
+		$this->jobList = $jobList;
 	}
 
 	/**
@@ -261,7 +263,7 @@ class ListController extends OCSController {
 		}
 
 		if ($isFinished) {
-			$this->toBuyAutoMatch->matchAfterPurchaseList($userId, $created->getId());
+			$this->queueToBuyAutoMatchForList($userId, $created->getId());
 		}
 
 		return new DataResponse(['list' => $this->serializeList($created, null, $listCategoryIds)], Http::STATUS_CREATED);
@@ -312,6 +314,8 @@ class ListController extends OCSController {
 		if ($list === null) {
 			return new DataResponse(['message' => 'List not found'], Http::STATUS_NOT_FOUND);
 		}
+
+		$wasFinished = ($list->getStatus() ?? 'new') === 'finished' || ($list->getIsFinished() ?? false);
 
 		if ($isFinished === true && $list->resolveKind() === ListEntity::KIND_NEED_TO_BUY) {
 			return new DataResponse(['message' => 'A To Buy list cannot be finished as a purchase'], Http::STATUS_UNPROCESSABLE_ENTITY);
@@ -389,8 +393,8 @@ class ListController extends OCSController {
 			return new DataResponse(['message' => 'Failed to update list'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		if ($isFinished === true) {
-			$this->toBuyAutoMatch->matchAfterPurchaseList($userId, $updated->getId());
+		if ($isFinished === true && !$wasFinished) {
+			$this->queueToBuyAutoMatchForList($userId, $updated->getId());
 		}
 
 		return new DataResponse(['list' => $this->serializeList($updated, null, $listCategoryIds)], Http::STATUS_OK);
@@ -531,7 +535,7 @@ class ListController extends OCSController {
 	 *
 	 * 201: To Buy list created and activated
 	 * 401: Current user is not logged in
-	 * 422: An item name is too long
+	 * 422: The prefix or an item name is too long, or too many items were sent
 	 * 500: Failed to create the list
 	 */
 	#[NoAdminRequired]
@@ -542,6 +546,10 @@ class ListController extends OCSController {
 			return new DataResponse(['message' => 'Not logged in'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		if (count($itemNames) > self::MAX_ITEM_NAMES) {
+			return new DataResponse(['message' => 'Too many items'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+
 		$names = $this->normalizeItemNames($itemNames);
 		if ($names === false) {
 			return new DataResponse(['message' => 'Item name is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
@@ -550,6 +558,9 @@ class ListController extends OCSController {
 		$prefix = trim($prefix ?? '');
 		if ($prefix === '') {
 			$prefix = 'To Buy';
+		}
+		if (mb_strlen($prefix) > self::MAX_ITEM_NAME_LENGTH - 11) {
+			return new DataResponse(['message' => 'prefix is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
 		$now = new DateTime('now', new DateTimeZone('UTC'));
@@ -625,6 +636,14 @@ class ListController extends OCSController {
 
 	private function getCurrentUserId(): ?string {
 		return $this->userSession->getUser()?->getUID();
+	}
+
+	private function queueToBuyAutoMatchForList(string $userId, string $listId): void {
+		try {
+			$this->jobList->add(ToBuyAutoMatchJob::class, ['userId' => $userId, 'listId' => $listId]);
+		} catch (\Throwable $e) {
+			$this->logger->warning('Failed to queue To Buy auto-check', ['exception' => $e]);
+		}
 	}
 
 	/**

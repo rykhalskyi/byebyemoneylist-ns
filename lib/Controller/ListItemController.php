@@ -307,6 +307,9 @@ class ListItemController extends OCSController {
 			if ($normalizedCustomName === false) {
 				return new DataResponse(['message' => 'customName is too long'], Http::STATUS_UNPROCESSABLE_ENTITY);
 			}
+			if ($isToBuy && $normalizedCustomName === null) {
+				return new DataResponse(['message' => 'Item name is required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+			}
 			$item->setCustomName($normalizedCustomName);
 		}
 

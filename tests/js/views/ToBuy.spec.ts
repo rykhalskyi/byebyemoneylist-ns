@@ -130,6 +130,19 @@ describe('ToBuy', () => {
 		expect(wrapper.text()).toContain('Milk')
 	})
 
+	it('keeps the list visible when adding an item fails', async () => {
+		vi.mocked(api.addToBuyItem).mockRejectedValueOnce(new Error('network'))
+		const wrapper = await render()
+
+		await wrapper.findComponent(NcTextField).find('input').setValue('Cheese')
+		await wrapper.findAll('button').find((button) => button.text() === 'Add item')!.trigger('click')
+		await flushPromises()
+
+		expect(wrapper.text()).toContain('Failed to add the item.')
+		expect(wrapper.text()).toContain('Milk')
+		expect(wrapper.text()).not.toContain('Could not load the To Buy list')
+	})
+
 	it('emits close from the back button', async () => {
 		const wrapper = await render()
 

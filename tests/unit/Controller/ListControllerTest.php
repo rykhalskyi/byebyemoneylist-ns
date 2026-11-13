@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Controller;
 
+use OCA\ByeByeMoneyList\BackgroundJob\ToBuyAutoMatchJob;
 use OCA\ByeByeMoneyList\Controller\ListController;
 use OCA\ByeByeMoneyList\Db\ListItemMapper;
 use OCA\ByeByeMoneyList\Db\ListMapper;
@@ -13,8 +14,8 @@ use OCA\ByeByeMoneyList\Entity\ListItemEntity;
 use OCA\ByeByeMoneyList\Entity\ListShareEntity;
 use OCA\ByeByeMoneyList\Service\ReceiptPictureService;
 use OCA\ByeByeMoneyList\Service\Sharing\ListCopyService;
-use OCA\ByeByeMoneyList\Service\ToBuy\ToBuyAutoMatchService;
 use OCP\AppFramework\Http;
+use OCP\BackgroundJob\IJobList;
 use OCP\IDBConnection;
 use OCP\IRequest;
 use OCP\IUser;
@@ -31,7 +32,7 @@ final class ListControllerTest extends TestCase {
 	private ListCopyService $listCopyService;
 	private IDBConnection $db;
 	private IUserSession $userSession;
-	private ToBuyAutoMatchService $toBuyAutoMatch;
+	private IJobList $jobList;
 
 	protected function setUp(): void {
 		$request = $this->createMock(IRequest::class);
@@ -42,7 +43,7 @@ final class ListControllerTest extends TestCase {
 		$this->listCopyService = $this->createMock(ListCopyService::class);
 		$this->db = $this->createMock(IDBConnection::class);
 		$this->userSession = $this->createMock(IUserSession::class);
-		$this->toBuyAutoMatch = $this->createMock(ToBuyAutoMatchService::class);
+		$this->jobList = $this->createMock(IJobList::class);
 		$logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new ListController(
@@ -55,7 +56,7 @@ final class ListControllerTest extends TestCase {
 			$this->db,
 			$this->userSession,
 			$logger,
-			$this->toBuyAutoMatch,
+			$this->jobList,
 		);
 	}
 
@@ -451,9 +452,12 @@ final class ListControllerTest extends TestCase {
 			->method('replaceCategoriesByListId')
 			->with('11111111-2222-4333-8444-555555555555', ['cat-9']);
 
-		$this->toBuyAutoMatch->expects($this->once())
-			->method('matchAfterPurchaseList')
-			->with('alice', '11111111-2222-4333-8444-555555555555');
+		$this->jobList->expects($this->once())
+			->method('add')
+			->with(ToBuyAutoMatchJob::class, [
+				'userId' => 'alice',
+				'listId' => '11111111-2222-4333-8444-555555555555',
+			]);
 
 		$response = $this->controller->update(
 			'11111111-2222-4333-8444-555555555555',
@@ -712,6 +716,42 @@ final class ListControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertNull($response->getData()['list']);
+	}
+
+	public function testCreateToBuyRejectsTooLongPrefix(): void {
+		$this->mockUser('alice');
+		$this->mapper->expects($this->never())->method('insertActiveToBuyList');
+
+		$response = $this->controller->createToBuy(str_repeat('a', 245));
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testCreateToBuyRejectsTooManyItems(): void {
+		$this->mockUser('alice');
+		$this->mapper->expects($this->never())->method('insertActiveToBuyList');
+
+		$response = $this->controller->createToBuy('To Buy', array_fill(0, 501, 'Milk'));
+
+		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+	}
+
+	public function testUpdateDoesNotQueueAutoMatchWhenAlreadyFinished(): void {
+		$this->mockUser('alice');
+
+		$list = $this->makeList('list-1', 'Weekly groceries');
+		$list->setStatus('finished');
+		$list->setIsFinished(true);
+		$list->setKind(ListEntity::KIND_PURCHASE);
+
+		$this->mapper->method('findByIdAndOwner')->willReturn($list);
+		$this->mapper->method('update')->willReturnArgument(0);
+		$this->mapper->method('replaceCategoriesByListId');
+		$this->jobList->expects($this->never())->method('add');
+
+		$response = $this->controller->update('list-1', 'Weekly groceries', isFinished: true);
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 	}
 
 	public function testUpdateRejectsFinishingToBuyList(): void {

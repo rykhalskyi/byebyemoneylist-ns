@@ -157,4 +157,13 @@ describe('ShoppingListRow', () => {
 		expect(names).not.toContain('Share')
 		expect(names).not.toContain('View receipt')
 	})
+
+	it('does not offer to open an inactive To Buy list', async () => {
+		const wrapper = await render({ list: list({ kind: 'NEED_TO_BUY', isActive: false }) })
+
+		await openMenu(wrapper)
+		const names = wrapper.findAllComponents(NcActionButton).map((button) => button.text())
+		expect(names).not.toContain('Open list')
+		expect(names).toContain('Delete')
+	})
 })
