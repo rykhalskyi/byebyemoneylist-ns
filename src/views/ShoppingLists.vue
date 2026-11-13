@@ -3,7 +3,7 @@ import type { KindFilter } from '../composables/useShoppingLists.ts'
 import type { ListItem, ShoppingList } from '../types.ts'
 
 import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiInbox, mdiPlus } from '@mdi/js'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -84,7 +84,7 @@ const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
 const shareList = ref<ShoppingList | null>(null)
 const shareAddOnly = ref(false)
 const inboxOpen = ref(false)
-const inboxCount = ref(0)
+const inboxCount = ref<number | null>(null)
 
 const filters: { id: KindFilter, label: string }[] = [
 	{ id: 'all', label: t('All') },
@@ -102,14 +102,25 @@ const addProductSharedOwner = computed<string | null>(() => {
 onMounted(() => {
 	void loadData()
 	void loadInboxCount()
+	window.addEventListener('focus', onWindowFocus)
 })
+
+onUnmounted(() => {
+	window.removeEventListener('focus', onWindowFocus)
+})
+
+function onWindowFocus() {
+	if (!inboxOpen.value) {
+		void loadInboxCount()
+	}
+}
 
 async function loadInboxCount() {
 	try {
 		const imports = await fetchPurchaseImports()
 		inboxCount.value = imports.filter((entry) => entry.status === 'pending' || entry.status === 'in_review').length
 	} catch {
-		inboxCount.value = 0
+		inboxCount.value = null
 	}
 }
 
@@ -187,7 +198,7 @@ watch(
 					<template #icon>
 						<NcIconSvgWrapper :path="mdiInbox" :size="20" />
 					</template>
-					{{ t('Inbox') }} ({{ inboxCount }})
+					{{ t('Inbox') }} ({{ inboxCount ?? 0 }})
 				</NcButton>
 
 				<NcButton

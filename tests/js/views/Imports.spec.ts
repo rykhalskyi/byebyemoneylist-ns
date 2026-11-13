@@ -119,6 +119,43 @@ describe('Imports', () => {
 		expect(wrapper.text()).not.toContain('Incoming purchase')
 	})
 
+	it('shows a profile hint when the AI profile is missing', async () => {
+		vi.mocked(importsApi.fetchPurchaseImports).mockResolvedValue([summary()])
+		vi.mocked(importsApi.fetchPurchaseImport).mockResolvedValue(purchaseImport())
+		vi.mocked(importsApi.suggestImportAi).mockRejectedValue({
+			response: { status: 409, data: { message: 'No active LLM profile' } },
+		})
+
+		const wrapper = mount(Imports)
+		await flushPromises()
+		await wrapper.findAll('button').find((button) => button.text() === 'Review')!.trigger('click')
+		await flushPromises()
+		await wrapper.findAll('button').find((button) => button.text() === 'AI suggest')!.trigger('click')
+		await flushPromises()
+
+		expect(wrapper.text()).toContain('Add and activate an LLM profile in Settings to use AI suggestions.')
+		expect(wrapper.findComponent(ImportReview).exists()).toBe(true)
+	})
+
+	it('closes the review when the AI suggestion reports an already imported list', async () => {
+		vi.mocked(importsApi.fetchPurchaseImports)
+			.mockResolvedValueOnce([summary()])
+			.mockResolvedValueOnce([])
+		vi.mocked(importsApi.fetchPurchaseImport).mockResolvedValue(purchaseImport())
+		vi.mocked(importsApi.suggestImportAi).mockRejectedValue({
+			response: { status: 409, data: { message: 'Import is already imported' } },
+		})
+
+		const wrapper = mount(Imports)
+		await flushPromises()
+		await wrapper.findAll('button').find((button) => button.text() === 'Review')!.trigger('click')
+		await flushPromises()
+		await wrapper.findAll('button').find((button) => button.text() === 'AI suggest')!.trigger('click')
+		await flushPromises()
+
+		expect(wrapper.findComponent(ImportReview).exists()).toBe(false)
+	})
+
 	it('emits close from the back button', async () => {
 		vi.mocked(importsApi.fetchPurchaseImports).mockResolvedValue([])
 

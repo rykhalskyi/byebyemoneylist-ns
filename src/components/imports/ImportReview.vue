@@ -217,12 +217,14 @@ async function runSuggest(ai: boolean) {
 		initFromImport(next)
 		info.value = t('Suggestions updated.')
 	} catch (caught) {
-		if (ai && statusOf(caught) === 409) {
-			const message = messageOf(caught)
-			if (message !== null && message.toLowerCase().includes('llm profile')) {
+		if (statusOf(caught) === 409) {
+			const message = messageOf(caught)?.toLowerCase() ?? ''
+			if (ai && message.includes('llm profile')) {
 				error.value = t('Add and activate an LLM profile in Settings to use AI suggestions.')
-			} else {
+			} else if (message.includes('already imported') || message.includes('already approved')) {
 				emit('approved')
+			} else {
+				error.value = t('Could not update suggestions.')
 			}
 		} else {
 			error.value = t('Could not update suggestions.')

@@ -121,11 +121,12 @@ final class PurchaseImportAiServiceTest extends TestCase {
 	public function testUsesTheOnlyProfileWhenNoneIsActive(): void {
 		$this->profileMapper->method('findActiveByOwner')->willReturn(null);
 		$this->profileMapper->method('findAllByOwner')->willReturn([$this->profile()]);
-		$this->scanner->method('complete')->willReturn('{"categories":[],"items":[]}');
+		$this->scanner->expects($this->once())
+			->method('complete')
+			->with('deepseek', 'key', 'deepseek-v4', $this->isType('string'), 5, 5, 512)
+			->willReturn('{"categories":[],"items":[]}');
 
 		$this->service->suggest($this->import(), [$this->item()], [$this->category()], 'alice');
-
-		$this->addToAssertionCount(1);
 	}
 
 	public function testAppliesValidatedSuggestions(): void {

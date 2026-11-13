@@ -196,6 +196,34 @@ describe('ShoppingLists', () => {
 		expect(button!.attributes('disabled')).toBeUndefined()
 	})
 
+	it('keeps the Inbox button enabled when the count cannot be loaded', async () => {
+		vi.mocked(importsApi.fetchPurchaseImports).mockRejectedValue(new Error('offline'))
+
+		const wrapper = await render()
+		const button = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+
+		expect(button!.text()).toContain('Inbox (0)')
+		expect(button!.attributes('disabled')).toBeUndefined()
+	})
+
+	it('refreshes the Inbox count when the window regains focus', async () => {
+		vi.mocked(importsApi.fetchPurchaseImports)
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([importSummary('pending')])
+
+		const wrapper = await render()
+		const before = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+		expect(before!.text()).toContain('Inbox (0)')
+
+		window.dispatchEvent(new Event('focus'))
+		await flushPromises()
+		await nextTick()
+
+		const after = wrapper.findAll('button').find((candidate) => candidate.text().startsWith('Inbox'))
+		expect(after!.text()).toContain('Inbox (1)')
+		expect(after!.attributes('disabled')).toBeUndefined()
+	})
+
 	it('opens the Inbox from the Shopping Lists header', async () => {
 		vi.mocked(importsApi.fetchPurchaseImports).mockResolvedValue([importSummary('pending')])
 		const wrapper = await render()
