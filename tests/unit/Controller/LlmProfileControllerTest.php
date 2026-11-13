@@ -20,12 +20,13 @@ use Psr\Log\LoggerInterface;
 final class LlmProfileControllerTest extends TestCase {
 	private LlmProfileController $controller;
 	private DefaultLlmProfileService $defaultLlmProfileService;
+	private LlmProfileMapper $mapper;
 	private ICrypto $crypto;
 	private IUserSession $userSession;
 
 	protected function setUp(): void {
 		$request = $this->createMock(IRequest::class);
-		$mapper = $this->createMock(LlmProfileMapper::class);
+		$this->mapper = $this->createMock(LlmProfileMapper::class);
 		$this->crypto = $this->createMock(ICrypto::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$logger = $this->createMock(LoggerInterface::class);
@@ -33,7 +34,7 @@ final class LlmProfileControllerTest extends TestCase {
 
 		$this->controller = new LlmProfileController(
 			$request,
-			$mapper,
+			$this->mapper,
 			$this->crypto,
 			$this->userSession,
 			$logger,
@@ -113,5 +114,28 @@ final class LlmProfileControllerTest extends TestCase {
 		$response = $this->controller->ensureDefault();
 
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+	}
+
+	public function testCreateActivatesTheFirstProfile(): void {
+		$this->mockUser('alice');
+		$this->mapper->method('findActiveByOwner')->with('alice')->willReturn(null);
+		$this->crypto->method('encrypt')->with('secret-key')->willReturn('encrypted-key');
+		$this->crypto->method('decrypt')->with('encrypted-key')->willReturn('secret-key');
+		$this->mapper->expects($this->once())
+			->method('insert')
+			->willReturnCallback(static fn (LlmProfileEntity $profile): LlmProfileEntity => $profile);
+		$this->mapper->expects($this->once())
+			->method('setActive')
+			->with($this->isType('string'), 'alice', true);
+
+		$response = $this->controller->create(
+			name: 'DeepSeek',
+			provider: 'deepseek',
+			apiKey: 'secret-key',
+		);
+
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$data = $response->getData();
+		$this->assertTrue($data['profile']['isActive']);
 	}
 }

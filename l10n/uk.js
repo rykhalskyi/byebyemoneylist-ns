@@ -41,6 +41,7 @@ OC.L10N.register(
 		"Automotive" : "Автомобіль",
 		"Back" : "Назад",
 		"Back to inbox" : "Назад до вхідних",
+		"Back to lists" : "Назад до списків",
 		"Bakery" : "Випічка",
 		"Balance" : "Баланс",
 		"Barcode" : "Штрихкод",

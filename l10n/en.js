@@ -41,6 +41,7 @@ OC.L10N.register(
 		"Automotive" : "Automotive",
 		"Back" : "Back",
 		"Back to inbox" : "Back to inbox",
+		"Back to lists" : "Back to lists",
 		"Bakery" : "Bakery",
 		"Balance" : "Balance",
 		"Barcode" : "Barcode",

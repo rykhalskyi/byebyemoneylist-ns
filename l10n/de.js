@@ -41,6 +41,7 @@ OC.L10N.register(
 		"Automotive" : "Automobil",
 		"Back" : "Zurück",
 		"Back to inbox" : "Zurück zum Posteingang",
+		"Back to lists" : "Zurück zu den Listen",
 		"Bakery" : "Bäckerei",
 		"Balance" : "Saldo",
 		"Barcode" : "Barcode",

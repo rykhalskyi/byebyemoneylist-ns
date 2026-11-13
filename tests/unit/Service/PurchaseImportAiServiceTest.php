@@ -118,6 +118,16 @@ final class PurchaseImportAiServiceTest extends TestCase {
 		$this->service->suggest($this->import(), [$this->item()], [$this->category()], 'alice');
 	}
 
+	public function testUsesTheOnlyProfileWhenNoneIsActive(): void {
+		$this->profileMapper->method('findActiveByOwner')->willReturn(null);
+		$this->profileMapper->method('findAllByOwner')->willReturn([$this->profile()]);
+		$this->scanner->method('complete')->willReturn('{"categories":[],"items":[]}');
+
+		$this->service->suggest($this->import(), [$this->item()], [$this->category()], 'alice');
+
+		$this->addToAssertionCount(1);
+	}
+
 	public function testAppliesValidatedSuggestions(): void {
 		$this->profileMapper->method('findActiveByOwner')->willReturn($this->profile());
 		$this->scanner->method('complete')->willReturn(json_encode([

@@ -78,6 +78,12 @@ class PurchaseImportAiService {
 	): void {
 		$profile = $this->profileMapper->findActiveByOwner($owner);
 		if ($profile === null) {
+			$profiles = $this->profileMapper->findAllByOwner($owner);
+			if (count($profiles) === 1) {
+				$profile = $profiles[0];
+			}
+		}
+		if ($profile === null) {
 			throw new NoActiveLlmProfileException('No active LLM profile');
 		}
 

@@ -2,7 +2,7 @@
 import type { KindFilter } from '../composables/useShoppingLists.ts'
 import type { ListItem, ShoppingList } from '../types.ts'
 
-import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiPlus } from '@mdi/js'
+import { mdiAlertCircle, mdiCartOff, mdiCartPlus, mdiInbox, mdiPlus } from '@mdi/js'
 import { computed, onMounted, ref, watch } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -17,7 +17,9 @@ import AddToBuyItemDialog from '../components/shoppinglists/AddToBuyItemDialog.v
 import EditToBuyItemDialog from '../components/shoppinglists/EditToBuyItemDialog.vue'
 import ListGroupSection from '../components/shoppinglists/ListGroupSection.vue'
 import ShareListDialog from '../components/shoppinglists/ShareListDialog.vue'
+import Imports from './Imports.vue'
 import { useShoppingLists } from '../composables/useShoppingLists.ts'
+import { fetchPurchaseImports } from '../services/purchaseImportsApi.ts'
 import { t } from '../utils/l10n.ts'
 
 const props = withDefaults(defineProps<{ purchaseMode?: 'manual' | 'scan' | null }>(), {
@@ -81,6 +83,8 @@ const showPurchaseDialog = ref(false)
 const purchaseDialogMode = ref<'manual' | 'scan'>('manual')
 const shareList = ref<ShoppingList | null>(null)
 const shareAddOnly = ref(false)
+const inboxOpen = ref(false)
+const inboxCount = ref(0)
 
 const filters: { id: KindFilter, label: string }[] = [
 	{ id: 'all', label: t('All') },
@@ -95,7 +99,28 @@ const addProductSharedOwner = computed<string | null>(() => {
 	return list?.sharedBy ?? null
 })
 
-onMounted(loadData)
+onMounted(() => {
+	void loadData()
+	void loadInboxCount()
+})
+
+async function loadInboxCount() {
+	try {
+		const imports = await fetchPurchaseImports()
+		inboxCount.value = imports.filter((entry) => entry.status === 'pending' || entry.status === 'in_review').length
+	} catch {
+		inboxCount.value = 0
+	}
+}
+
+function openInbox() {
+	inboxOpen.value = true
+}
+
+async function closeInbox() {
+	inboxOpen.value = false
+	await loadInboxCount()
+}
 
 function openPurchaseDialog(mode: 'manual' | 'scan') {
 	purchaseDialogMode.value = mode
@@ -147,11 +172,24 @@ watch(
 </script>
 
 <template>
-	<div :class="$style.wrapper">
+	<Imports v-if="inboxOpen" @close="closeInbox" />
+	<div v-else :class="$style.wrapper">
 		<div :class="$style.header">
 			<h2>{{ t('Shopping Lists') }}</h2>
 
 			<div :class="$style.actions">
+				<NcButton
+					:class="$style['add-button']"
+					type="button"
+					variant="secondary"
+					:disabled="inboxCount === 0"
+					@click="openInbox">
+					<template #icon>
+						<NcIconSvgWrapper :path="mdiInbox" :size="20" />
+					</template>
+					{{ t('Inbox') }} ({{ inboxCount }})
+				</NcButton>
+
 				<NcButton
 					:class="$style['add-button']"
 					type="button"
