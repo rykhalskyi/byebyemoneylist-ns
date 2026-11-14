@@ -1,9 +1,10 @@
-import type { PurchaseImport, PurchaseImportSummary } from '../../../src/types.ts'
+import type { LlmProfile, PurchaseImport, PurchaseImportSummary } from '../../../src/types.ts'
 
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ImportReview from '../../../src/components/imports/ImportReview.vue'
 import Imports from '../../../src/views/Imports.vue'
+import * as llmApi from '../../../src/services/llmApi.ts'
 import * as importsApi from '../../../src/services/purchaseImportsApi.ts'
 
 vi.mock('../../../src/services/purchaseImportsApi.ts', () => ({
@@ -21,6 +22,26 @@ vi.mock('../../../src/services/listsApi.ts', () => ({
 	fetchProducts: vi.fn().mockResolvedValue([]),
 	fetchStores: vi.fn().mockResolvedValue([]),
 }))
+
+vi.mock('../../../src/services/llmApi.ts', () => ({
+	fetchLlmProfiles: vi.fn().mockResolvedValue([]),
+}))
+
+function llmProfile(overrides: Partial<LlmProfile> = {}): LlmProfile {
+	return {
+		id: 'profile-1',
+		name: 'Test profile',
+		provider: 'openai',
+		apiKeyMasked: '…',
+		model: null,
+		connectTimeoutSeconds: 30,
+		readTimeoutSeconds: 60,
+		maxTokens: 2048,
+		isActive: true,
+		createdAt: '2026-01-01T00:00:00Z',
+		...overrides,
+	}
+}
 
 function summary(overrides: Partial<PurchaseImportSummary> = {}): PurchaseImportSummary {
 	return {
@@ -81,6 +102,7 @@ enableAutoUnmount(afterEach)
 describe('Imports', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([])
 	})
 
 	it('shows only pending and in-review incoming lists', async () => {
@@ -119,7 +141,8 @@ describe('Imports', () => {
 		expect(wrapper.text()).not.toContain('Incoming purchase')
 	})
 
-	it('shows a profile hint when the AI profile is missing', async () => {
+	it('shows a profile hint when the AI suggestion requires an LLM profile', async () => {
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([llmProfile()])
 		vi.mocked(importsApi.fetchPurchaseImports).mockResolvedValue([summary()])
 		vi.mocked(importsApi.fetchPurchaseImport).mockResolvedValue(purchaseImport())
 		vi.mocked(importsApi.suggestImportAi).mockRejectedValue({
@@ -130,7 +153,7 @@ describe('Imports', () => {
 		await flushPromises()
 		await wrapper.findAll('button').find((button) => button.text() === 'Review')!.trigger('click')
 		await flushPromises()
-		await wrapper.findAll('button').find((button) => button.text() === 'AI suggest')!.trigger('click')
+		await wrapper.findAll('button').find((button) => button.text() === 'Suggest')!.trigger('click')
 		await flushPromises()
 
 		expect(wrapper.text()).toContain('Add and activate an LLM profile in Settings to use AI suggestions.')
@@ -138,6 +161,7 @@ describe('Imports', () => {
 	})
 
 	it('closes the review when the AI suggestion reports an already imported list', async () => {
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([llmProfile()])
 		vi.mocked(importsApi.fetchPurchaseImports)
 			.mockResolvedValueOnce([summary()])
 			.mockResolvedValueOnce([])
@@ -150,7 +174,7 @@ describe('Imports', () => {
 		await flushPromises()
 		await wrapper.findAll('button').find((button) => button.text() === 'Review')!.trigger('click')
 		await flushPromises()
-		await wrapper.findAll('button').find((button) => button.text() === 'AI suggest')!.trigger('click')
+		await wrapper.findAll('button').find((button) => button.text() === 'Suggest')!.trigger('click')
 		await flushPromises()
 
 		expect(wrapper.findComponent(ImportReview).exists()).toBe(false)

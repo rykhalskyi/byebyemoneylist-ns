@@ -43,3 +43,4 @@ Append-only decision record. The "why" lives here; the full change history lives
 - [2026-11-12] D-39 — Copying a To Buy list preserves kind=NEED_TO_BUY, copies items as plain text and leaves the copy inactive — because only POST /api/lists/to-buy may switch the active list (Android parity).
 - [2026-11-13] D-40 — Creating an LLM profile activates it when no profile is active — because a configured profile should be usable for AI suggestions without a separate selection step.
 - [2026-11-13] D-41 — Import AI falls back to the only configured profile when none is active — because legacy installs can have a single inactive profile and a configured profile should still be usable.
+- [2026-11-13] D-42 — Import AI matching stays user-triggered: the review explains that Suggest maps products and categories, and never calls the LLM on open — because auto-running would overwrite deterministic exact/barcode/alias matches and could clobber edits during the slow request
