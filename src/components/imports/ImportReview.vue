@@ -429,6 +429,9 @@ function messageOf(caught: unknown): string | null {
 							<span v-if="entry.row.discount !== null">− {{ formatTotal(entry.row.discount) }}</span>
 						</span>
 						<span v-if="entry.row.isCoupon" :class="$style.badge">{{ t('Coupon') }}</span>
+						<span v-if="entry.row.suggestion.source" :class="$style.meta">
+							{{ t('Suggested') }}: {{ entry.row.suggestion.source }}
+						</span>
 					</div>
 
 					<NcSelect
@@ -459,10 +462,6 @@ function messageOf(caught: unknown): string | null {
 						label="name"
 						:filterable="true"
 						:placeholder="t('Category')" />
-
-					<span v-if="entry.row.suggestion.source" :class="$style.meta">
-						{{ t('Suggested') }}: {{ entry.row.suggestion.source }}
-					</span>
 				</div>
 			</section>
 
@@ -547,8 +546,8 @@ function messageOf(caught: unknown): string | null {
 
 .row {
 	display: grid;
-	grid-template-columns: minmax(140px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr);
-	gap: 12px;
+	grid-template-columns: minmax(110px, 1.2fr) 140px minmax(140px, 1.2fr);
+	gap: 8px;
 	align-items: center;
 	margin-bottom: 12px;
 }
@@ -559,10 +558,21 @@ function messageOf(caught: unknown): string | null {
 
 .item-row {
 	display: grid;
-	grid-template-columns: minmax(180px, 2fr) minmax(160px, 1fr) minmax(160px, 1fr) minmax(160px, 1fr);
-	gap: 12px;
+	grid-template-columns: minmax(110px, 1.2fr) minmax(0, 195px) minmax(0, 195px) minmax(0, 195px);
+	gap: 8px;
 	align-items: center;
 	margin-bottom: 12px;
+}
+
+.row > *,
+.item-row > * {
+	min-width: 0;
+}
+
+.row :global(.nc-select.v-select.select),
+.item-row :global(.nc-select.v-select.select) {
+	min-width: 0;
+	width: 100%;
 }
 
 .item-main {
