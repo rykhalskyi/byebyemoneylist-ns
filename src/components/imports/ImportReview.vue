@@ -56,7 +56,6 @@ const categories = ref<Category[]>([])
 const products = ref<Product[]>([])
 const loadingOptions = ref(true)
 const busy = ref(false)
-const autoSuggesting = ref(false)
 const analyzing = ref(false)
 const analyzingMode = ref<'catalog' | 'ai'>('catalog')
 const hasLlmProfile = ref(false)
@@ -89,20 +88,6 @@ const itemActionOptions = computed<ActionOption[]>(() => [
 ])
 
 const isApproved = computed(() => current.value.status === 'approved')
-
-const isReviewable = computed(() => current.value.status === 'pending' || current.value.status === 'in_review')
-
-const needsAiSuggestions = computed(() => current.value.items.some((row) => {
-	if (row.isCoupon) {
-		return false
-	}
-	if (row.suggestion.source === 'ai') {
-		return false
-	}
-	return row.suggestion.productId === null
-		|| row.suggestion.productId === undefined
-		|| row.suggestion.source === 'fuzzy'
-}))
 
 const canSave = computed(() => {
 	if (storeAction.value === 'map_existing' && storeValue.value === null) {
@@ -146,7 +131,6 @@ onMounted(async () => {
 		loadingOptions.value = false
 		initFromImport(props.purchaseImport)
 	}
-	await runAutoSuggest()
 })
 
 function initFromImport(value: PurchaseImport) {
@@ -226,27 +210,6 @@ function buildPayload(): ImportMappingPayload {
 			mappedCategoryId: row.category?.id ?? null,
 			newProductName: row.action === 'create_new' ? row.newProductName.trim() : null,
 		})),
-	}
-}
-
-async function runAutoSuggest() {
-	if (!isReviewable.value || !needsAiSuggestions.value || !hasLlmProfile.value) {
-		return
-	}
-
-	autoSuggesting.value = true
-	try {
-		const next = await suggestImportAi(current.value.id)
-		initFromImport(next)
-	} catch (caught) {
-		if (statusOf(caught) === 409) {
-			const message = messageOf(caught)?.toLowerCase() ?? ''
-			if (message.includes('already imported') || message.includes('already approved')) {
-				emit('approved')
-			}
-		}
-	} finally {
-		autoSuggesting.value = false
 	}
 }
 
@@ -343,15 +306,15 @@ function messageOf(caught: unknown): string | null {
 				<NcButton
 					type="button"
 					variant="secondary"
-					:disabled="busy || autoSuggesting || loadingOptions || isApproved"
+					:disabled="busy || loadingOptions || isApproved"
 					@click="runSuggest">
 					{{ t('Suggest') }}
 				</NcButton>
 			</div>
 		</div>
 
-		<p v-if="autoSuggesting" :class="$style.info">
-			{{ t('Matching products with AI…') }}
+		<p v-if="!isApproved" :class="$style.hint">
+			{{ t('Select Suggest to map products and categories automatically.') }}
 		</p>
 
 		<div v-if="loadingOptions" :class="$style.center">
@@ -469,7 +432,7 @@ function messageOf(caught: unknown): string | null {
 				<NcButton
 					type="button"
 					variant="primary"
-					:disabled="busy || autoSuggesting || isApproved || !canSave"
+					:disabled="busy || isApproved || !canSave"
 					@click="onApprove">
 					{{ t('Approve') }}
 				</NcButton>
@@ -623,6 +586,11 @@ function messageOf(caught: unknown): string | null {
 
 .info {
 	color: var(--color-success-text);
+}
+
+.hint {
+	margin: 0;
+	opacity: 0.7;
 }
 
 @media (max-width: 900px) {

@@ -188,4 +188,42 @@ final class PurchaseImportAiServiceTest extends TestCase {
 		$this->assertNull($item->getSuggestedProductId());
 		$this->assertNull($item->getMatchSource());
 	}
+
+	public function testKeepsDeterministicProductMatches(): void {
+		$this->profileMapper->method('findActiveByOwner')->willReturn($this->profile());
+		$itemsPayload = [];
+		$sources = ['exact', 'barcode', 'alias', 'fuzzy'];
+		foreach (array_keys($sources) as $index) {
+			$itemsPayload[] = [
+				'lineId' => (string)($index + 1),
+				'productId' => 'product-1',
+				'newProductName' => null,
+				'categoryId' => 'cat-1',
+				'confidence' => 0.95,
+			];
+		}
+		$this->scanner->method('complete')->willReturn(json_encode(['items' => $itemsPayload]) ?: '');
+
+		$items = [];
+		foreach ($sources as $index => $source) {
+			$item = $this->item();
+			$item->setLineId((string)($index + 1));
+			$item->setSuggestedProductId('product-1');
+			$item->setMatchSource($source);
+			$item->setConfidence($source === 'fuzzy' ? 0.6 : 1.0);
+			$items[] = $item;
+		}
+
+		$this->service->suggest($this->import(), $items, [], 'alice');
+
+		foreach (['exact', 'barcode', 'alias'] as $index => $source) {
+			$this->assertSame($source, $items[$index]->getMatchSource());
+			$this->assertSame(1.0, $items[$index]->getConfidence());
+			$this->assertNull($items[$index]->getSuggestedCategoryId());
+		}
+
+		$this->assertSame('ai', $items[3]->getMatchSource());
+		$this->assertSame(0.95, $items[3]->getConfidence());
+		$this->assertSame('cat-1', $items[3]->getSuggestedCategoryId());
+	}
 }

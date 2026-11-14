@@ -223,6 +223,9 @@ class PurchaseImportAiService {
 			if ($item === null || $item->getAction() !== PurchaseImportEntity::ACTION_PENDING) {
 				continue;
 			}
+			if ($this->hasDeterministicProductMatch($item)) {
+				continue;
+			}
 
 			$confidence = $this->number($row['confidence'] ?? null, self::CONFIDENCE_THRESHOLD);
 			if ($confidence < self::CONFIDENCE_THRESHOLD) {
@@ -289,6 +292,18 @@ class PurchaseImportAiService {
 			$import->setStoreMatchSource('ai');
 			$import->setStoreConfidence(0.9);
 		}
+	}
+
+	/**
+	 * Whether the deterministic matcher already resolved this product row from an
+	 * exact name, barcode or alias. Those suggestions stay authoritative; the AI
+	 * only fills unresolved or fuzzy rows.
+	 */
+	private function hasDeterministicProductMatch(PurchaseImportItemEntity $item): bool {
+		if ($item->getSuggestedProductId() === null) {
+			return false;
+		}
+		return in_array($item->getMatchSource(), ['exact', 'barcode', 'alias'], true);
 	}
 
 	/**

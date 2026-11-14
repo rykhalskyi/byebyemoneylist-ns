@@ -235,9 +235,9 @@ New classes under `lib/`:
   string $prompt, int $connect, int $read, int $maxTokens): string` to
   `Service/Receipt/OpenAiCompatibleScanner` (reuse `ENDPOINTS`, `DEFAULT_MODELS`,
   error handling, `response_format=json_object`; no image part).
-- The web review runs this automatically on open when product rows are still
-  unresolved or only fuzzy-matched; the **AI suggest** button remains for manual
-  re-runs.
+- The web review calls this only when the user presses **Suggest**; nothing is sent
+  to the LLM on open, so deterministic exact/barcode/alias matches are not
+  overwritten and user edits are never clobbered by a late response.
 - Prompt: compact JSON with the import (store name/address, list category names,
   items) plus candidate catalog:
   - stores: `{id, name, address}`
@@ -332,11 +332,12 @@ Edge cases:
     - action toggle: Map existing / Create new / Skip;
     - for Create new: editable product name + category select;
     - coupon rows default to Skip with an explanatory hint.
-  - On open, automatically calls `/suggest-ai` when non-coupon rows are unresolved
-    or fuzzy-matched; failures stay silent so deterministic suggestions still show.
-  - Buttons: **Suggest**, **AI suggest** (spinner; disabled/hint when no active LLM
-    profile), **Save mapping**, **Approve**. Approve first saves then calls
-    `/approve`; on success emits `approved` and the parent reloads.
+  - A hint above the sections tells the user that **Suggest** maps products and
+    categories automatically. Suggestions run only on demand; failures keep the
+    deterministic suggestions visible.
+  - Buttons: **Suggest** (runs AI when a profile exists, deterministic otherwise),
+    **Approve**. Approve first saves then calls `/approve`; on success emits
+    `approved` and the parent reloads.
 - `src/views/ShoppingLists.vue` is unchanged; after approval the new list appears in
   the normal list fetch.
 
@@ -381,8 +382,8 @@ Manual end-to-end (with the Android branch):
 
 1. On a `nextcloud.local` user with an active LLM profile, upload a finished
    purchase from the phone.
-2. Inbox shows the import; Suggest fills matches; AI suggest improves unresolved
-   rows.
+2. Inbox shows the import; pressing Suggest fills matches (AI when a profile is
+   active, deterministic otherwise).
 3. Correct one item to "Create new", skip a coupon, approve.
 4. Shopping Lists shows the new list with the same id; Analytics/Dashboard include
    its `final_total`.

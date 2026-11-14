@@ -126,9 +126,19 @@ describe('ImportReview', () => {
 		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([])
 	})
 
-	it('runs AI matching automatically for unresolved products', async () => {
+	it('does not run suggestions until the user clicks Suggest', async () => {
 		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([llmProfile()])
-		const importRow = purchaseImport()
+
+		const wrapper = mount(ImportReview, { props: { purchaseImport: purchaseImport() } })
+		await flushPromises()
+
+		expect(importsApi.suggestImportAi).not.toHaveBeenCalled()
+		expect(importsApi.suggestImport).not.toHaveBeenCalled()
+		expect(wrapper.text()).toContain('Select Suggest to map products and categories automatically.')
+	})
+
+	it('runs AI matching when the user clicks Suggest', async () => {
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([llmProfile()])
 		vi.mocked(importsApi.suggestImportAi).mockResolvedValue(purchaseImport({
 			status: 'in_review',
 			items: [item({
@@ -142,7 +152,10 @@ describe('ImportReview', () => {
 			})],
 		}))
 
-		const wrapper = mount(ImportReview, { props: { purchaseImport: importRow } })
+		const wrapper = mount(ImportReview, { props: { purchaseImport: purchaseImport() } })
+		await flushPromises()
+
+		await findSuggestButton(wrapper).trigger('click')
 		await flushPromises()
 
 		expect(importsApi.suggestImportAi).toHaveBeenCalledWith('import-1')
@@ -150,26 +163,7 @@ describe('ImportReview', () => {
 		expect(inputValue(wrapper)).toBe('Milk 1L')
 	})
 
-	it('does not run AI matching when every product is already AI-suggested', async () => {
-		const importRow = purchaseImport({
-			items: [item({
-				suggestion: {
-					productId: null,
-					productName: 'Milk 1L',
-					categoryId: null,
-					source: 'ai',
-					confidence: 0.9,
-				},
-			})],
-		})
-
-		mount(ImportReview, { props: { purchaseImport: importRow } })
-		await flushPromises()
-
-		expect(importsApi.suggestImportAi).not.toHaveBeenCalled()
-	})
-
-	it('keeps the raw name prefilled when AI matching is unavailable', async () => {
+	it('shows the missing-profile hint and keeps the raw name when Suggest cannot use AI', async () => {
 		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([llmProfile()])
 		vi.mocked(importsApi.suggestImportAi).mockRejectedValue({
 			response: { status: 409, data: { message: 'No active LLM profile' } },
@@ -178,9 +172,12 @@ describe('ImportReview', () => {
 		const wrapper = mount(ImportReview, { props: { purchaseImport: purchaseImport() } })
 		await flushPromises()
 
+		await findSuggestButton(wrapper).trigger('click')
+		await flushPromises()
+
 		expect(importsApi.suggestImportAi).toHaveBeenCalledWith('import-1')
 		expect(inputValue(wrapper)).toBe('Milk')
-		expect(wrapper.text()).not.toContain('Add and activate an LLM profile')
+		expect(wrapper.text()).toContain('Add and activate an LLM profile in Settings to use AI suggestions.')
 	})
 
 	it('uses deterministic suggestions when no LLM profile is configured', async () => {

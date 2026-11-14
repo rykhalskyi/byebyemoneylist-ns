@@ -111,4 +111,4 @@
 ## [2026-11-12] update | T48 implemented: server-side To Buy auto-check service with active-profile gate, pending-id filtering and hooks from list finalization, receipt commit and import approval
 ## [2026-11-12] update | To Buy redesign T42–T48 implemented on feature/to-buy-list-redesign; automated checks green, migration dry-run and manual smoke pending
 ## [2026-11-13] update | T49 Inbox entry moved into Shopping Lists with a pending count; Inbox now shows reviewable imports only; AI suggestions distinguish missing profiles from already-imported conflicts; first LLM profile auto-activates.
-## [2026-11-13] update | T50 automatic AI product matching on import review; unresolved rows auto-call suggest-ai, create-new stays the no-match default; Vitest 262/262, eslint/stylelint green
+## [2026-11-13] update | T50 import review keeps AI matching user-triggered via Suggest with an explanatory hint; create-new stays the no-match default; Vitest 264/264, eslint/stylelint green

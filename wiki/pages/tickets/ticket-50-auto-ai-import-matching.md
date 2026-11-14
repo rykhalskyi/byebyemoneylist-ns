@@ -2,39 +2,47 @@
 created: 2026-11-13
 type: ticket
 status: implemented
-summary: T50 — Purchase import review runs AI product matching automatically and falls back to create-new
+summary: T50 — Purchase import review keeps AI product matching user-triggered via Suggest and explains it in the UI
 ---
 
-# T50 — Automatic AI matching on purchase import review
+# T50 — Explicit AI matching on purchase import review
 
 Source request: the review showed dropdowns for unresolved products instead of
-matching them, because AI suggestions only ran when the user pressed **AI suggest**.
+matching them, because AI suggestions only ran when the user pressed a separate
+**AI suggest** button that was easy to miss.
 
 ## Spec
 
-- Opening a reviewable purchase import runs AI matching automatically when at least
-  one non-coupon product row is unresolved or only fuzzy-matched.
-- Rows already handled by AI are not sent again; exact/barcode/alias matches are
-  kept as-is.
+- The review never calls the LLM on open; the user triggers matching with
+  **Suggest**.
+- A visible hint explains that **Suggest** maps products and categories
+  automatically.
+- **Suggest** uses AI when an active (or single configured) profile exists and the
+  deterministic matcher otherwise.
+- Rows already matched by exact/barcode/alias suggestions stay authoritative even
+  when the user runs suggestions; AI only fills unresolved or fuzzy rows.
 - A missing/unavailable LLM profile must not block review: deterministic
-  suggestions stay visible and the auto-run failure is silent.
+  suggestions stay visible and failures do not break the screen.
 - Rows with no matched product default to **Create new product** with the raw
   uploaded name prefilled.
 
 ## Plan
 
-1. `src/components/imports/ImportReview.vue` — add an auto-run guard based on
-   `suggestion.source`/`productId`, call `suggestImportAi` after catalog options
-   load, apply the returned import, and disable actions while matching.
-2. Show a short "Matching products with AI…" status during the automatic run.
-3. Tests: auto-runs for unresolved rows, skips when every row is AI-suggested, and
-   keeps the raw name prefilled when no profile exists.
-4. l10n: add the new status string for en/de/uk.
+1. `src/components/imports/ImportReview.vue` — drop the automatic `suggestImportAi`
+   call on mount, keep a single **Suggest** button that picks AI vs deterministic
+   from `hasLlmProfile`, and show an explanatory hint above the sections.
+2. `PurchaseImportAiService` — keep exact/barcode/alias product matches
+   authoritative and let AI fill only unresolved or fuzzy rows.
+3. Tests: assert nothing runs on mount, the hint is shown, and clicking Suggest
+   hits the AI or deterministic endpoint as appropriate; PHP unit test covers the
+   deterministic-match guard.
+4. Remove the auto-run-only state (`autoSuggesting`, `needsAiSuggestions`,
+   `isReviewable`) and the inline "Matching products with AI…" status.
+5. l10n: replace the auto-run status string with the new hint for en/de/uk.
 
 ## Outcome
 
-- Review opens trigger `/suggest-ai` once for unresolved/fuzzy rows; results are
-  applied immediately and create-new stays the no-match default.
-- Auto-run failures (including `409 No active LLM profile`) are swallowed; the
-  explicit **AI suggest** button still reports the missing-profile hint.
-- Vitest 262/262 green; eslint and stylelint clean.
+- Matching is now fully user-triggered; the hint tells users to press **Suggest**.
+- No request races the user on open, so deterministic matches and in-progress edits
+  are not overwritten.
+- Vitest 264/264 green; eslint and stylelint clean.
