@@ -13,11 +13,13 @@ import type {
 import { mdiArrowLeft } from '@mdi/js'
 import { computed, onMounted, ref } from 'vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { fetchCategories, fetchProducts, fetchStores } from '../../services/listsApi.ts'
+import { fetchLlmProfiles } from '../../services/llmApi.ts'
 import { approveImport, saveImportMapping, suggestImport, suggestImportAi } from '../../services/purchaseImportsApi.ts'
 import { formatDate, formatTotal } from '../../utils/format.ts'
 import { t } from '../../utils/l10n.ts'
@@ -55,6 +57,9 @@ const products = ref<Product[]>([])
 const loadingOptions = ref(true)
 const busy = ref(false)
 const autoSuggesting = ref(false)
+const analyzing = ref(false)
+const analyzingMode = ref<'catalog' | 'ai'>('catalog')
+const hasLlmProfile = ref(false)
 const error = ref<string | null>(null)
 const info = ref<string | null>(null)
 
@@ -125,14 +130,16 @@ const canSave = computed(() => {
 onMounted(async () => {
 	loadingOptions.value = true
 	try {
-		const [storeList, categoryList, productList] = await Promise.all([
+		const [storeList, categoryList, productList, profiles] = await Promise.all([
 			fetchStores(),
 			fetchCategories(),
 			fetchProducts('all'),
+			fetchLlmProfiles().catch(() => []),
 		])
 		stores.value = storeList
 		categories.value = categoryList
 		products.value = productList
+		hasLlmProfile.value = profiles.some((profile) => profile.isActive) || profiles.length === 1
 	} catch {
 		error.value = t('Could not load your catalog.')
 	} finally {
@@ -223,7 +230,7 @@ function buildPayload(): ImportMappingPayload {
 }
 
 async function runAutoSuggest() {
-	if (!isReviewable.value || !needsAiSuggestions.value) {
+	if (!isReviewable.value || !needsAiSuggestions.value || !hasLlmProfile.value) {
 		return
 	}
 
@@ -243,12 +250,15 @@ async function runAutoSuggest() {
 	}
 }
 
-async function runSuggest(ai: boolean) {
+async function runSuggest() {
+	const useAi = hasLlmProfile.value
+	analyzingMode.value = useAi ? 'ai' : 'catalog'
+	analyzing.value = true
 	busy.value = true
 	error.value = null
 	info.value = null
 	try {
-		const next = ai
+		const next = useAi
 			? await suggestImportAi(current.value.id)
 			: await suggestImport(current.value.id)
 		initFromImport(next)
@@ -256,7 +266,7 @@ async function runSuggest(ai: boolean) {
 	} catch (caught) {
 		if (statusOf(caught) === 409) {
 			const message = messageOf(caught)?.toLowerCase() ?? ''
-			if (ai && message.includes('llm profile')) {
+			if (useAi && message.includes('llm profile')) {
 				error.value = t('Add and activate an LLM profile in Settings to use AI suggestions.')
 			} else if (message.includes('already imported') || message.includes('already approved')) {
 				emit('approved')
@@ -267,27 +277,7 @@ async function runSuggest(ai: boolean) {
 			error.value = t('Could not update suggestions.')
 		}
 	} finally {
-		busy.value = false
-	}
-}
-
-async function saveMapping(showConfirmation = true) {
-	const next = await saveImportMapping(current.value.id, buildPayload())
-	initFromImport(next)
-	if (showConfirmation) {
-		info.value = t('Mapping saved.')
-	}
-}
-
-async function onSaveMapping() {
-	busy.value = true
-	error.value = null
-	info.value = null
-	try {
-		await saveMapping()
-	} catch {
-		error.value = t('Could not save the mapping.')
-	} finally {
+		analyzing.value = false
 		busy.value = false
 	}
 }
@@ -297,7 +287,7 @@ async function onApprove() {
 	error.value = null
 	info.value = null
 	try {
-		await saveMapping(false)
+		await saveImportMapping(current.value.id, buildPayload())
 		await approveImport(current.value.id)
 		emit('approved')
 	} catch (caught) {
@@ -354,15 +344,8 @@ function messageOf(caught: unknown): string | null {
 					type="button"
 					variant="secondary"
 					:disabled="busy || autoSuggesting || loadingOptions || isApproved"
-					@click="runSuggest(false)">
+					@click="runSuggest">
 					{{ t('Suggest') }}
-				</NcButton>
-				<NcButton
-					type="button"
-					variant="secondary"
-					:disabled="busy || autoSuggesting || loadingOptions || isApproved"
-					@click="runSuggest(true)">
-					{{ t('AI suggest') }}
 				</NcButton>
 			</div>
 		</div>
@@ -486,13 +469,6 @@ function messageOf(caught: unknown): string | null {
 			<div :class="$style.footer">
 				<NcButton
 					type="button"
-					variant="secondary"
-					:disabled="busy || autoSuggesting || isApproved || !canSave"
-					@click="onSaveMapping">
-					{{ t('Save mapping') }}
-				</NcButton>
-				<NcButton
-					type="button"
 					variant="primary"
 					:disabled="busy || autoSuggesting || isApproved || !canSave"
 					@click="onApprove">
@@ -500,6 +476,25 @@ function messageOf(caught: unknown): string | null {
 				</NcButton>
 			</div>
 		</template>
+
+		<NcDialog
+			:open="analyzing"
+			:name="t('Analyzing suggestions')"
+			size="small"
+			noClose
+			:closeOnClickOutside="false">
+			<div :class="$style.analyzing">
+				<NcLoadingIcon :size="32" />
+				<p :class="$style['analyzing-title']">
+					{{ t('Analyzing…') }}
+				</p>
+				<p :class="$style.meta">
+					{{ analyzingMode === 'ai'
+						? t('Asking the AI to match products and categories. This can take a moment.')
+						: t('Matching products and categories against your catalog.') }}
+				</p>
+			</div>
+		</NcDialog>
 	</div>
 </template>
 
@@ -595,6 +590,20 @@ function messageOf(caught: unknown): string | null {
 	display: flex;
 	justify-content: center;
 	padding: 24px;
+}
+
+.analyzing {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 0 16px;
+	text-align: center;
+}
+
+.analyzing-title {
+	margin: 0;
+	font-weight: bold;
 }
 
 .error {

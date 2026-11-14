@@ -1,9 +1,10 @@
-import type { PurchaseImport, PurchaseImportItem } from '../../../../src/types.ts'
+import type { LlmProfile, PurchaseImport, PurchaseImportItem } from '../../../../src/types.ts'
 
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import ImportReview from '../../../../src/components/imports/ImportReview.vue'
+import * as llmApi from '../../../../src/services/llmApi.ts'
 import * as importsApi from '../../../../src/services/purchaseImportsApi.ts'
 
 vi.mock('../../../../src/services/purchaseImportsApi.ts', () => ({
@@ -18,6 +19,26 @@ vi.mock('../../../../src/services/listsApi.ts', () => ({
 	fetchProducts: vi.fn().mockResolvedValue([]),
 	fetchStores: vi.fn().mockResolvedValue([]),
 }))
+
+vi.mock('../../../../src/services/llmApi.ts', () => ({
+	fetchLlmProfiles: vi.fn().mockResolvedValue([]),
+}))
+
+function llmProfile(overrides: Partial<LlmProfile> = {}): LlmProfile {
+	return {
+		id: 'profile-1',
+		name: 'Test profile',
+		provider: 'openai',
+		apiKeyMasked: '…',
+		model: null,
+		connectTimeoutSeconds: 30,
+		readTimeoutSeconds: 60,
+		maxTokens: 2048,
+		isActive: true,
+		createdAt: '2026-01-01T00:00:00Z',
+		...overrides,
+	}
+}
 
 function item(overrides: Partial<PurchaseImportItem> = {}): PurchaseImportItem {
 	return {
@@ -89,14 +110,24 @@ function inputValue(wrapper: ReturnType<typeof mount>): string {
 	return (field.find('input').element as HTMLInputElement).value
 }
 
+function findSuggestButton(wrapper: ReturnType<typeof mount>) {
+	const button = wrapper.findAll('button').find((entry) => entry.text() === 'Suggest')
+	if (button === undefined) {
+		throw new Error('Suggest button not found')
+	}
+	return button
+}
+
 enableAutoUnmount(afterEach)
 
 describe('ImportReview', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([])
 	})
 
 	it('runs AI matching automatically for unresolved products', async () => {
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([llmProfile()])
 		const importRow = purchaseImport()
 		vi.mocked(importsApi.suggestImportAi).mockResolvedValue(purchaseImport({
 			status: 'in_review',
@@ -139,6 +170,7 @@ describe('ImportReview', () => {
 	})
 
 	it('keeps the raw name prefilled when AI matching is unavailable', async () => {
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([llmProfile()])
 		vi.mocked(importsApi.suggestImportAi).mockRejectedValue({
 			response: { status: 409, data: { message: 'No active LLM profile' } },
 		})
@@ -149,5 +181,54 @@ describe('ImportReview', () => {
 		expect(importsApi.suggestImportAi).toHaveBeenCalledWith('import-1')
 		expect(inputValue(wrapper)).toBe('Milk')
 		expect(wrapper.text()).not.toContain('Add and activate an LLM profile')
+	})
+
+	it('uses deterministic suggestions when no LLM profile is configured', async () => {
+		const importRow = purchaseImport({
+			items: [item({
+				suggestion: {
+					productId: 'product-1',
+					productName: 'Milk',
+					categoryId: null,
+					source: 'exact',
+					confidence: 1,
+				},
+			})],
+		})
+		vi.mocked(importsApi.suggestImport).mockResolvedValue(importRow)
+
+		const wrapper = mount(ImportReview, { props: { purchaseImport: importRow } })
+		await flushPromises()
+
+		await findSuggestButton(wrapper).trigger('click')
+		await flushPromises()
+
+		expect(importsApi.suggestImport).toHaveBeenCalledWith('import-1')
+		expect(importsApi.suggestImportAi).not.toHaveBeenCalled()
+	})
+
+	it('uses AI suggestions when an LLM profile is configured', async () => {
+		vi.mocked(llmApi.fetchLlmProfiles).mockResolvedValue([llmProfile()])
+		const importRow = purchaseImport({
+			items: [item({
+				suggestion: {
+					productId: 'product-1',
+					productName: 'Milk',
+					categoryId: null,
+					source: 'exact',
+					confidence: 1,
+				},
+			})],
+		})
+		vi.mocked(importsApi.suggestImportAi).mockResolvedValue(importRow)
+
+		const wrapper = mount(ImportReview, { props: { purchaseImport: importRow } })
+		await flushPromises()
+
+		await findSuggestButton(wrapper).trigger('click')
+		await flushPromises()
+
+		expect(importsApi.suggestImportAi).toHaveBeenCalledWith('import-1')
+		expect(importsApi.suggestImport).not.toHaveBeenCalled()
 	})
 })
