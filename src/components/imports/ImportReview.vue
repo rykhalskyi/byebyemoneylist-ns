@@ -510,6 +510,7 @@ function messageOf(caught: unknown): string | null {
 	align-items: flex-start;
 	gap: 16px;
 	flex-wrap: wrap;
+	margin-top: 16px;
 }
 
 .header-text {

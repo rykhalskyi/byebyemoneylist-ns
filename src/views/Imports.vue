@@ -197,6 +197,7 @@ function isReviewable(status: ImportStatus): boolean {
 	align-items: flex-start;
 	gap: 16px;
 	flex-wrap: wrap;
+	margin-top: 16px;
 }
 
 .header-main {
