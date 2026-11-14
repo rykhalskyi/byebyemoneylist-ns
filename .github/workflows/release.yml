@@ -84,8 +84,16 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ steps.version.outputs.version }}"
-          gh release create "v${version}" \
-            "byebyemoneylist-${version}.tar.gz" \
-            "byebyemoneylist-${version}.tar.gz.sha256" \
-            --title "v${version}" \
-            --generate-notes
+          tag="v${version}"
+          assets=(
+            "byebyemoneylist-${version}.tar.gz"
+            "byebyemoneylist-${version}.tar.gz.sha256"
+          )
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; uploading assets with --clobber"
+            gh release upload "$tag" "${assets[@]}" --clobber
+          else
+            gh release create "$tag" "${assets[@]}" \
+              --title "$tag" \
+              --generate-notes
+          fi
